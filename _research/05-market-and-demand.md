@@ -53,8 +53,13 @@ itself is already concentrated around Paperclip.
 | Egypt | Largest Arabic-speaking market (~110M+), National AI Strategy (2020), >100 AI companies, mostly startups; cost-sensitive, selective adoption | ILO Arab Region report 2026; MENA landscape |
 | Channel reality | WhatsApp is the dominant business channel in the GCC/Egypt | Innovatrix |
 
-**Nobody in the AI-company category ships Arabic-first, RTL, dialect-aware, WhatsApp-native.** That is
-the clearest open flank — plus a strong story for Egypt/GCC SMEs, agencies and government-adjacent work.
+**Nobody in the AI-company category ships Arabic-first, RTL, dialect-aware, WhatsApp-native.** The
+region already has Arabic **agent/CX** platforms (Teammates.ai, tkana, Wittify, Thikaa, ChatSA, Misraj,
+Musaid, Arabic.AI) and even named "AI teammates" (Raya/Adam/Sara) — but *no* Arabic product lets a user
+**design an AI company**: org chart, typed connections, goals cascade, budgets, audit. Regional
+investment is live (Aligator $1.2M, Oct 2026) and Deloitte expects Arabic-optimized agents to
+proliferate in 2026. That is the clearest open flank — plus a strong story for Egypt/GCC SMEs, agencies
+and government-adjacent work.
 
 ## 5.5 Buying triggers to design for
 

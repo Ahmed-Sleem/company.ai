@@ -23,7 +23,7 @@ Legend: ✅ mature / shipped & documented · 🟡 partial or requires code/confi
 | **Human + AI mixed org** | Paperclip: human and agent members side by side, human roles (owner/admin/operator/viewer) | — (framework only) | Copilot Studio/Agentforce: human-in-the-loop org-wide | ✅ |
 | **No-code visual builder (drag & drop)** | 🟡 Paperclip has a React UI, but deployment is CLI/Docker/pnpm; no drag-drop graph editor | 🟡 CrewAI Studio exists but is code-first; Langflow is a generic visual builder | ✅ TeamDay, Relevance AI "Workforce Canvas", Copilot Studio visual designer | 🟡 **weakest link in OSS** |
 | **Hosted SaaS "sign up and go"** | 🟡 Paperclip Cloud = waitlist, no published price; third-party hosting exists (paperclipcloud.com from $21/mo) | Managed offerings: CrewAI Enterprise, LangGraph Platform | ✅ TeamDay ($19–99/mo + BYO key), Relevance AI ($29/mo+), Lindy ($49.99/mo+) | 🟡/✅ |
-| **Arabic / RTL / MENA localization** | ❌ none found in any company-platform repo | ❌ | ❌ (enterprise vendors localize UI, not the org concept) | ❌ **open** |
+| **Arabic / RTL / MENA localization** | ❌ none found in any company-platform repo | ❌ | 🟡 Arabic **AI-teammate/CX** platforms exist (Teammates.ai, tkana, Wittify, Thikaa, ChatSA, Misraj, Musaid, Arabic.AI) — but they sell chatbots/agents, **not** an AI-company org chart + goals | 🟡 **partially open** |
 
 ## 1.2 The four ways the idea is "available" today
 
@@ -42,6 +42,11 @@ with checkpoints and human approval; MetaGPT/ChatDev simulate a software company
 an "AI org chart" ($19–99/mo BYO Anthropic key, $999/mo dedicated); Relevance AI has a drag-and-drop
 "Workforce Canvas" ($29/mo+); Lindy sells general-purpose assistants ($49.99–199.99/mo); Microsoft
 Copilot Studio and Salesforce Agentforce sell governed multi-agent orchestration to enterprises.
+Two 2026 launches are especially close to the user's idea: **Tycoon AI** (Product Hunt #1, 2026-05-21;
+an AI CEO named Astra + 10+ ready agents for research/marketing/code/finance/legal, goal-in → plan →
+assignment → approval, no API keys needed) and **Pancake** (2026-05-20; *"a full AI org chart in
+Slack"*, open-source Squad templates, goal-matched agents stacked one by one, 23 autonomous agents in
+the founders' own company).
 
 **Route D — Research simulations (proof the concept works, not products).** Stanford's *Generative
 Agents* (Smallville), Altera's *Project Sid* (1,000+ autonomous agents developing specialized roles,

@@ -79,6 +79,31 @@ All URLs checked **2026-10-02**. Primary sources are marked **[P]**; secondary/a
 - **[S]** https://www.ilo.org/sites/default/files/2026-05/2500858E_AI-and-Employment-Futures-for-the-Arab-Region-E-final.pdf
   — Arab region AI/employment data.
 
+- **[S]** https://www.producthunt.com/products/tycoon-us — Tycoon AI: AI CEO Astra + 10+ agents, role
+  structure, approval loop, workspace knowledge (launched 2026-05-20, #1 daily 2026-05-21).
+- **[S]** https://www.shareuhack.com/en/posts/product-hunt-weekly-2026-05-28 — Tycoon AI #4 weekly, 536
+  upvotes; founder claims $1M ARR in 30 days for a prior AI-CEO-run company.
+- **[S]** https://www.producthunt.com/products/pancake-6 — Pancake: "full AI org chart in Slack",
+  goal-matched agents, open-source Squad templates, 23 agents running the founders' company.
+- **[S]** https://gist.github.com/kerzhner/0d165d3958dd1191d91a475881d7f07f — Product Hunt agents
+  TLDR (Mar 2026): OctoClaw ($9.99/mo AI specialists), Budibase AI Agents, others.
+- **[S]** https://roseram.com/product-hunt — PH top-50 lists (May–Sep 2026): Tycoon AI, MakersClaw,
+  Vokal, StoreClaw, Clipto MCP, Superset, Emdash.
+- **[S]** https://www.producthunt.com/products/tycoon-us/alternatives — Soloop ("approval-first Agent
+  OS for solo founders"), Relay.app, Taskade, Surfsite, DayZero.
+- **[S]** https://www.ycombinator.com/companies/industry/enterprise-software — Soren (F2025, "AI
+  workforce for business operations"), Nexus (F2025, no-code production agents), Marker, Dataleap.
+- **[P]** https://www.teammates.ai/arabic-chatbot — Arabic AI teammates Raya/Adam/Sara, dialect list.
+- **[P]** https://www.tkana.sa/en — Saudi AI agent platform, AIDA virtual employees, WhatsApp.
+- **[P]** https://wittify.ai/en — Arabic-first no-code voice/chat agents, 25+ dialects, on-prem.
+- **[P]** https://thikaa.com/?lang=en — MENA WhatsApp AI chatbot + Salla integration.
+- **[S]** https://www.baseer.dev/saudi-agents — directory of Saudi agent platforms (ChatSA, Misraj,
+  Musaid, Tkana).
+- **[P]** https://arabic.ai/ar/agentic-studio/ — Arabic.AI Agentic Studio, sovereign LLMs, 200+ connectors.
+- **[S]** https://entarabi.com/2026/10/aligator-... — Aligator raises $1.2M (Oct 2026) for PR agents, Doha.
+- **[S]** Product Hunt / Steam / App Store / Google Play listings for **AI Lab Tycoon** (2026),
+  **AI Company: Startup Simulator**, **My AI Company**, **AI Tycoon**, **business-tycoon**.
+
 ## Reproduce the GitHub evidence
 
 ```bash

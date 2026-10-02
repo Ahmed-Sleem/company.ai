@@ -127,6 +127,50 @@ routing presets claimed to save 30–50% tokens. Not a company model — a deliv
 - **OpenAI Workspace Agents** (2026-04-22) and **Google Gemini Enterprise** — big labs moved *adjacent*,
   not into the org-chart metaphor: team-level shared agents, not a company structure.
 
+## 3.9b The 2026 SaaS challengers (closest to the user's idea as a live product)
+
+**Tycoon AI (tycoon.us)** — launched 2026-05-20, **#1 on Product Hunt daily (2026-05-21)**, 536 weekly
+upvotes. Founder Xiaoyin Qu previously let an AI CEO ("Astra") run real companies: HeyBoss reached 100K+
+users and SkillBoss hit $1M ARR in 30 days. The productized version gives one person an **AI CEO plus
+10+ out-of-the-box agents** (CMO managing X, CTO writing code with Claude Code/Hermes, research,
+finance, legal). You text Astra a goal or KPI ("10x traffic this month"); she plans, assigns the right
+agent, tracks progress and asks for approval. Feedback stays attached to task threads; you can define
+brand voice/quality bar/constraints as workspace knowledge; custom agents get their own role, process
+and approval boundaries. **No API-key setup required.**
+→ *This is the most direct competition to the user's idea in the commercial space, and it already has
+a distribution win. Its weakness: it is a single AI-CEO hierarchy, not a user-designed org graph — the
+user cannot drag the structure, define arbitrary reporting lines/edges, or bring their own existing
+agent runtimes.*
+
+**Pancake (getpancake.ai)** — launched 2026-05-20. Positions as **"a full AI org chart in Slack"**
+across GTM, product and ops. Creates a **company brain** by syncing meeting notes and Slack
+discussions; you stack agents one at a time, **each matched to a real goal** ("compounding autonomy over
+time, 0→70% in a few months"); hires from **open-source Squad templates** or rolls your own. The
+founders run Pancake on Pancake: 23 autonomous agents, ~3 tasks/day each, daily digest in Slack, e.g. a
+product squad that listens to a sales call and opens a PR unprompted. Weakness: Slack-bound, not a
+general visual company builder.
+
+**OctoClaw, MakersClaw, Vokal, LobeHub, Soloop, StoreClaw, Soren (YC), Nexus (YC)** — the long tail of
+"hire AI employees / agents in your chat / approval-first agent OS". OctoClaw ($9.99/mo) and MakersClaw
+target Slack/Teams/Telegram; Vokal is a human+agent collaboration space; Soloop is approval-first for
+solo founders; Soren and Nexus are YC-backed "AI workforce"/no-code agent plays.
+
+**Takeaway:** between March and June 2026 a dozen products launched on exactly this idea. None of them
+exposes a **drag-and-drop org graph with typed edges + a goal cascade + bring-your-own agent runtimes**
+— that combination remains Paperclip's territory, and Paperclip is not no-code.
+
+## 3.9c MENA / Arabic
+
+No Arabic-first or RTL-first *AI company / org chart* product was found. What exists is one layer below
+on the stack: **AI teammates and CX agents** — Teammates.ai (Raya/Adam/Sara, Egyptian/Gulf/Levantine/
+Maghrebi dialects), tkana (Saudi; AIDA "virtual employees" on WhatsApp), Wittify (25+ Arabic dialects,
+voice+chat, ISO-certified, on-prem), Thikaa (WhatsApp + Salla), ChatSA/Misraj/Musaid/Arabic.AI
+(no-code Arabic agent builders with sovereign models), and Baseer (directory). Funding is flowing:
+Qatar-based **Aligator raised $1.2M (Oct 2026)** for PR-automation agents, and regional analysts expect
+Arabic-optimized agents to proliferate in 2026 (Deloitte ME).
+→ The regional market is being taught what "AI employees" means by CX vendors; nobody is selling them
+**a company they can structure, budget and govern.** That is the opening.
+
 ## 3.10 Research
 
 Stanford **Generative Agents** (2023) invented believable agent societies; Altera's **Project Sid**

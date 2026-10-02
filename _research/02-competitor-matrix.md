@@ -57,6 +57,55 @@ AGPL-3.0, trust-graded governance).
 | **UiPath Maestro / IBM watsonx Orchestrate / Kore.ai / Aisera / OneReach** | Enterprise orchestration/governance | Process/BPMN-centric multi-agent | Enterprise contracts | No | Adjacent: orchestration & governance, not "your own AI company" |
 | **PaperclipCloud** (3rd-party) | Managed hosting of Paperclip | Inherits Paperclip org chart | $21/$69/$149 per month | Hosts OSS | Evidence that people will pay to avoid self-hosting |
 
+## 2.4b SaaS newcomers that are org-chart-native (2026 launches, non-developer buyers)
+
+These matter because they are the closest thing to the user's idea already on the market as a product:
+
+| Product | Position | Org model | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| **Tycoon AI** (tycoon.us) | "Run one-person companies entirely with AI agents" | **AI CEO "Astra"** + 10+ ready agents (CMO, CTO, research, finance, legal); goals → plan → assignment → progress review → approval; task threads keep feedback; custom agents with own role/approval boundaries | **#1 Product Hunt daily 2026-05-21**, 536 weekly upvotes; founder claims prior AI-CEO-run companies reaching 100K+ users and $1M ARR in 30 days | Live |
+| **Pancake** (getpancake.ai) | "Full AI org chart in Slack" across GTM, product, ops | Hire agents one by one, each matched to a real goal; company brain syncs meeting notes + Slack; **open-source Squad templates**; 23 agents × 3 tasks/day in the founders' own company | Product Hunt launch 2026-05-20 | Live |
+| **OctoClaw** | "Hire AI specialists for marketing, sales, support" | Specialist agents, no code, guardrails | PH Mar 2026, top-10 of week; $9.99/mo | Live |
+| **MakersClaw** | "Hire AI employees that live in your Slack, Teams, Telegram" | Agents inside chat platforms | PH Jun 2026 | Live |
+| **Vokal** | "Collaboration space for 10x teammates with their AI agents" | Space where humans + agents work together | PH Jun 2026 | Live |
+| **LobeHub** | "Your Chief Agent Operator for multi-agent work" | Multi-agent operator | PH May 2026 | Live |
+| **Soloop** | "Approval-first Agent OS for solo founders" | Approval-gated agents | PH 2026 | Live |
+| **Soren** (YC F2025) | "Builds the AI workforce for business operations" | AI workforce | YC directory | YC-backed |
+| **Nexus** (YC F2025) | No-code production AI agents for non-technical teams | Agents, not full org chart | YC directory | YC-backed |
+| **Ceetos/ClawCompany/others** | Paperclip-style role templates | Org chart | GitHub, 0–600★ | Small |
+
+**Read:** the "hire AI employees / run a company with AI" idea is being launched **weekly** on Product
+Hunt. Differentiation cannot be the concept — it must be execution, localization, governance or a
+vertical.
+
+## 2.4c MENA / Arabic platforms (adjacent, not org-chart products)
+
+| Product | Country | What it does | Why it is not a full competitor |
+| --- | --- | --- | --- |
+| **Teammates.ai** | MENA | Named Arabic AI teammates: Raya (support), Adam (sales), Sara (recruiting); 4+ dialects; WhatsApp/email/phone | CX-only, no org chart/goals cascade |
+| **tkana** | Saudi | AI agents on WhatsApp/web; "virtual employees (AIDA)" for sales, support, marketing | Vertical CX agent platform |
+| **Wittify AI** | MENA | Arabic-first no-code voice/chat agents, 25+ dialects, ISO-certified, on-prem | CX automation |
+| **Thikaa** | MENA | WhatsApp chatbot + voice agent, Salla integration, dialect support | E-commerce CX |
+| **ChatSA / Misraj / Musaid / Arabic.AI** | Saudi / MENA | No-code Arabic agent builders, sovereign LLMs, government/enterprise focus | Agent builders, not company/org platforms |
+| **Baseer** | Saudi | Directory/portal of Saudi AI agents | Content platform |
+
+**Conclusion for the region:** Arabic **AI-agent and CX** platforms are numerous and funded
+(Aligator raised $1.2M for PR agents, Oct 2026). Arabic **AI-company / org-chart + goals** platforms do
+not exist yet. That is the unclaimed flank.
+
+## 2.5b Games & simulators (the consumer-facing cousin of the idea)
+
+| Title | Platform | What it is |
+| --- | --- | --- |
+| **AI Lab Tycoon** | Steam, 2026 | Management sim: hire researchers, manage research/finances, rival labs |
+| **AI Company: Startup Simulator** | iOS | CEO of an AI startup: products, team, morale, reputation |
+| **My AI Company: Build Your Startup** | Android | Idle/tycoon: hire devs/designers, offices, funding, rival startups |
+| **AI Tycoon** | Android | Decision-driven AI company competition |
+| **business-tycoon** | Browser (open source) | Isometric AI office simulator, hire specialists, build rooms, ship products |
+
+These prove **consumer appetite for the metaphor**; several of them are more polished than the actual
+B2B products in this category — relevant if a lightweight/educational tier is ever considered.
+
 ## 2.5 Research & simulations
 
 | Work | What it proves | Link |
