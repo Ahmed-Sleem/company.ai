@@ -21,6 +21,10 @@
 | `10-feature-brainstorm.md` | **45+ features we can add**, grouped, with novelty/impact/effort + top-12 shortlist | Yes |
 | `11-build-strategy.md` | Reference architecture, phase plan, make-vs-reuse, metrics, wedge decision | Yes |
 | `12-user-rules-received.md` | ⚠️ Status of the user's 5 rule documents (content not yet received) | Yes |
+| `14-obsidian-graph-and-canvas.md` | **How Obsidian does it** (d3-force + PixiJS, JSON Canvas) + library shortlist + our mapping | Yes |
+| `15-code-harvest-plan.md` | **Reuse plan**: what to download, licences, merge workflow, target monorepo layout | Yes |
+| `harvest/clone-all.sh` | Script that clones every reusable repo **outside** the git repo | Yes |
+| `designer-brief.md` | **The hand-off file for the designer** — elements only, no structure, reserved network area | Yes |
 | `data/github-snapshot-2026-10-02.json` | Raw GitHub API evidence (reproducible) | Yes |
 | `data/competitors.csv` | Same data, spreadsheet-friendly | Yes |
 | `rules/` | **User-supplied mandatory rules** (agent rules, coding rules, design rules) — mirrors of canonical root files | Root canonical files stay; mirrors archive with this folder |
