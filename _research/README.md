@@ -18,7 +18,7 @@
 | `07-sources.md` | Every source used, with date checked | Yes |
 | `data/github-snapshot-2026-10-02.json` | Raw GitHub API evidence (reproducible) | Yes |
 | `data/competitors.csv` | Same data, spreadsheet-friendly | Yes |
-| `rules/` | **User-supplied mandatory rules** (agent rules, coding rules, design rules) | Rules are mandatory while building; archive before deployment |
+| `rules/` | **User-supplied mandatory rules** (agent rules, coding rules, design rules) — mirrors of canonical root files | Root canonical files stay; mirrors archive with this folder |
 
 ## Rules
 

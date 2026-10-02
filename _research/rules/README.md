@@ -23,10 +23,23 @@ _research/rules/
 | **EDITABLE** | Rules the user allows improving | Agent may propose a diff; change only after user approves |
 | **TBD** | Not yet classified | Treated as MANDATORY until the user says otherwise (safe default) |
 
-## Why these live in `_research/`
+## Why these live in `_research/` (decided 2026-10-02)
 
-Per the user's instruction, all rules and research artefacts stay in **one removable folder** so that
-`rm -rf _research/` cleanly removes pre-deployment material. Note: if any rule file **must** be
-discovered automatically at the repository root by tooling (e.g. `AGENTS.md` at root for agent
-frameworks), the user will be asked whether to keep a root symlink/short pointer file. That decision is
-pending until the rules arrive.
+Per the user's instruction, all research artefacts stay in **one removable folder** so that
+`rm -rf _research/` cleanly removes pre-deployment material.
+
+**User decision (2026-10-02): mandatory rules will live at the repository root as auto-discoverable
+files (e.g. `/AGENTS.md`) and be MIRRORED into `_research/rules/` for one-shot archival.**
+So before deployment: delete/keep the root copy deliberately, then `rm -rf _research/`.
+
+Files with `MIRROR` status below are copies of root files — never edit the mirror independently:
+
+```text
+/AGENTS.md                 ← canonical (mandatory, auto-discovered)
+_research/rules/AGENTS.md  ← MIRROR
+/CODING_RULES.md           ← canonical (if provided)
+_research/rules/CODING_RULES.md ← MIRROR
+```
+
+Removal convention: root canonical files stay unless the user explicitly says otherwise; the mirrors
+disappear with `_research/`.
