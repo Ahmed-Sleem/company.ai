@@ -16,6 +16,11 @@
 | `05-market-and-demand.md` | Market size, funding, adoption data, MENA/Arabic angle, risks | Yes |
 | `06-gap-analysis-and-recommendation.md` | What is missing in the market + recommended differentiation & MVP scope | Yes |
 | `07-sources.md` | Every source used, with date checked | Yes |
+| `08-gui-inventory.md` | **Do they have GUIs?** What kind, who, and the unclaimed GUI | Yes |
+| `09-reuse-and-licensing-map.md` | **What to reuse** (licences, traps, fork-vs-build decisions) | Yes |
+| `10-feature-brainstorm.md` | **45+ features we can add**, grouped, with novelty/impact/effort + top-12 shortlist | Yes |
+| `11-build-strategy.md` | Reference architecture, phase plan, make-vs-reuse, metrics, wedge decision | Yes |
+| `12-user-rules-received.md` | ⚠️ Status of the user's 5 rule documents (content not yet received) | Yes |
 | `data/github-snapshot-2026-10-02.json` | Raw GitHub API evidence (reproducible) | Yes |
 | `data/competitors.csv` | Same data, spreadsheet-friendly | Yes |
 | `rules/` | **User-supplied mandatory rules** (agent rules, coding rules, design rules) — mirrors of canonical root files | Root canonical files stay; mirrors archive with this folder |
