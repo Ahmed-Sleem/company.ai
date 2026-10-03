@@ -1,0 +1,35 @@
+{
+  "name": "company-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "verify": "bash scripts/verify.sh",
+    "tokens:build": "node packages/tokens/src/generate.mjs",
+    "tokens:check": "node packages/tokens/src/generate.mjs --check",
+    "db:generate": "drizzle-kit generate --config packages/company/drizzle.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "oxlint --deny-warnings packages services apps scripts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev:web": "npm run dev -w @company/web",
+    "dev:api": "tsx watch services/api/src/server.ts",
+    "e2e:web": "node apps/web/e2e/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "drizzle-kit": "^0.31.11",
+    "oxlint": "^1.86.0",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

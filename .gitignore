@@ -16,3 +16,7 @@ design/index.html
 
 # the served short-path copy (the tracked snapshot lives in _research/snapshots/):
 design/dl.zip
+
+# local development database (PGlite) and e2e artefacts:
+.data/
+apps/web/dist/

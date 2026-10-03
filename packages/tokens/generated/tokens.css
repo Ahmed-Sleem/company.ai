@@ -1,0 +1,190 @@
+/* Company OS tokens — CSS.
+ * GENERATED FILE — do not edit. Source: design/tokens/company-os-pixel.css|json
+ * Rebuild: npm run tokens:build      Verify in sync: npm run tokens:check
+ */
+@import './theme.css';
+
+@font-face{
+  font-family:'Pixelify Sans';
+  font-style:normal;
+  font-weight:400 700;
+  font-display:swap;
+  src:url('../assets/PixelifySans.woff2') format('woff2');
+}
+
+/* ---- 1. Base tokens: DARK (default) — verbatim from the design source --------------- */
+:root{
+color-scheme: dark;
+
+  /* surfaces */
+  --bg:#111514;        /* app background            */
+  --side:#141817;      /* sidebar / chrome          */
+  --surface:#181d1b;   /* cards, panels             */
+  --raised:#1d2320;    /* raised elements, badges   */
+  --hover:#232c27;     /* hover fill                */
+
+  /* lines */
+  --line:#303b34;      /* borders, separators       */
+  --soft:#252e29;      /* subtle inner borders      */
+
+  /* text */
+  --text:#e1e7e1;
+  --muted:#a0aea4;
+  --dim:#819388;       /* smallest text — check contrast (see REVIEW §contrast) */
+
+  /* accent + semantics */
+  --accent:#accab3;    /* sage — primary accent     */
+  --accent-bg:#253c2d; /* accent tint background    */
+  --on-accent:#14271b; /* text on accent            */
+  --danger:#efaaa3;
+  --warning:#dfc18b;
+  --blue:#a8c4d6;
+
+  /* elevation */
+  --shadow:0 24px 80px #0007;
+
+  /* type */
+  --font:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',monospace; /* UI/mono  */
+  --sans:Arial,Tahoma,sans-serif;                                          /* body + AR */
+  --xs:11px; --sm:12px; --base:13px; --body:14px; --lg:16px; --title:28px;
+
+  /* space */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px;
+
+  /* shape & control */
+  --radius:6px;
+  --control:34px;
+  --touch:48px;
+
+  /* layout & motion */
+  --nav:210px;
+  --speed:130ms;
+  --max:1440px;
+  --ring:2px solid var(--accent);
+}
+
+/* ---- 2. Theme override: LIGHT (themes only change values) --------------------------- */
+:root[data-theme=light]{
+color-scheme: light;
+  --bg:#f5f6f1;
+  --side:#ecefe8;
+  --surface:#fcfcf8;
+  --raised:#f0f3eb;
+  --hover:#e9eee4;
+  --line:#c5cec1;
+  --soft:#dfe4da;
+  --text:#26372c;
+  --muted:#5a6b5d;
+  --dim:#526455;
+  --accent:#416f4e;
+  --accent-bg:#e2ecdd;
+  --on-accent:#fff;
+  --danger:#a6473d;
+  --warning:#84612c;
+  --blue:#3c6a88;
+  --shadow:0 24px 80px #243b252b;
+}
+
+/* ---- 3. The pixel skin — verbatim from the design source ---------------------------- */
+/* =====================================================================================
+   3. THE PIXEL SKIN
+   Applied as an overlay on top of the unchanged base system.
+   Demo comment: "Original palette, layout, spacing, data and behavior are unchanged."
+   This is why the look survives edits — keep this separation in the real product.
+   ===================================================================================== */
+:root{
+  --radius:0px;                                  /* square everything */
+  --pixel:'Pixelify Sans',ui-monospace,monospace; /* SIL OFL 1.1, embedded in demo */
+}
+
+/* 65 pixel portraits: 49 traced from Characters.jpeg (48x48 grid) + 16 from
+   "1-bit characters 32x32 px.jpeg" (32x32 grid) -> normalise pixel density. */
+
+/* Pixel face for hierarchy only — never long-form. Arabic keeps the readable face. */
+:root:not([lang=ar]) :is(h1,h2,.brand,.stat-value,.navitem,.btn,.tabs button,
+                         .employee-name,.thread-name,.column-head,.theme-option){
+  font-family:var(--pixel); font-weight:500; letter-spacing:0;
+}
+:root:not([lang=ar]) :is(.navitem,.btn,.tabs button,.theme-option){font-size:13px}
+:root:not([lang=ar]) .btn.small{font-size:12px}
+:root:not([lang=ar]) .brand{font-size:17px}
+:root:not([lang=ar]) .brand small{font-family:var(--font);font-size:9px;letter-spacing:1.6px}
+:root:not([lang=ar]) .employee-name{font-size:16px}
+:root:not([lang=ar]) .thread-name{font-size:15px}
+:root:not([lang=ar]) h1{font-weight:500;letter-spacing:0}
+:root:not([lang=ar]) h2{font-size:18px}
+:root:not([lang=ar]) .sectionhead h2{font-size:16px}
+:root:not([lang=ar]) .dialog-head h2{font-size:23px}
+
+/* Square pixels replace rounded dots, pills and soft glyphs. */
+.icon.pixel-icon{stroke:none;fill:currentColor;shape-rendering:crispEdges}
+:is(.dot,.notification .unread,.badge,.kbd,.segmented button,.theme-sample,.avatar-choice,
+    .search-result,.theme-option,.thread,.initial,.brandmark,.channel-symbol,.message-text,
+    .attachment,.composer,.reply-preview,.mentions,.btn,.navitem,.workspace,input,select,
+    textarea,dialog,.panel,.reserved,.state,.skeleton i,.toast,.avatar,.image-preview){border-radius:0}
+.avatar{image-rendering:pixelated;box-shadow:2px 2px 0 var(--soft)}
+.brandmark{border-width:2px;box-shadow:2px 2px 0 var(--soft)}
+
+/* Hard, shallow shadows recall OS controls without changing dimensions. */
+.btn:not(.ghost),.workspace,.theme-option{box-shadow:2px 2px 0 var(--line)}
+.btn:not(.ghost):active,.workspace:active,.theme-option:active{
+  transform:translate(1px,1px);box-shadow:1px 1px 0 var(--line)}
+.btn.primary:hover{filter:none;background:var(--accent);box-shadow:3px 3px 0 var(--line)}
+.btn.ghost:hover,.navitem:hover{box-shadow:inset 2px 0 0 var(--line)}
+.navitem[aria-current=page]{box-shadow:inset 3px 0 0 var(--accent)}
+[dir=rtl] .navitem[aria-current=page]{box-shadow:inset -3px 0 0 var(--accent)}
+
+/* Stepped corner frames on panels (decorative pseudo-frame only; content never clipped). */
+.panel{position:relative;box-shadow:2px 2px 0 var(--soft);border-color:transparent}
+.panel:after{content:'';position:absolute;inset:-1px;pointer-events:none;border:1px solid var(--line);
+  clip-path:polygon(3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,
+                    100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),
+                    calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),
+                    0 calc(100% - 3px),0 3px,3px 3px)}
+.panel:before{content:'';pointer-events:none;position:absolute;inset:0;
+  background:linear-gradient(var(--line),var(--line)) top left/3px 3px no-repeat,
+             linear-gradient(var(--line),var(--line)) top right/3px 3px no-repeat,
+             linear-gradient(var(--line),var(--line)) bottom left/3px 3px no-repeat,
+             linear-gradient(var(--line),var(--line)) bottom right/3px 3px no-repeat}
+
+/* Progress drawn as discrete blocks, still sized by real data. */
+:is(.meter,.employee-progress)>span{border-radius:0;
+  background:repeating-linear-gradient(90deg,var(--accent) 0,var(--accent) 6px,transparent 6px,transparent 8px)}
+.wave i{border-radius:0;width:3px}
+
+/* Classic window chrome for dialogs. */
+dialog{border:2px solid var(--line);box-shadow:4px 4px 0 var(--bg),6px 6px 0 var(--line)}
+.dialog-head{background:var(--side);border-bottom:2px solid var(--line)}
+.toast,.mentions{box-shadow:3px 3px 0 var(--line)}
+
+/* Quiet motion: colour/border only — no movement, glow or brightness jumps. */
+.btn,.workspace,.theme-option,.palette-option,.navitem,.tabs button,.thread,.avatar-choice,.search-result
+  {transition:background-color 100ms,border-color 100ms,color 100ms}
+.btn:not(.ghost):active,.workspace:active,.theme-option:active{transform:none;box-shadow:inset 1px 1px 0 var(--line)}
+
+/* Accessibility extras that are part of the style contract. */
+@media(pointer:coarse){ /* 48px touch targets on coarse pointers */ }
+@media(prefers-reduced-motion:reduce){ /* all transitions/animations off */ }
+@media(forced-colors:active){.panel{border:1px solid CanvasText}.icon.pixel-icon{fill:CanvasText}}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{
+  outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---- 4. The two media queries the design source left as intent, implemented -------- */
+@media(pointer:coarse){
+  /* "48px touch targets on coarse pointers" — both axes, exactly as the prototype's T1 item. */
+  :is(.btn,.navitem,.tabs button,.icon-btn,.searchbox input,.field input,.field select,
+      .segmented button,.tree-person,.employee-name,.message-tools button,.textbtn,
+      .theme-option,.palette-option,.workspace,.linklike){
+    min-height:var(--touch);
+  }
+  :is(.btn,.navitem,.icon-btn,.segmented button,.textbtn,.tree-person,.employee-name,
+      .message-tools button,.theme-option,.palette-option){min-width:var(--touch)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    transition-duration:0.001ms !important;
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+  }
+}

@@ -5,12 +5,35 @@ inbox, the company's reporting structure, conversations (with a visible model se
 notes), and a visual network of the company — all in one GUI, in the designer's locked pixel style,
 bilingual (English LTR / Arabic RTL).
 
-**Status: pre-build.** Research, the designer's demo, the extracted design system, the rules, and a
-working prototype with the network view are in the repo. No product build yet.
+**Status: P0 built.** The workspace runs as one product: shared packages, an API, and a working GUI
+built only from the design tokens. The designer's prototype with the network view is still in the
+repo and still verified. Everything is checked by one command (`bash scripts/verify.sh`).
 
-**Verified 2026-10-03:** `node design/prototype/verify.mjs` → 11/11 · `node design/prototype/probe-browser.mjs`
-→ 7/7 in a real browser (viewports 320→1920, graph framing and clipping, page overflow, 44px touch
-targets, contrast from the live tokens, focus rings).
+**Verified 2026-10-03 (the gate, green):** type-check · tokens in sync with the design source ·
+lint (0 errors) · **51** database/API/gateway/contract tests · **9** GUI tests · 5 repository checks ·
+production build · **16** browser checks against the real API · the designer's **11** checks.
+
+## Run it
+
+```bash
+# once: install everything (needs Node 20+)
+npm install
+
+# terminal 1 — the API (starts on http://127.0.0.1:8787, uses a local database, no keys, no spend)
+npx tsx services/api/src/server.ts
+
+# terminal 2 — the app (starts on http://127.0.0.1:5173 — open this one)
+npm run dev -w @company/web
+```
+
+## Check it
+
+```bash
+bash scripts/verify.sh          # the gate: everything above, in order, with a summary
+```
+
+Every check can fail on purpose (that is how they were built): `bash scripts/checks/_observe-failure.sh`
+plants a violation for each repository check and confirms it fails.
 
 ## The GUI
 

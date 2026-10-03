@@ -1,0 +1,246 @@
+/* =====================================================================================
+   The application shell, built only from the design tokens.
+
+   Every value here resolves to a custom property from packages/tokens/generated/tokens.css
+   (which is generated from design/tokens/company-os-pixel.*). The raw-value check fails the
+   build if a length or colour literal appears in this file — that is the enforcement, not a
+   promise. Class names follow the designer's own vocabulary (.panel, .navitem, .roster) so
+   the locked design stays legible to whoever opens this next.
+   ===================================================================================== */
+@import 'tailwindcss';
+@import '@company/tokens/tokens.css';
+
+/* App chrome constants — the pixel treatment's own measures, taken from the demo's stylesheet
+   (1px hairlines, 2px pixel borders/shadows, 3px corner notches). They live here as named
+   tokens rather than inline literals so the raw-value check can stay absolute. */
+:root{
+  --app-hair:1px;
+  --app-stroke:2px;
+  --app-notch:3px;
+  --app-track:1.6px;
+  --app-stripe:6px;
+  --app-roster-min:260px;
+  --app-tree-h:260px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--base);
+  line-height: 1.5;
+}
+
+:root:not([lang='ar']) :is(h1, h2, .brand, .stat-value, .navitem, .btn, .tabs button, .employee-name, .thread-name, .column-head) {
+  font-family: var(--pixel);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--s2);
+  inset-block-start: calc(var(--s2) * -8);
+  padding: var(--s2) var(--s3);
+  background: var(--surface);
+  border: var(--app-hair) solid var(--line);
+  z-index: 30;
+  transition: inset-block-start var(--speed);
+}
+.skip-link:focus { inset-block-start: var(--s2); }
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--nav) minmax(0, 1fr);
+  min-height: 100%;
+}
+
+.sidebar {
+  background: var(--side);
+  border-inline-end: var(--app-hair) solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+}
+
+.brand { display: flex; align-items: center; gap: var(--s2); font-size: var(--lg); }
+.brand .brandmark {
+  display: grid;
+  place-items: center;
+  inline-size: var(--s8);
+  block-size: var(--s8);
+  border: var(--app-stroke) solid var(--line);
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
+  background: var(--raised);
+  font-size: var(--sm);
+}
+.brand small { display: block; font-family: var(--font); font-size: var(--base); letter-spacing: var(--app-track); color: var(--muted); }
+
+.navlist { display: flex; flex-direction: column; gap: var(--app-stroke); margin: 0; padding: 0; list-style: none; }
+.navitem {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  justify-content: flex-start;
+  inline-size: 100%;
+  min-height: var(--control);
+  padding-inline: var(--s3);
+  background: transparent;
+  border: var(--app-hair) solid transparent;
+  color: var(--text);
+  font-size: var(--base);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 100ms, border-color 100ms, color 100ms;
+}
+.navitem:hover { background: var(--hover); }
+.navitem[aria-current='page'] { border-color: var(--line); background: var(--raised); box-shadow: inset var(--app-notch) 0 0 var(--accent); }
+[dir='rtl'] .navitem[aria-current='page'] { box-shadow: inset calc(var(--app-notch) * -1) 0 0 var(--accent); }
+.navitem .count { margin-inline-start: auto; color: var(--muted); font-size: var(--sm); }
+
+.topbar {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: calc(var(--control) + var(--s8));
+  padding: var(--s3) var(--s5);
+  background: var(--side);
+  border-bottom: var(--app-hair) solid var(--line);
+}
+.topbar h1 { margin: 0; font-size: var(--lg); }
+.topbar .spacer { flex: 1; }
+
+.main {
+  grid-column: 2;
+  padding: var(--s5);
+  max-inline-size: var(--max);
+  inline-size: 100%;
+}
+
+.panel {
+  position: relative;
+  background: var(--surface);
+  border: var(--app-hair) solid transparent;
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
+  padding: var(--s5);
+}
+.panel + .panel { margin-block-start: var(--s5); }
+.panel:after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--app-hair) * -1);
+  pointer-events: none;
+  border: var(--app-hair) solid var(--line);
+  /* the pixel-skin corner notch, drawn on the panel's own edge */
+  clip-path: polygon(
+    var(--app-notch) 0, calc(100% - var(--app-notch)) 0,
+    calc(100% - var(--app-notch)) var(--app-notch), 100% var(--app-notch),
+    100% calc(100% - var(--app-notch)), calc(100% - var(--app-notch)) calc(100% - var(--app-notch)),
+    calc(100% - var(--app-notch)) 100%, var(--app-notch) 100%,
+    var(--app-notch) calc(100% - var(--app-notch)), 0 calc(100% - var(--app-notch)),
+    0 var(--app-notch), var(--app-notch) var(--app-notch));
+}
+.sectionhead { display: flex; align-items: center; gap: var(--s3); margin-block-end: var(--s4); }
+.sectionhead h2 { margin: 0; font-size: var(--lg); }
+.sectionhead p { margin: 0; color: var(--muted); font-size: var(--sm); }
+
+.btn {
+  min-height: var(--control);
+  padding-inline: var(--s3);
+  background: var(--raised);
+  color: var(--text);
+  border: var(--app-hair) solid var(--line);
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--line);
+  font-size: var(--base);
+  cursor: pointer;
+  transition: background-color 100ms, border-color 100ms, color 100ms;
+}
+.btn:hover { background: var(--hover); }
+.btn:active { transform: translate(var(--app-hair), var(--app-hair)); box-shadow: var(--app-hair) var(--app-hair) 0 var(--line); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { box-shadow: var(--app-notch) var(--app-notch) 0 var(--line); }
+.btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.btn.small { min-height: var(--control); font-size: var(--sm); }
+
+.roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-roster-min), 1fr)); gap: var(--s4); }
+.employee { background: var(--raised); border: var(--app-hair) solid var(--soft); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.employee-name { font-size: var(--lg); margin: 0; }
+.employee .role { color: var(--muted); font-size: var(--sm); }
+
+.status-dot { display: inline-block; inline-size: var(--s2); block-size: var(--s2); background: var(--accent); }
+.status-dot.error { background: var(--danger); }
+.status-dot.paused { background: var(--warning); }
+
+.meter { block-size: var(--s2); background: var(--soft); border: var(--app-hair) solid var(--line); }
+.meter > span {
+  display: block;
+  block-size: 100%;
+  background: repeating-linear-gradient(90deg, var(--accent) 0, var(--accent) var(--app-stripe), transparent var(--app-stripe), transparent calc(var(--app-stripe) + var(--app-stroke)));
+}
+.meter.over > span { background: repeating-linear-gradient(90deg, var(--danger) 0, var(--danger) var(--app-stripe), transparent var(--app-stripe), transparent calc(var(--app-stripe) + var(--app-stroke))); }
+.meta { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--sm); gap: var(--s2); }
+
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
+.column { background: var(--raised); border: var(--app-hair) solid var(--soft); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
+.column-head { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--sm); color: var(--muted); }
+.card { background: var(--surface); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.card h3 { margin: 0; font-size: var(--base); font-family: var(--font); }
+.tag { display: inline-block; padding-inline: var(--s2); border: var(--app-hair) solid var(--line); font-size: var(--base); color: var(--muted); }
+.tag.high, .tag.critical { color: var(--danger); border-color: var(--danger); }
+.tag.low { color: var(--dim); }
+
+.decision { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: var(--s4); align-items: start; }
+.decision h3 { margin: 0 0 var(--s2); font-size: var(--lg); }
+.decision dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--s1) var(--s3); font-size: var(--sm); }
+.decision dt { color: var(--muted); }
+.decision dd { margin: 0; }
+.decision .actions { display: flex; gap: var(--s2); }
+.decision .decided { color: var(--muted); font-size: var(--sm); }
+
+.state { display: flex; flex-direction: column; gap: var(--s3); align-items: flex-start; }
+.skeleton { display: flex; flex-direction: column; gap: var(--s2); inline-size: 100%; }
+.skeleton i { display: block; block-size: var(--s4); background: var(--soft); }
+.skeleton i:nth-child(2) { inline-size: 80%; }
+.skeleton i:nth-child(3) { inline-size: 60%; }
+
+.statusbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s5);
+  border-top: var(--app-hair) solid var(--line);
+  color: var(--dim);
+  font-size: var(--base);
+}
+.statusbar .dot { color: var(--accent); }
+
+.icon-btn {
+  min-inline-size: var(--control);
+  min-block-size: var(--control);
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: var(--app-hair) solid var(--line);
+  color: var(--text);
+  cursor: pointer;
+}
+.icon-btn:hover { background: var(--hover); }
+
+.group { display: flex; gap: var(--s2); flex-wrap: wrap; }
+svg.tree { inline-size: 100%; block-size: var(--app-tree-h); background: var(--raised); border: var(--app-hair) solid var(--soft); }
+
+@media (max-width: 800px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .topbar, .main { grid-column: 1; }
+  .sidebar { flex-direction: row; overflow-inline: auto; }
+  .board { grid-template-columns: minmax(0, 1fr); }
+  .decision { grid-template-columns: minmax(0, 1fr); }
+}

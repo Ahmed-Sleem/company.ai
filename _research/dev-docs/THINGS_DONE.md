@@ -5,6 +5,60 @@
 
 ---
 
+## 2026-10-03 13:35 — P0 built end to end: the workspace runs as one product, the GUI is real, and the gate is green
+
+- **Task (user):** "start first phase … make sure everything is suitable to work together and work
+  with the GUI, always test check manually and create tests for each thing, note unified one,
+  multiple to use them freely, recheck the rules before each phase."
+- **Delivered (all local, one commit):**
+  - `packages/tokens` — the design tokens as a package (generator, generated CSS/TS, and
+    `@company/tokens/tokens.css` for the app to import).
+  - `packages/contracts` — the shared shapes and vocabularies (views, stages, transitions,
+    decision precedence, model pricing/cost), ids as **UUIDs branded per type**.
+  - `packages/company` — schema (13 tables), the Postgres/PGlite client, the repository of rules
+    (review gate, budget from the **ledger**, decisions, threads), and the demo seed.
+  - `packages/gateway` — the premade-gateway client (LiteLLM/Ollama/vLLM compatible) with a mock
+    adapter, model registry, fallback chain, and the block-and-raise-a-decision path.
+  - `services/api` — the HTTP surface (company, agents, calls, tasks, decisions, models, views,
+    threads), error vocabulary (`409` rule violations, `422` invalid input, `500` generic).
+  - `apps/web` — the GUI: the shell (sidebar/topbar/statusbar), six views, the four data states as
+    one component, budget meters bound to the ledger, the decision inbox with rule + change + audit,
+    the decision controls, RTL/Arabic, theme cycling — tokens only, logical properties only.
+- **Two real defects were found by using it, not by reading it:**
+  1. the Team meters read **$0.00 of $40.00** — the seed had written the cached
+     `spent_monthly_cents` counter and never moved money through the ledger, which is what the
+     budget check reads. Fix: the seed now records spend through the product's own `recordRun`
+     path (six runs: $12.50 / $8.20 / $18.90) plus the one failed run that explains Zara's error
+     state. New `packages/company/test/money.test.ts` (3 tests, own database) locks it; observed
+     failing first (mutated seed → "expected 750 to be 1250").
+  2. the dev server was **broken**: `@company/*` packages had no `exports`, so Vite could not
+     resolve them (the failure was real, not a warning). Fix: every package now declares
+     `exports` (source-shipping monorepo, no build step) and `tsconfig.json`'s `paths` map was
+     removed — **one** resolution mechanism for types and runtime.
+- **Gate (`scripts/verify.sh`, 9 steps, green):** type-check · tokens in sync · oxlint (0 errors) ·
+  **51** database/API/gateway/contract/token tests · **9** web tests (jsdom) · 5 repository checks ·
+  production build · **16** browser checks against the real API · the designer's **11** checks.
+  Every new check was observed failing first (`scripts/checks/_observe-failure.sh`: 10/10
+  behaviours correct).
+- **The five repository checks (each fails on a planted violation):** no raw colours/lengths
+  (same stripping rules as the design gate: token block, comments and `@media` conditions),
+  logical properties only in CSS, no import escapes an app directory, the licence gate
+  (158 dependency licences; AGPL/GPL/LGPL/SSPL/BUSL/Elastic/fair-code/unlicensed fail; MPL/EPL must
+  be named in `THIRD_PARTY.md` — `lightningcss` recorded), and the docs check (required documents
+  present, done-log still append-only).
+- **Design fidelity:** the shell reuses the demo's own vocabulary and measures (`--nav`, `--control`,
+  `--touch`, `--s1…--s10`, `--radius`, the pixel chrome as named tokens `--app-hair/-stroke/-notch`),
+  the pixel skin is asserted in a browser (radius 0), and Arabic switches the document to RTL and
+  drops the pixel face — all checked in `apps/web/e2e/smoke.mjs`, not asserted by eye.
+- **Validation commands:** `bash scripts/verify.sh` → **passed 9 · failed 0 · skipped 0**;
+  live browser probe of the running app: six views, no console errors, meters reading $12.50/$8.20/$18.90.
+- **Limitations / honest gaps:** only one API can run on this machine at a time (each one loads
+  PostgreSQL, ~400 MB) — the e2e therefore uses its own ports (8790/4174) and clears its database
+  first; the org tree's SVG geometry is still plain numbers until the P3 layout engine replaces the
+  layout function; the 21 remaining lint *warnings* are style suggestions, listed but not fatal.
+
+---
+
 ## 2026-10-03 13:05 — the deep mix-and-match sweep: 177 repositories licence-verified, donor files read, four plans corrected
 
 - **Task (user answer, 2026-10-03):** before P0 — *"search deeply and extensively… a lot of GitHub repos have ready-made code; instead of creating this project from scratch we can collect, mix and match, adapt, edit and merge code all over, to be faster and more accurate"*. Also answered C3 (OpenAI + Anthropic + one cheap open lane *and* "there are pre-made gateways we can use directly") and C5 (hard caps), D1 (full thread + digest + decisions-only filter).

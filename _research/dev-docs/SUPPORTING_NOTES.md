@@ -107,3 +107,42 @@ gestures are a poor fit on touch and the list gives a real accessible path). Doc
 5. **`--dim` contrast** at 11px is borderline in dark mode; raised to `--muted` wherever the text
    carries meaning. Measured 2026-10-03: the worst live token pair is `--muted` on `--bg` at **5.23:1**
    (AA for body text); `--dim` is only used for non-essential labels, as designed.
+
+## 8. P0 decisions taken while building (recorded so they are not re-litigated)
+
+1. **Chrome values are named tokens, not literals.** The pixel treatment needs 1px hairlines, 2px
+   pixel borders/shadows and 3px corner notches. They live in `apps/web/src/styles/app.css` as
+   `--app-hair`, `--app-stroke`, `--app-notch` (plus `--app-track`, `--app-stripe`,
+   `--app-roster-min`, `--app-tree-h`), exactly the way the prototype declares `--pg-hair` in its own
+   token block. The raw-value check strips the `:root{…}` block, comments and `@media` conditions —
+   the same stripping the design gate uses — so breakpoints stay literal (a platform constraint,
+   custom properties cannot appear in a media query) and nothing else may.
+2. **One module-resolution mechanism.** Every workspace package declares `exports` to its TypeScript
+   source (`@company/tokens` also exposes `./tokens.css`, `./theme.css`, `./tokens`). `tsconfig.json`
+   has no `paths` and no `baseUrl` (TypeScript 7 removed the latter). Do not reintroduce `paths`:
+   a package that is not resolvable as a library is a broken package, not a configuration problem.
+3. **Tests get a process per file.** PGlite is real PostgreSQL in WASM and three suites in one
+   process exhaust a 2 GB machine (`vitest` → "Worker forks emitted error"). `vitest.config.ts`
+   therefore uses `pool: 'forks'`, `fileParallelism: false`, `maxWorkers: 1`; a test that needs its
+   own seeded database gets its own file (see `packages/company/test/money.test.ts`).
+4. **A test must not depend on another test's spending.** Assertions about seeded money were moved
+   to a file with its own database after the budget tests inflated the shared one
+   ("expected 1500 to be 1250").
+5. **The browser smoke test runs on its own ports (API 8790, preview 4174) and clears its database
+   first.** A shared port once made the smoke test silently talk to a dev server (it passed partly,
+   then failed), and a reused database once made it pass only on the first run. A smoke test that
+   talks to a server it did not start is not a smoke test.
+6. **Only one API at a time on the small machine.** Each API process loads PostgreSQL (~400 MB);
+   stop the development API before running the gate. The e2e prints this hint when a server dies.
+7. **Licence policy at the dependency level.** Runtime dependencies must be permissive and named in
+   `THIRD_PARTY.md`; MPL/EPL packages are allowed unmodified as build tooling but must be named
+   (`lightningcss` is the current one, pulled in by Vite/Tailwind); AGPL/GPL/LGPL/SSPL/BUSL/Elastic/
+   fair-code/no-licence fail the gate outright. Platform-specific binaries inherit their base
+   package's entry (`lightningcss-linux-x64-*`).
+8. **The seed writes money the product's way.** It calls `recordRun` (the same function the gateway
+   uses) instead of writing the cached counter, so ledger, counter, meter and audit trail cannot
+   disagree. If a future seed needs spend, do it this way.
+9. **Org-tree geometry waits for P3.** `apps/web/src/components/OrgTree.tsx` uses plain numbers for
+   its SVG layout; the P3 engine (footprint, packing, hulls) replaces the layout function only, and
+   the token/fallback pairing rule then applies to it the way the design gate applies it to the
+   prototype graph (37 pairs in step today).

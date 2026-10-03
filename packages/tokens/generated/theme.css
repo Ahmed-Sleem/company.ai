@@ -1,0 +1,32 @@
+/* Tailwind v4 theme — utilities resolve to the design tokens.
+ * GENERATED FILE — do not edit. Source: design/tokens/company-os-pixel.css|json
+ * Rebuild: npm run tokens:build      Verify in sync: npm run tokens:check
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-side: var(--side);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-blue: var(--blue);
+  --font-pixel: var(--pixel);
+  --font-ui: var(--font);
+  --font-sans: var(--sans);
+  --radius-none: 0px;
+  --text-xs: var(--xs);
+  --text-sm: var(--sm);
+  --text-base: var(--base);
+  --text-body: var(--body);
+  --text-lg: var(--lg);
+  --text-title: var(--title);
+}

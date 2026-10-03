@@ -1,0 +1,12 @@
+{
+  "name": "@company/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./generated/tokens.css",
+    "./theme.css": "./generated/theme.css",
+    "./tokens": "./generated/tokens.ts"
+  }
+}

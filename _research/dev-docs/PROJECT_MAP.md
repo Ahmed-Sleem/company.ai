@@ -3,9 +3,26 @@
 Human-readable map of the repository. Keep this honest: if a path here does not exist, fix this file.
 
 ```
-company.ai/                          (root holds nothing else)
-├── README.md                        entry point: what this is, and the repo layout
+company.ai/
+├── README.md                        entry point: what this is, how to run it, and the repo layout
 ├── LICENSE
+├── THIRD_PARTY.md                   the licence ledger (policy, tools, planned deps, forbidden list)
+├── package.json / tsconfig.json / vitest.config.ts / .oxlintrc.json
+│
+├── packages/                        shared code, imported by name (@company/…)
+│   ├── tokens/                      the design system as code: generator + generated CSS/TS
+│   ├── contracts/                   shapes and vocabularies shared by every layer (ids: UUIDs)
+│   ├── company/                     schema, database client, the rules (repo), the demo seed
+│   └── gateway/                     the model-gateway client: adapters, registry, budget guard
+├── services/                        the runnable servers
+│   ├── api/                         the HTTP surface the GUI talks to (Hono)
+│   └── orchestrator/                P1+ — agent runs against the gateway
+├── apps/web/                        the GUI (Vite + React): shell, six views, components
+│                                    e2e/smoke.mjs = the browser check used by the gate
+├── scripts/
+│   ├── verify.sh                    THE GATE — nine steps, run before every commit
+│   └── checks/                      the five repository checks + _observe-failure.sh
+├── docker/                          compose + env template (deploy-ready, not deployed)
 │
 ├── design/                          the product-facing visual layer (NOT removable)
 │   ├── README.md                    contents + merge protocol + state of the design
@@ -45,4 +62,5 @@ company.ai/                          (root holds nothing else)
 | Product theme | `design/tokens/company-os-pixel.json` | generate CSS variables; no component may hard-code a value |
 | Product canvas (P3) | `design/tokens/*` + `_research/14` | React Flow; force layout in a worker; same modes/filters/legend as the prototype |
 | Product data model | `_research/15-code-harvest-plan.md` | `packages/contracts`; the demo's objects map 1:1 (agents, tasks, decisions, threads) |
-| Rule enforcement | `scripts/verify.sh` (to be created) | token check, lint, types, tests, build — contract §16 |
+| Rule enforcement | `scripts/verify.sh` (exists) | types, tokens-in-sync, lint, tests, repo checks, build, browser smoke, design gate — contract §16 |
+| GUI → API | `apps/web` → `services/api` | one origin in deployment; the dev server proxies `/api`, so the browser never needs a second port |

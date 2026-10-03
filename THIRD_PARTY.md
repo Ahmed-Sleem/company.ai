@@ -32,7 +32,18 @@ lockfile or a source file — at which point the row gains the commit and the ex
 
 | Package | Licence | Use | Shipping? |
 |---|---|---|---|
-| `playwright` (microsoft/playwright) | Apache-2.0 | browser probe + screenshot gallery | no — devDependency |
+| `playwright` (microsoft/playwright) | Apache-2.0 | browser probe + screenshot gallery, and `apps/web/e2e/smoke.mjs` | no — devDependency |
+| `lightningcss` (+ `lightningcss-linux-x64-gnu`/`-musl`) | **MPL-2.0** (weak copyleft) | Vite/Tailwind's CSS pipeline | no — devDependency, used unmodified |
+| `vite`, `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react` | MIT | build, unit tests, DOM tests | no — devDependency |
+| `typescript`, `oxlint`, `tsx`, `drizzle-kit` | Apache-2.0 / MIT | type-check, lint, run TS, migrations | no — devDependency |
+
+**MPL note.** `lightningcss` is MPL-2.0: file-level copyleft. It is used **unmodified** as a build
+tool and nothing of it is linked into the shipped bundle, which is what MPL permits. The licence
+gate (`scripts/checks/licence-gate.mjs`) fails if any MPL/EPL package appears that is not named in
+this table, and fails outright on AGPL/GPL/LGPL/SSPL/BUSL/Elastic/fair-code/unlicensed packages.
+
+**Runtime dependencies** (shipped inside the product) must each appear in the tables below: hono,
+zod, drizzle-orm, @electric-sql/pglite, react, react-dom.
 
 ### Planned dependencies (added at the phase shown)
 

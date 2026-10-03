@@ -52,3 +52,19 @@ contract's enforcement (§3.4 of `GENERAL_GUI_AGENT_RULES.md`).
 3. **Avatar art:** normalise the 48- and 32-grid portrait sets (see `SUPPORTING_NOTES.md`), or
    commission a single-grid set from the designer?
 4. **Backend for the network layout:** persist node positions per user (recommended) or per company?
+
+## P0 status (2026-10-03)
+
+**Built and green.** The workspace runs as one product: `packages/{tokens,contracts,company,gateway}`,
+`services/api`, `apps/web`. The GUI is the designer's shell and screens — sidebar, topbar, status bar,
+six views, four data states, decision inbox with rule + change + audit, budget meters fed by the
+ledger, Arabic RTL, theme cycling — built only from the tokens.
+
+The gate is `bash scripts/verify.sh` (9 steps: types, tokens-in-sync, lint, 51 tests, 9 GUI tests,
+5 repository checks, build, 16 browser checks, the designer's 11 checks). Two defects were found by
+using the product and are fixed and locked by tests: the budget meters read $0.00 because the seed
+never moved money through the ledger, and the GUI could not resolve the shared packages because none
+of them declared `exports`.
+
+Next: P1 (the board's real interactions and the approval semantics carried by the inbox), starting
+with a re-read of the four rule documents, per the standing instruction.
