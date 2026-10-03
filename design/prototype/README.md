@@ -15,7 +15,8 @@ Live preview: `http://<sandbox>:8080/prototype/company-os.html` (the folder is s
 | `graph.js` | Network view: model, force/rings layout, SVG render, interaction, persistence, keyboard, list mode + the enhancement layer |
 | `graph.css` | Its styling — tokens only, logical properties, no data animation |
 | `prototype-changes.css` | The change-request items that are pure CSS (one block per item) |
-| `verify.mjs` | The gate: `node design/prototype/verify.mjs` (10 checks) |
+| `verify.mjs` | The gate: `node design/prototype/verify.mjs` (11 checks, no dependencies) |
+| `probe-browser.mjs` | The **browser** half: `node design/prototype/probe-browser.mjs` (7 checks — viewport matrix, graph framing/clipping, page overflow, touch targets, contrast, focus). Needs `playwright` |
 | `index.html` | The earlier dependency-free scaffold (kept for reference; superseded by `company-os.html`) |
 
 ## What the prototype changes (and why)
@@ -76,11 +77,28 @@ node    design/prototype/verify.mjs                    # the gate (see below)
 parse · the layout engine converges, stays finite and is deterministic over a 77-node company ·
 no raw colours or stray lengths in the new CSS · no physical `left`/`right` anywhere new · the demo's
 six views, themes, RTL, dialogs and storage key are intact · the network page renders in English and
-Arabic and honours all five data states · **no node, label band or department hull overlaps** in either
-layout · every CSS geometry token matches its JavaScript fallback. It prints what it did **not** check
-(browser rendering, gestures, screen-reader order, 200% zoom) so nothing unverified is mistaken for
-verified. Every check was also observed failing for the right reason — see
-`../../_research/18-changes-implemented.md` §3.
+Arabic and honours all five data states · **no node, label band or department hull overlap** in either
+layout · **no node drawn over a department hull label** · every CSS geometry token matches its
+JavaScript fallback. Every check was observed failing for the right reason — see
+`../../_research/18-changes-implemented.md` §3 and §3c.
+
+`probe-browser.mjs` is the other half, and it needs a browser (Playwright). It measures what the gate
+cannot: the viewport matrix 320×568 → 1920×1080, whether the graph is framed inside its stage in both
+flows, page-level horizontal overflow, the 44px touch floor under `pointer: coarse`, WCAG contrast
+computed from the **live** themed tokens (24 pairs, both themes), and that the first tab stops draw a
+visible focus ring. Two of the defects fixed in §3c were found by this probe and by nothing else.
+
+## What the browser pass changed (2026-10-03)
+
+The gate's own NOT CHECKED list was the standing honesty gap. Running the browser pass closed it and
+found four real defects, all in this folder (the demo's bytes are untouched):
+
+| # | Defect (measured) | Fix |
+|---|---|---|
+| F1 | With no saved view the graph rendered at world scale and the stage clipped **20 of 22 nodes** at every tested viewport | fit once the layout settles when there is no saved view, and again on resize until the user frames it themselves; a scope or layout switch re-frames too (`NEEDS_FIT` / `USER_ADJUSTED` in `graph.js`, `fitView()` now includes the hull boxes) |
+| F2 | A node was drawn **16px inside** a department hull label band (the label was painted over) | one shared box definition (`hullBoxes`/`boxForList`) + a `clearLabelBands()` keep-out inside the packing loop; gate check 8b, observed failing first |
+| F3 | **24px of horizontal page overflow at 320×568** — the two graph toolbars cannot share a row and the skin keeps segmented groups rigid | `prototype-changes.css` narrow-width block: toolbars wrap, groups may shrink, the spacer is dropped below 540px |
+| F4 | 20 controls were **narrower than 44px** on a coarse pointer (20×48, 34×48, 58×30 …) | change item **T1** in `prototype-changes.css`: the measured offenders are raised to the contract's 48px in both axes. Fine pointers are untouched |
 
 ## When this becomes the product
 

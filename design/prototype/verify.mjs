@@ -2,7 +2,7 @@
 /* =====================================================================================
    Prototype verification gate — run:  node design/prototype/verify.mjs
    -------------------------------------------------------------------------------------
-   Checks what can honestly be checked without a browser:
+   Checks what can honestly be checked without a browser (11 checks):
      1. the prototype builds from the demo and every patch applies
      2. JavaScript syntax of the graph module and of the demo's own script
      3. the layout engine converges, produces finite coordinates and is deterministic
@@ -10,8 +10,12 @@
      5. no physical left/right in the new CSS or markup (RTL rule)
      6. the prototype still contains the demo's six views and its accessibility seams
      7. the network page renders in English and Arabic and honours all five data states
-   Anything requiring eyes (rendering, focus order, gesture feel, contrast) is listed as
-   NOT CHECKED so it is never mistaken for verified.
+     8. nothing overlaps: node/label footprints and department hulls (force and rings)
+     8b. no node is drawn over a department hull label band
+     9. every CSS geometry token matches its JavaScript fallback
+   The browser half lives in `probe-browser.mjs` (Playwright): viewport matrix, graph framing and
+   clipping, page overflow, touch targets, contrast measured from the live tokens, and focus rings.
+   Anything neither tool measured is still listed as NOT CHECKED, so unverified never reads as done.
    ===================================================================================== */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -26,10 +30,10 @@ const DEMO = join(ROOT, 'design', 'designer-demo', 'ai-company-os.html');
 const PROTO = join(HERE, 'company-os.html');
 const results = [];
 const notChecked = [
-  'rendering, contrast and focus order in a real browser',
+  'rendering, contrast and focus order in a real browser — run design/prototype/probe-browser.mjs',
   'pointer gestures (drag, pinch, wheel) on a real device',
   'screen-reader announcement order',
-  '200% zoom / 320x568 layout behaviour',
+  'browser zoom at 200% (the browser probe covers the 320x568 viewport, not zoom)',
 ];
 function check(name, fn) {
   try { const detail = fn(); results.push({ name, ok: true, detail: detail || '' }); }
@@ -281,6 +285,58 @@ check('spacing: no node, label band or department hull overlaps (force and rings
   return report.join(' · ');
 });
 
+/* 8b — hull labels stay readable ------------------------------------------------------------- */
+/* The band above a hull holds the department name. A node there paints over the label, which is
+   what the first screenshots taken after the fit fix showed. Observed failing first: with
+   clearLabelBands() disabled (or the band token set to 0) the worst intrusion below is a node
+   sitting ~40px inside the band; with it enabled the intrusion is 0. */
+check('spacing: no node is drawn over a department hull label', () => {
+  const sandbox = { console };
+  sandbox.window = sandbox; sandbox.global = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync(join(HERE, 'graph.js'), 'utf8'), sandbox);
+  const api = sandbox.window.__graph;
+
+  const agents = [], tasks = [], threads = [];
+  for (let i = 0; i < 30; i++) agents.push({ id: 'a' + i, name: ['Agent ' + i, 'وكيل ' + i], role: ['r', 'ر'],
+    dept: i % 3 ? 'Engineering' : 'Go to market', status: ['working','idle','paused','error'][i % 4],
+    avatar: i % 49, manager: i === 0 ? 'you' : 'a' + (i % 9), spent: 1, budget: 10, focus: ['f','و'], skills: [] });
+  for (let i = 0; i < 12; i++) tasks.push({ id: 'T' + i, title: ['Task ' + i, 'مهمة ' + i], owner: 'a' + (i % 30),
+    stage: ['backlog','progress','review','done'][i % 4], priority: 'high', progress: i, due: '2026-10-05' });
+  for (let i = 0; i < 4; i++) threads.push({ id: 'th' + i, name: ['Conversation ' + i, 'محادثة ' + i], kind: 'group',
+    members: ['a' + i, 'a' + (i + 1)], model: 'GPT-4o' });
+
+  const report = [];
+  for (const layout of ['force', 'rings']) {
+    const g = api.build({ agents, tasks, threads, operator: 'Vanil' });
+    let alpha = 1;
+    for (let i = 0; i < 900; i++) { api.step(g, { alpha, layout }); alpha *= 0.976; }
+    api.pack(g, {});
+
+    assert(api.band() > 0, 'the hull label band token is zero — this check would be vacuous');
+    const boxes = api.hullBoxes(g);
+    assert(boxes.length >= 2, `${layout}: expected department hulls, got ${boxes.length} — check would be vacuous`);
+    let worst = 0, hit = '';
+    for (const box of boxes) {
+      const inGroup = new Set(box.list.map(n => n.id));
+      for (const n of g.nodes) {
+        if (inGroup.has(n.id)) continue;
+        const f = api.footprint(n);
+        // intrusion into the band rectangle (0 when fully outside)
+        const overX = Math.min(n.x + f, box.x + box.w) - Math.max(n.x - f, box.x);
+        const overY = Math.min(n.y + f, box.y + api.band()) - Math.max(n.y - f, box.y);
+        if (overX > 0 && overY > 0) {
+          const depth = Math.min(overX, overY);
+          if (depth > worst) { worst = depth; hit = n.id + ' on ' + box.dept; }
+        }
+      }
+    }
+    assert(worst <= 0.5, `${layout}: a node sits ${worst.toFixed(1)}px inside the hull label band (${hit})`);
+    report.push(`${layout}: 0px intrusion into ${boxes.length} label bands`);
+  }
+  return report.join(' · ');
+});
+
 /* 9 — tokens and their fallbacks stay in step ---------------------------------------------- */
 check('tokens: every CSS geometry token matches its JS fallback', () => {
   const css = readFileSync(join(HERE, 'graph.css'), 'utf8');
@@ -299,7 +355,8 @@ check('tokens: every CSS geometry token matches its JS fallback', () => {
     '--g-label-reserve-person': 'labelReservePerson', '--g-label-reserve-task': 'labelReserveTask',
     '--g-label-reserve-thread': 'labelReserveThread', '--g-dept-gap': 'deptGap',
     '--g-ring-min-arc': 'ringMinArc', '--g-pack-iters': 'packIters',
-    '--g-label-max': 'labelMax', '--g-hull-label-max': 'hullLabelMax'
+    '--g-label-max': 'labelMax', '--g-hull-label-max': 'hullLabelMax',
+    '--g-hull-label-band': 'hullLabelBand'
   };
   const bad = [];
   for (const [cssName, jsName] of Object.entries(pairs)) {

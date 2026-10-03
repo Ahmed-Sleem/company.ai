@@ -31,11 +31,12 @@
   --g-gap:10;                  /* collision gap */
   --g-max-v:14;                /* velocity cap */
   --g-damp:.86;
-  --g-zoom-min:.45;
+  --g-zoom-min:.25;            /* deep enough that Fit can always frame the whole graph */
   --g-zoom-max:2.2;
   --g-fit-pad:28;   /* even margin around the fitted graph */
   --g-hull-pad:16;
   --g-hull-label-gap:5;
+  --g-hull-label-band:16;      /* reserved band above a hull for its label */
   --g-ring-gap:130;            /* Rings layout: distance between reporting levels */
   --g-ring-offset:44;          /* Rings layout: tasks/threads sit outside their ring */
   --g-ring-flat:.66;           /* vertical squash of the rings */

@@ -8,6 +8,30 @@ bilingual (English LTR / Arabic RTL).
 **Status: pre-build.** Research, the designer's demo, the extracted design system, the rules, and a
 working prototype with the network view are in the repo. No product build yet.
 
+**Verified 2026-10-03:** `node design/prototype/verify.mjs` → 11/11 · `node design/prototype/probe-browser.mjs`
+→ 7/7 in a real browser (viewports 320→1920, graph framing and clipping, page overflow, 44px touch
+targets, contrast from the live tokens, focus rings).
+
+## The GUI
+
+Real captures of the prototype (`design/prototype/company-os.html`) — not mockups. Dark and light,
+English and Arabic, desktop and mobile. Re-capture with `node design/screenshots/shots.mjs`.
+
+| | |
+|---|---|
+| ![Team](design/screenshots/01-team-light-en.png) | ![Network — force](design/screenshots/05-network-force-light-en.png) |
+| **Team** — the roster, budgets and live status | **Network** — the whole company in one view |
+| ![Tasks](design/screenshots/02-tasks-light-en.png) | ![Inbox](design/screenshots/03-inbox-light-en.png) |
+| **Tasks** — four stages, AI facts on the card | **Inbox** — decisions with cost and cost of delay |
+| ![Conversations](design/screenshots/04-conversations-light-en.png) | ![Settings](design/screenshots/07-settings-light-en.png) |
+| **Conversations** — one thread, any model | **Settings** — appearance, palettes, language, states |
+
+| Dark | Arabic (RTL) |
+|---|---|
+| ![Team — dark](design/screenshots/08-team-dark-en.png) | ![Team — Arabic](design/screenshots/11-team-light-ar.png) |
+| ![Network — rings](design/screenshots/06-network-rings-light-en.png) | ![Network — Arabic](design/screenshots/09-network-force-dark-ar.png) |
+| ![Tasks — dark, Arabic](design/screenshots/10-tasks-dark-ar.png) | ![Network — mobile, Arabic](design/screenshots/12-network-mobile-ar.png) |
+
 ## The repository
 
 ```

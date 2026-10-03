@@ -56,7 +56,7 @@ recorded in `dev-docs/SUPPORTING_NOTES.md`.
 
 ## 3. Verification, and the checks we watched fail
 
-Command: `node design/prototype/verify.mjs` — **10/10 pass**.
+Command: `node design/prototype/verify.mjs` — **11/11 pass** (10 at the time of writing; check 8b was added in §3c).
 
 | Check | Result |
 |---|---|
@@ -108,6 +108,48 @@ Asked for: *no overlapping, space between things, nothing over anything.*
 The gate grew two checks for this: **spacing** (no node/label/hull overlap in both layouts, asserted
 numerically) and **token agreement** (every CSS geometry token equals its JavaScript fallback, so the
 one-definition-per-value rule cannot drift). Both were observed failing before being trusted.
+
+## 3c. The browser pass (2026-10-03) — the NOT-CHECKED list, now checked
+
+The three items the gate printed as *"not verified here"* were executed on a machine with a browser
+(this session has network and npm; the sessions that built the prototype did not). Everything below
+was **measured**, fixed where broken, and re-measured. The demo's bytes are untouched throughout;
+every fix is in `graph.js`, `graph.css` or `prototype-changes.css`.
+
+**Tooling added:** `design/prototype/probe-browser.mjs` — 7 checks in a real engine: the viewport
+matrix 320×568 → 1920×1080, graph framing and clipping in both flows, page-level horizontal overflow,
+the 44px touch floor under `pointer: coarse`, WCAG contrast computed from the **live** themed tokens
+(24 pairs × dark/light), and focus rings on the first six tab stops. It prints its own NOT CHECKED
+list, like the gate.
+
+### Defects found and fixed
+
+| # | Measured defect | Root cause | Fix | Evidence |
+|---|---|---|---|---|
+| **F1** | **20 of 22 nodes crossed the stage edge at every viewport** when there was no saved view | `fitView()` existed but was only wired to the Fit button, double-click and the F key — never to first paint, so the graph rendered at world scale | `NEEDS_FIT` (no saved view) fits on the first frame **and** again when the simulation settles; `VIEW_RESTORED` protects a restored view; `USER_ADJUSTED` stops re-fitting once the user pans/zooms; scope and layout switches re-frame | probe: 0 clipped at 6 viewports, content fills 76–87% of its constraining axis |
+| **F1b** | The **rings** layout still overflowed the stage after F1 | `fitView()` framed nodes only — the department hulls and their labels were not in the fit box — and `--g-zoom-min:.45` clamped the fit before it could frame them | `fitView()` now includes `drawnHullBoxes()`; `--g-zoom-min` `.45 → .25` (CSS + JS fallback, checked in step by the gate) | probe: "department hulls stay inside the stage" passes in both layouts at 6 viewports |
+| **F2** | A node was drawn **16px inside** another department's hull **label band** — the department name was painted over | hull geometry was computed in three places (render, gate, nothing in the engine), and the label band was never reserved | one definition (`boxForList`/`hullBoxes`/`drawnHullBoxes`) shared by renderer, packing and gate; `clearLabelBands()` keeps foreign nodes out of the band and runs **inside** the packing loop so separation and clearance hold together | new gate check **8b**, observed failing first (16.0px intrusion, node `x:th1` on `Go to market`) then passing (0px, 2 bands, both layouts) |
+| **F3** | **24px of horizontal page overflow at 320×568** | two graph toolbars cannot share a 320px row and the skin keeps `.segmented` rigid (`flex-shrink:0`, `white-space:nowrap`) | `prototype-changes.css`: below 540px the graph toolbars wrap, their children may shrink, and the flex spacer is dropped | probe: no horizontal scrollbar at any of the 6 viewports |
+| **F4** | **20 controls narrower than 44px** on a coarse pointer (20×48 nav, 34×48 search/language, 36×48 segmented, 58×30 `.btn.small`, 35px tree rows) | the skin raises `min-height` to 48px on coarse pointers but not `min-width`, and `.btn.small` keeps a fixed 30px height | change item **T1** in `prototype-changes.css` — measured offenders raised to 48px in **both** axes, `@media(pointer:coarse)` only, so desktop is untouched | probe: "all controls meet the 44px floor at 390px" |
+
+### What the pass confirmed as already correct
+
+- **Contrast:** 24 live token pairs across both themes meet WCAG AA (worst: `--muted` on `--bg`
+  5.23:1 in dark). No token edits were needed.
+- **Focus:** every one of the first six tab stops draws a visible ring (skip link → company switcher →
+  nav items …).
+- **Screenshots:** the 12-shot gallery is now in `design/screenshots/`. The capture script had to be
+  fixed first — it guessed selectors, so five shots were skipped and two theme/language pairs were
+  byte-identical because the app never actually changed state. It now drives the real controls and
+  waits for the engine to settle; 12/12 captured, all variants distinct.
+
+### Still not verified (and why)
+
+Screen-reader announcement order (needs a real screen reader), gesture *feel* on a physical device,
+`forced-colors` rendering, and long-session storage growth. All four are printed by the tools
+themselves. Nothing here claims otherwise.
+
+---
 
 ## 4. The network view (A4) — behaviour as built
 

@@ -6,7 +6,7 @@ survive and so they travel with the repository.
 
 | File | What it is |
 |---|---|
-| `company_ai_FULL_2026-10-03.zip` | The complete project as of 2026-10-03: `README.md`, `LICENSE`, `.gitignore`, all of `design/`, all of `_research/` (documents 00–23, rules, dev-docs, data, harvest, tools). Verified by extracting it to a clean folder and running `node design/prototype/verify.mjs` → 10/10. |
+| `company_ai_FULL_2026-10-03.zip` | The complete project as of 2026-10-03: `README.md`, `LICENSE`, `.gitignore`, all of `design/` (demo, tokens, prototype, gate, browser probe, **the 12 gallery screenshots**), all of `_research/` (documents 00–23, rules, dev-docs, data, harvest, tools). Verified by extracting it to a clean folder and running `node design/prototype/verify.mjs` → 11/11. |
 
 ## How to use it
 
@@ -20,13 +20,13 @@ survive and so they travel with the repository.
 
 - **One zip per published milestone.** Name them `company_ai_<milestone>_<date>.zip`.
 - After adding a new snapshot, delete the previous one so the repository does not grow without bound.
-- The zip never contains `.git`, the checkpoints folder, or **this folder** itself (so the numbers
-  below stay exactly true — nothing in the zip can invalidate them).
+- The zip never contains `.git`, `node_modules`, the checkpoints folder, or **this folder** itself
+  (so the numbers below stay exactly true — nothing in the zip can invalidate them).
 - A snapshot is **not** a substitute for committing the real files — it is a convenience copy.
 
 ---
 
-**Current file:** `company_ai_FULL_2026-10-03.zip` — **58 files**, **542,714 bytes** (542714 bytes exactly), sha256 `0e133c3f83947860d4d963d309c5ff38afad818093ddeca24b212708f3f1d69b`.
+**Current file:** `company_ai_FULL_2026-10-03.zip` — **71 files**, **2,873,322 bytes** (2873322 bytes exactly), sha256 `c0d5f31b4fe2569041e97e4ea458811d8aa11d7d44611cae5539b1d2c9dda13c`.
 
 **How to check it yourself:**
 

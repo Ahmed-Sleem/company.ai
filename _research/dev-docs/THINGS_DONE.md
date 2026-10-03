@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-10-03 04:40 — the browser pass is done: 4 defects found and fixed, the 12 gallery shots are in the repo, gate 11/11 + probe 7/7
+
+- **Task (user):** *"apply this patch, merge all to main … now download the full updated repo, read it, read the rules (they are mandatory), study what we are doing, because you will work on it"* — the handoff's first-week list, items 2 and 3.
+- **Environment note (matters):** this session **has network and npm**, unlike the sessions that produced the prototype. That is why the three items the handoff listed as *owed* (screenshots, browser verification, and their evidence) could finally be executed here.
+- **Read (all of it):** the four mandatory rule documents in `_research/rules/`, `design/README.md`, `design/prototype/*`, the tokens, and `_research/` 00–23 including the dev-docs set. The study notes are in `HANDOFF-ACK.md` beside this repository.
+- **1. Screenshots (handoff item 2) — DONE.** `design/screenshots/` now holds all **12** PNGs, captured by `shots.mjs` from the live prototype (dark + light, EN + AR, desktop + mobile). The script was **fixed first**: it previously guessed selectors (`getByRole('button', {name:'Team'})`, `[data-layout=…]`), so 5 shots were skipped and two pairs came out byte-identical because theme/language never actually changed. It now drives the app's real controls (`[data-nav=]`, `[data-action=theme]`, `[data-action=language]`, `[data-g=layout]`), asserts the app really changed state, and **waits for the layout engine to stop moving** before capturing. Evidence: 12/12 saved, every theme/language pair now differs.
+- **2. Browser verification (handoff item 3) — DONE.** New `design/prototype/probe-browser.mjs` (Playwright): viewport matrix 320×568 → 1920×1080, graph framing/clipping in both layouts, page overflow, the 44px touch floor under `pointer: coarse`, WCAG contrast computed from the **live** tokens (24 pairs × 2 themes), and focus rings. **7/7** after the fixes below.
+- **3. Four defects found — all fixed** (details and the shared definitions in `18-changes-implemented.md` §3c):
+  - **F1** with no saved view the graph rendered at world scale: **20 of 22 nodes clipped at every viewport**. Fixed with fit-on-first-paint + re-frame on scope/layout switch and resize (`NEEDS_FIT` / `VIEW_RESTORED` / `USER_ADJUSTED`), and `fitView()` now frames the hull boxes as well as the nodes (the rings layout had been overflowing the stage at every size).
+  - **F2** a node sat **16px inside** a department hull label band. Fixed with one shared box definition (`hullBoxes`/`boxForList`) plus `clearLabelBands()` **inside** the packing loop; new gate check 8b, **observed failing first** (16.0px intrusion) and passing after.
+  - **F3** **24px of horizontal overflow at 320×568** from the two graph toolbars. Fixed in `prototype-changes.css` (wrap + allow the rigid segmented groups to shrink below 540px).
+  - **F4** **20 controls narrower than 44px** on a coarse pointer (20×48, 34×48, 58×30 …). Fixed as change item **T1** in `prototype-changes.css`, coarse pointers only — desktop rendering is untouched.
+- **4. The zoom floor moved** with the framing fix: `--g-zoom-min` `.45 → .25` (CSS token + JS fallback, still checked in step by the gate). At `.45` the rings layout could not be framed at all at 1440×900 — the clamp was the thing clipping it.
+- **Validation:** `node design/prototype/verify.mjs` → **11/11** (was 10; the new check is 8b). `node design/prototype/probe-browser.mjs` → **7/7**. `python3 design/prototype/build-prototype.py --check` → all 8 build checks ok. Designer demo still byte-identical (blob `7dd2e203…`, md5 `ff4a9063…`). F1/F2/F3/F4 were each reproduced before the fix and re-measured after.
+- **Docs updated in the same change:** `design/prototype/README.md` (new "what the browser pass changed" table, 11 checks, the probe), `design/README.md`, `design/screenshots/README.md` (status: taken, and the honest note about the selector bug), `design/prototype/verify.mjs` header, root `README.md` (gallery), `18-changes-implemented.md`, `SUPPORTING_NOTES.md`, `_research/snapshots/`.
+- **Still not verified (unchanged):** screen-reader announcement order (needs a real screen reader), gesture *feel* on a device, `forced-colors` rendering, and long-session storage behaviour. Listed by both tools so they cannot be mistaken for passes.
+- **Limitation:** `probe-browser.mjs` requires Playwright, so it is not part of the dependency-free gate; CI runs `verify.mjs` always and the probe when a browser is available (`scripts/verify.sh` will wrap both in P0).
+
+---
+
 ## 2026-10-03 03:20 — PUBLISHED: the organised tree is on `main` (route 23.2 executed in a session with GitHub access)
 
 - **Task (user):** *"apply this patch to it, merge all to the main, have it in the latest version"* —

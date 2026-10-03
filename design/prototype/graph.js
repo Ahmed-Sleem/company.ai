@@ -38,7 +38,8 @@ var T = {
   packIters: 90,         /* final separation passes once the simulation settles */
   labelMax: 18,          /* characters before a node label is shortened */
   hullLabelMax: 14,
-  zoomMin: .45, zoomMax: 2.2, fitPad: 28, hullPad: 16, hullLabelGap: 5,
+  hullLabelBand: 16,     /* reserved band above a hull for its department label (see hullBoxes) */
+  zoomMin: .25, zoomMax: 2.2, fitPad: 28, hullPad: 16, hullLabelGap: 5,
   ringGap: 130, ringOffset: 44, ringFlat: .66, maxDepth: 8,
   seedPerson: 170, seedThread: 300, seedTask: 370,
   alpha: .6, decay: .976
@@ -327,6 +328,73 @@ function separateDepartments(groups, strength){
     }
   }
 }
+/* A department's drawn box, INCLUDING the band its label sits in. One definition, used by the
+   renderer, by the keep-out pass below and by the verification gate — so "the box the user sees"
+   and "the box we test" can never drift apart. */
+function boxForList(list){
+  var pad = T.hullPad + labelReserve(list[0]);
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  list.forEach(function(n){
+    minX = Math.min(minX, n.x - n.radius); maxX = Math.max(maxX, n.x + n.radius);
+    minY = Math.min(minY, n.y - n.radius); maxY = Math.max(maxY, n.y + n.radius);
+  });
+  var box = { x: minX - pad, y: minY - pad - T.hullLabelBand,
+              w: (maxX - minX) + pad * 2, h: (maxY - minY) + pad * 2 + T.hullLabelBand,
+              labelY: minY - pad - T.hullLabelGap, dept: list[0].dept, list: list };
+  box.right = box.x + box.w; box.bottom = box.y + box.h;
+  return box;
+}
+function hullBoxes(g){
+  var graph = g || G;
+  if (!graph || !graph.nodes) return [];
+  return departmentGroups(graph).map(boxForList);
+}
+/* The hulls the view actually draws: company-ish modes, department with 2+ *shown* members.
+   paint() and fitView() both use this, so the framing can never ignore something on screen. */
+function drawnHullBoxes(graph, shown){
+  var g = graph || G;
+  if (!g || !g.nodes) return [];
+  if (CTRL.mode === 'work') return [];
+  var vis = shown || (function(){
+    var m = {};
+    g.nodes.forEach(function(n){ if (isVisible(n)) m[n.id] = true; });
+    return m;
+  })();
+  var by = {};
+  g.nodes.forEach(function(n){
+    if (n.kind !== 'person' || !n.dept || n.refId === 'you' || !vis[n.id]) return;
+    (by[n.dept] = by[n.dept] || []).push(n);
+  });
+  return Object.keys(by).filter(function(d){ return by[d].length >= 2; }).map(function(d){ return boxForList(by[d]); });
+}
+/* Keep every node out of the label band of a group it does not belong to. Without this a node from
+   another department (or the operator) is drawn over a department's name — seen in the first
+   screenshots taken after the fit fix, and now measured by the gate's "hull label band" check. */
+function clearLabelBands(g){
+  var graph = g || G;
+  if (!graph || !graph.nodes) return 0;
+  var boxes = hullBoxes(graph);
+  if (!boxes.length) return 0;
+  var moved = 0;
+  boxes.forEach(function(box){
+    var band = { x: box.x, y: box.y, w: box.w, h: T.hullLabelBand };
+    var inGroup = {};
+    box.list.forEach(function(n){ inGroup[n.id] = true; });
+    graph.nodes.forEach(function(n){
+      if (inGroup[n.id]) return;                       /* its own members sit inside by definition */
+      var f = footprint(n);
+      if (n.x + f < band.x || n.x - f > band.x + band.w) return;
+      if (n.y + f < band.y || n.y - f > band.y + band.h) return;
+      /* move out through whichever horizontal edge is nearer: the minimal translation that
+         clears the band completely (a wrong direction here parks the node *inside* the label) */
+      var exitTop = band.y - f - 1;              /* centre y just above the band */
+      var exitBottom = band.y + band.h + f + 1;  /* centre y just below it */
+      n.y = (n.y - exitTop <= exitBottom - n.y) ? exitTop : exitBottom;
+      moved += 1;
+    });
+  });
+  return moved;
+}
 /* The packing pass: no springs, no centring — only separation. It runs once the
    simulation has settled, so the layout the user sees has no overlaps at all. */
 function pack(g, opts){
@@ -355,6 +423,10 @@ function pack(g, opts){
     /* hulls must not overlap either: keep departments clear of one another */
     var groups = departmentGroups(g);
     if (groups.length > 1) separateDepartments(groups, 0.6);
+    /* Hull labels are chrome and must stay readable. Clearing a band moves a node, so this
+       participates in the loop instead of running once at the end: the next iteration re-separates
+       whatever the band clearance disturbed, and the loop only stops when both hold at once. */
+    moved += clearLabelBands(g);
     if (moved < 0.05) break;
   }
   return moved;
@@ -364,6 +436,11 @@ function pack(g, opts){
 var G = null;            /* live graph instance */
 var VIEW = { k: 1, tx: 0, ty: 0 };
 var CTRL = { mode: 'company', layout: 'force', filter: 'all', frozen: false, list: false };
+/* First-paint framing (see startLoop): fit once the layout settles, unless we restored the
+   user's own saved view, and keep refitting on resize until the user frames it themselves. */
+var NEEDS_FIT = false;       /* set when there is no saved view to restore */
+var VIEW_RESTORED = false;   /* a saved zoom/pan was applied — never override it */
+var USER_ADJUSTED = false;   /* the user panned, zoomed or fitted by hand */
 var selectedId = null, hoverId = null;
 var raf = 0, alpha = 0, lastPaint = 0;
 
@@ -438,6 +515,7 @@ function applyState(saved){
   if (saved.view && isFinite(saved.view.k)){
     VIEW.k = Math.min(T.zoomMax, Math.max(T.zoomMin, saved.view.k));
     VIEW.tx = saved.view.tx || 0; VIEW.ty = saved.view.ty || 0;
+    VIEW_RESTORED = true;
   }
   return used > 0;
 }
@@ -550,28 +628,13 @@ function paint(){
   var hullsG = qs('#g-hulls', svg);
   if (hullsG){
     hullsG.textContent = '';
-    if (CTRL.mode !== 'work'){
-      var byDept = {};
-      G.nodes.forEach(function(n){
-        if (n.kind !== 'person' || !n.dept || n.refId === 'you' || !shown[n.id]) return;
-        (byDept[n.dept] = byDept[n.dept] || []).push(n);
-      });
-      Object.keys(byDept).forEach(function(dept){
-        var list = byDept[dept];
-        if (list.length < 2) return;
-        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        list.forEach(function(n){
-          minX = Math.min(minX, n.x - n.radius); maxX = Math.max(maxX, n.x + n.radius);
-          minY = Math.min(minY, n.y - n.radius); maxY = Math.max(maxY, n.y + n.radius);
-        });
-        var pad = T.hullPad + T.labelReservePerson;
-        hullsG.appendChild(svgEl('rect', { 'class': 'g-hull', x: minX - pad, y: minY - pad,
-          width: (maxX - minX) + pad*2, height: (maxY - minY) + pad*2, rx: 0 }));
-        var t = svgEl('text', { 'class': 'g-hull-label', x: minX - pad + T.hullLabelGap, y: minY - pad - T.hullLabelGap });
-        t.textContent = shorten(safe(function(){ return t0(dept); }, dept), T.hullLabelMax);
-        hullsG.appendChild(t);
-      });
-    }
+    drawnHullBoxes(G, shown).forEach(function(box){
+      hullsG.appendChild(svgEl('rect', { 'class': 'g-hull', x: box.x, y: box.y,
+        width: box.w, height: box.h, rx: 0 }));
+      var t = svgEl('text', { 'class': 'g-hull-label', x: box.x + T.hullLabelGap, y: box.labelY });
+      t.textContent = shorten(safe(function(){ return t0(box.dept); }, box.dept), T.hullLabelMax);
+      hullsG.appendChild(t);
+    });
   }
 
   G.nodes.forEach(function(n){
@@ -606,6 +669,12 @@ function startLoop(){
       if (alpha < 0.004){ alpha = 0; pack(G, {}); paint(); saveState(); }
     }
     paint();
+    /* First paint: with no view of its own to restore, the graph must be shown *whole*.
+       Without this the nodes render at world coordinates and the stage clips them — found by
+       design/prototype/probe-browser.mjs (20 of 22 nodes crossed the stage edge at every
+       viewport). Fitting the view moves no node, so the persisted-layout rule of _research/14
+       ("recompute only on explicit user action") still holds. */
+    if (alpha === 0 && NEEDS_FIT){ NEEDS_FIT = false; fitView(); }
     if (alpha > 0.004 || dragging) raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
@@ -679,7 +748,9 @@ function attachInteraction(){
       dragging = null;
       wake(0.28); saveState();
     } else if (panning){
-      panning = null; svg.setAttribute('data-panning', 'false'); saveState();
+      panning = null; svg.setAttribute('data-panning', 'false');
+      USER_ADJUSTED = true;            /* the user framed the view themselves */
+      saveState();
     }
     try { svg.releasePointerCapture(ev.pointerId); } catch(e){}
   }
@@ -694,9 +765,10 @@ function attachInteraction(){
     VIEW.tx = mx - (mx - VIEW.tx) * (k / VIEW.k);
     VIEW.ty = my - (my - VIEW.ty) * (k / VIEW.k);
     VIEW.k = k;
+    USER_ADJUSTED = true;
     paint(); saveState();
   }, { passive: false });
-  svg.addEventListener('dblclick', function(){ fitView(); });
+  svg.addEventListener('dblclick', function(){ USER_ADJUSTED = true; fitView(); });
   svg.addEventListener('keydown', function(ev){
     if (ev.key === 'Enter' || ev.key === ' '){
       if (selectedId){ ev.preventDefault(); openSelected(); }
@@ -706,7 +778,7 @@ function attachInteraction(){
     var dirs = { ArrowUp: [0,-1], ArrowDown: [0,1], ArrowLeft: [-1,0], ArrowRight: [1,0] };
     var dxy = dirs[ev.key];
     if (!dxy) {
-      if (ev.key === 'f' || ev.key === 'F'){ fitView(); }
+      if (ev.key === 'f' || ev.key === 'F'){ USER_ADJUSTED = true; fitView(); }
       if (ev.key === 'r' || ev.key === 'R'){ resetLayout(); }
       return;
     }
@@ -753,6 +825,12 @@ function fitView(){
     minX = Math.min(minX, n.x - n.radius); maxX = Math.max(maxX, n.x + n.radius + 60);
     minY = Math.min(minY, n.y - n.radius); maxY = Math.max(maxY, n.y + n.radius + 18);
   });
+  /* the department hulls and their labels are on screen too — fitting without them clips them
+     (measured: the rings layout overflowed the stage at every viewport before this) */
+  drawnHullBoxes(G).forEach(function(b){
+    minX = Math.min(minX, b.x); maxX = Math.max(maxX, b.right);
+    minY = Math.min(minY, b.y); maxY = Math.max(maxY, b.bottom);
+  });
   var box = svg.getBoundingClientRect();
   var w = box.width || svg.clientWidth || 800, h = box.height || svg.clientHeight || 520, pad = T.fitPad;
   var k = Math.min((w - pad*2) / Math.max(1, maxX - minX), (h - pad*2) / Math.max(1, maxY - minY));
@@ -775,7 +853,9 @@ function resetLayout(){
   });
   G.byId['a:you'].x = 0; G.byId['a:you'].y = 0;
   try { window.localStorage.removeItem(STORE_KEY); } catch(e){}
-  CTRL.frozen = false; wake(1);
+  CTRL.frozen = false;
+  USER_ADJUSTED = false; NEEDS_FIT = true;   /* re-frame once the new layout settles */
+  wake(1);
   paint(); renderSide();
   notifySafe(gt('Layout restarted','تمت إعادة ترتيب التخطيط'));
 }
@@ -788,6 +868,7 @@ function announce(msg){
 }
 function zoomBy(factor){
   var svg = qs('#g-canvas'); if (!svg) return;
+  USER_ADJUSTED = true;
   var box = svg.getBoundingClientRect();
   var w = (box.width || 800) / 2, h = (box.height || 520) / 2;
   var k = Math.min(T.zoomMax, Math.max(T.zoomMin, VIEW.k * factor));
@@ -950,12 +1031,14 @@ function wireControls(){
     var b = ev.target.closest ? ev.target.closest('[data-g]') : null;
     if (!b) return;
     var action = b.dataset.g, value = b.dataset.value;
-    if (action === 'mode'){ CTRL.mode = value; alpha = Math.max(alpha, 0.5); if (!CTRL.frozen) startLoop(); }
-    else if (action === 'layout'){ CTRL.layout = value; alpha = Math.max(alpha, 0.85); if (!CTRL.frozen) startLoop(); }
+    /* Switching scope or layout rearranges the whole picture, so the old framing no longer means
+       anything: re-frame once the new layout settles (the user can still zoom and pan afterwards). */
+    if (action === 'mode'){ CTRL.mode = value; NEEDS_FIT = true; alpha = Math.max(alpha, 0.5); if (!CTRL.frozen) startLoop(); }
+    else if (action === 'layout'){ CTRL.layout = value; NEEDS_FIT = true; alpha = Math.max(alpha, 0.85); if (!CTRL.frozen) startLoop(); }
     else if (action === 'filter'){ CTRL.filter = value; }
     else if (action === 'list'){ CTRL.list = value === 'true'; }
     else if (action === 'freeze'){ setFrozen(); }
-    else if (action === 'fit'){ fitView(); }
+    else if (action === 'fit'){ USER_ADJUSTED = true; fitView(); }
     else if (action === 'reset'){ resetLayout(); }
     else if (action === 'zoom-in'){ zoomBy(1.15); }
     else if (action === 'zoom-out'){ zoomBy(1/1.15); }
@@ -1045,6 +1128,7 @@ function init(){
   G = buildGraph(src);
   var saved = loadState();
   var restored = applyState(saved);
+  NEEDS_FIT = !VIEW_RESTORED;   /* nothing of the user's own to restore -> show the whole graph */
   wireControls();
   buildScene();
   attachInteraction();
@@ -1052,6 +1136,10 @@ function init(){
   renderList();
   updateControls();
   paint();
+  /* Frame 1: show the whole graph from the very first paint, not just once it settles — otherwise
+     the user watches a clipped graph for the length of the settle. The fit is repeated when the
+     simulation stops (startLoop), so the final framing is the settled one. */
+  if (NEEDS_FIT) fitView();
   if (!restored || alpha === 0){ /* settle the layout, then stop: data is never animated forever */
     wake(restored ? 0.5 : 1);
   }
@@ -1193,7 +1281,10 @@ if (IS_BROWSER){
     if (document.hidden){ if (raf) { cancelAnimationFrame(raf); raf = 0; } }
     else if (G && !CTRL.frozen && alpha > 0.004) startLoop();
   });
-  window.addEventListener('resize', function(){ if (qs('#g-canvas')) paint(); });
+  window.addEventListener('resize', function(){
+    if (!qs('#g-canvas')) return;
+    if (!USER_ADJUSTED && !VIEW_RESTORED && !CTRL.list) fitView(); else paint();
+  });
   var obs = new MutationObserver(function(muts){
     for (var i = 0; i < muts.length; i++){
       var t = muts[i].target;
@@ -1214,6 +1305,8 @@ if (IS_BROWSER){
 
 /* test surface (used by the headless verification, not by the UI) */
 W.__graph = { build: buildGraph, step: layoutStep, pack: pack, footprint: footprint,
-              labelReserve: labelReserve, deptGroups: departmentGroups, hash: hash, version: 1 };
+              labelReserve: labelReserve, deptGroups: departmentGroups, hash: hash,
+              hullBoxes: hullBoxes, boxesFor: boxForList, clearLabelBands: clearLabelBands,
+              band: function(){ return T.hullLabelBand; }, version: 2 };
 
 })();

@@ -53,7 +53,37 @@
 #g-new{flex-shrink:0}
 @media(pointer:coarse){#g-new{min-width:var(--touch)}}
 
+/* --- T1: a real touch target in both axes -------------------------------------------------
+   The demo's own contract says "48px minimum touch targets on coarse pointers", and it sets
+   min-height:var(--touch) for its buttons — but several controls stay narrow (measured 20-38px
+   wide) or keep a fixed 30px height (.btn.small), i.e. a 20x48 or 58x30 thumb target. The
+   contract's §2.2/§4.1 and the accessibility floor (>=44px, 48 at coarse) win, so the measured
+   offenders are raised here. Nothing in this block applies to a fine pointer: desktop output is
+   byte-identical in behaviour and appearance. Evidence: design/prototype/probe-browser.mjs. */
+@media(pointer:coarse){
+  .topbar .btn,
+  .top-actions .btn,
+  .toolbar .btn,
+  .sectionhead .btn,
+  .palette-setting .btn,
+  .message-tools .btn,
+  .message-tools .textbtn,
+  .tree-person,
+  .employee-name{min-width:var(--touch);min-height:var(--touch)}
+  .btn.small{min-height:var(--touch)}
+  .topbar .row > .btn,
+  .segmented button{min-width:var(--touch)}
+}
+
 /* --- the graph page shares the demo's panels; keep its own toolbar controls compact ---- */
 #g-root .toolbar>*{flex-shrink:0}
 #g-root .segmented button{white-space:nowrap}
-@media(max-width:540px){#g-root .toolbar{gap:var(--s2)}#g-root .segmented{flex-wrap:wrap}}
+/* Below 540px the two graph toolbars cannot share a row and the rigid groups would push the page
+   24px wide (found by design/prototype/probe-browser.mjs at 320x568). Here the toolbars wrap and
+   the groups may shrink, so their buttons wrap instead of overflowing. Nothing changes on desktop. */
+@media(max-width:540px){
+  #g-root .toolbar{gap:var(--s2);flex-wrap:wrap}
+  #g-root .toolbar>*{min-width:0;flex-shrink:1}
+  #g-root .segmented{flex-wrap:wrap}
+  #g-root .toolbar .grow{display:none}
+}

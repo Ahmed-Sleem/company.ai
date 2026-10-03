@@ -14,8 +14,9 @@
 | `tokens/company-os-pixel.css` | **The design system** — tokens + pixel skin extracted verbatim from the demo, documented |
 | `tokens/company-os-pixel.json` | Same values, machine-readable (for Tailwind/theme generation) |
 | `prototype/company-os.html` | **The prototype** — the demo + the change request + the working network view (generated; open this one) |
-| `prototype/graph.js` `.css`, `prototype-changes.css`, `build-prototype.py`, `verify.mjs` | The network view, the changes, the rebuild script and the verification gate |
-| `screenshots/` | **README gallery** — `shots.mjs` (one-command capture) + `README.md` (the fixed 12-shot list, and how to take them by hand). Images are taken on a machine with a browser |
+| `prototype/graph.js` `.css`, `prototype-changes.css`, `build-prototype.py`, `verify.mjs` | The network view, the changes, the rebuild script and the verification gate (11 checks) |
+| `prototype/probe-browser.mjs` | The browser half of verification: 7 checks in a real engine (viewports, framing, overflow, touch, contrast, focus) |
+| `screenshots/` | **README gallery** — the 12 captures are **in place** (taken 2026-10-03 from the prototype itself, dark + light, EN + AR, desktop + mobile), with `shots.mjs` (one-command re-capture) and `README.md` |
 | `archive/gui-scaffold.html` | The first dependency-free scaffold, kept for reference only — superseded by `prototype/company-os.html` |
 | `designer-demo/ai-company-os.html` | **The designer's demo** (renamed, no `" (1)"`), byte-identical to the upload — the visual reference; never edit | 
 | `designer-demo/SOURCE.md` + `install.sh` | Provenance, blob sha, and an offline verify / re-download helper |
@@ -24,7 +25,8 @@ Review and change request: `../_research/17-demo-review.md`.
 What was implemented, and its verification: `../_research/18-changes-implemented.md` +
 `prototype/README.md`.
 
-Run the gate: `node design/prototype/verify.mjs` (10 checks; prints what it did not verify).
+Run the gate: `node design/prototype/verify.mjs` (11 checks, no dependencies).
+Run the browser probe: `node design/prototype/probe-browser.mjs` (7 checks; needs Playwright).
 
 ## What the designer's demo contains (verified — full inventory in `../_research/17-demo-review.md`)
 
