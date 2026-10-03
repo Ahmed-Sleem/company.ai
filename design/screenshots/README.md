@@ -3,20 +3,25 @@
 Gallery images for the root `README.md`, taken from the real prototype (`../prototype/company-os.html`)
 — not mockups, not drawings.
 
-**Status: the folder and the capture script are ready; the images themselves still have to be taken.**
-The sandbox that built the prototype has no browser installed and no network to install one, so the
-capture runs on any machine that has Node and a browser — one command, about a minute.
+**Status: all 12 images are in place**, captured 2026-10-03 from the prototype itself on a machine
+with Node + Chromium (`node design/screenshots/shots.mjs`, then verified by eye against the live
+prototype). The capture drives the app's **own** controls — the nav items, the appearance and
+language toggles, the graph layout buttons — and waits for the layout engine to stop moving before
+shooting. If a control cannot be found or the app does not actually change state, that shot fails and
+is reported as skipped: nothing is ever faked by writing to the DOM from outside the app.
+
+Re-capture after a prototype change with the same one command; the list below is the single source of
+truth for the file names.
 
 ---
 
-## Run the capture (recommended)
+## Run the capture (recommended) — needs a browser
 
 ```bash
-# once, to get a browser for Playwright:
-npx playwright@latest install chromium
-
-# capture everything (writes into this folder):
-node design/screenshots/shots.mjs
+cd design
+npm install --no-save playwright      # from the repository root; keeps the tree clean
+npx playwright install --with-deps chromium
+cd .. && node design/screenshots/shots.mjs
 ```
 
 It opens the prototype, visits every view and writes the PNGs listed below, then prints a table of what

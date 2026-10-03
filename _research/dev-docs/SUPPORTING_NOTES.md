@@ -52,7 +52,10 @@ carries meaning (review item E7).
 
 ## 5. Verification of the current prototype (evidence)
 
-Command: `node design/prototype/verify.mjs` — **10/10 pass** (run 2026-10-03).
+Command: `node design/prototype/verify.mjs` — **11/11 pass** (run 2026-10-03). The browser half is
+`node design/prototype/probe-browser.mjs` — **7/7** (viewport matrix, framing/clipping, overflow,
+touch targets, live-token contrast, focus rings); four defects it found are fixed and recorded in
+`_research/18-changes-implemented.md` §3c.
 
 | Check | Result |
 |---|---|
@@ -70,10 +73,12 @@ Command: `node design/prototype/verify.mjs` — **10/10 pass** (run 2026-10-03).
 Each check was also **observed failing** (raw colour, syntax error, hand-edited prototype, physical
 property) and then restored — the evidence table is in `_research/18-changes-implemented.md` §3.
 
-**Not verified here (no browser or device in this environment):** rendering and contrast in both
-themes, focus order, pointer gestures, screen-reader announcement order, 200% zoom / 320×568, and
-Arabic shaping of the new panel. The gate prints this list itself so the gap cannot be mistaken for
-a pass.
+**Verified in a real browser on 2026-10-03** (both themes, EN + AR, 320×568 → 1920×1080, framing in
+both graph layouts, page overflow, 44px touch floor, live-token contrast, focus rings) — see §3c of
+`18-changes-implemented.md`.
+**Still not verified:** screen-reader announcement order (needs a real screen reader), gesture *feel*
+on a physical device, `forced-colors` rendering, and long-session storage growth. Both tools print
+their own NOT CHECKED lists so the remaining gap cannot be mistaken for a pass.
 
 ### Checkpoint
 
@@ -100,4 +105,5 @@ gestures are a poor fit on touch and the list gives a real accessible path). Doc
 4. **Simulated values** (run counts, policy labels in the prototype) are derived from sample data and
    are labelled as sample data in the UI. The product must not carry them as real state.
 5. **`--dim` contrast** at 11px is borderline in dark mode; raised to `--muted` wherever the text
-   carries meaning.
+   carries meaning. Measured 2026-10-03: the worst live token pair is `--muted` on `--bg` at **5.23:1**
+   (AA for body text); `--dim` is only used for non-essential labels, as designed.
