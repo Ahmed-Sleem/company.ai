@@ -406,14 +406,17 @@ export async function listThreads(db: Db, companyId: string) {
     .select()
     .from(t.threads)
     .where(eq(t.threads.companyId, companyId))
-    .orderBy(desc(t.threads.lastMessageAt));
+    // newest thread first; the id breaks ties so two threads stored in the same
+    // millisecond cannot swap places between two reads of the same data.
+    .orderBy(desc(t.threads.lastMessageAt), desc(t.threads.id));
   const withLast = await Promise.all(
     rows.map(async (thread) => {
       const [last] = await db
         .select({ parts: t.messages.parts, authorKind: t.messages.authorKind })
         .from(t.messages)
         .where(eq(t.messages.threadId, thread.id))
-        .orderBy(desc(t.messages.createdAt))
+        // same rule: the id is the tiebreaker, so "the last message" is one answer, always.
+        .orderBy(desc(t.messages.createdAt), desc(t.messages.id))
         .limit(1);
       const firstText = Array.isArray(last?.parts)
         ? (last.parts.find((part) => (part as { type?: string }).type === 'text') as { text?: string } | undefined)?.text ?? null

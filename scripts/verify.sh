@@ -41,6 +41,21 @@ skip_if_no_browser() {
   return 1
 }
 
+# ── guard: a running development API starves the tests on a small machine ──────────────────
+# Each API process loads its own PostgreSQL (~400 MB). Running one while the gate runs its
+# own databases gets the test workers killed, which looks like a mysterious failure.
+if node -e "
+const net = require('node:net');
+const socket = net.connect({ host: '127.0.0.1', port: 8787 });
+socket.on('connect', () => { socket.destroy(); process.exit(0); });
+socket.on('error', () => process.exit(1));
+" 2>/dev/null; then
+  printf '\033[33m· an API is already running on port 8787.\033[0m\n'
+  printf '  Stop it before running the gate (Ctrl-C in its window), then run this again.\n'
+  printf '  One PostgreSQL at a time: two of them exhaust this machine memory.\n'
+  exit 1
+fi
+
 run "1/9 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
 run "2/9 tokens in sync with the design source" node packages/tokens/src/generate.mjs --check
 run "3/9 lint" npx oxlint

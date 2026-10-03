@@ -140,6 +140,7 @@ export async function seed(db: Db) {
     },
   ]);
 
+  const agentSaid = new Date(Date.now() - 60_000).toISOString();
   const thread = await first(
     db.insert(t.threads).values({
       companyId: company.id, title: 'Streaming pipeline review',
@@ -153,7 +154,7 @@ export async function seed(db: Db) {
     {
       companyId: company.id, threadId: thread.id, authorKind: 'agent', authorId: aria.id,
       parts: [{ type: 'text', text: 'The new streaming path passes its tests. Ready for your review when you are.' }],
-      createdAt: now,
+      createdAt: agentSaid,
     },
     {
       companyId: company.id, threadId: thread.id, authorKind: 'member', authorId: owner.id,
