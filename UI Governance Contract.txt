@@ -1,0 +1,637 @@
+
+# Enterprise UI Governance Contract
+
+**Status:** Mandatory. Every screen, component, and feature page must comply.
+**Applies to:** shell, main canvas, feature pages, utility panels, forms, tables, dialogs, empty/loading/error states.
+**Supersedes:** ad-hoc values. The narrative rationale lives in a separate design document; **this file is the enforced contract**. Where the two differ, this file wins.
+**Enforcement:** A CI build step (e.g., `ui-contract.test.ts`) fails on violations of the token, wording, and surface rules below.
+
+---
+
+## 0. The six laws
+
+1. **No raw values.** Never write a pixel, weight, radius, or font size literal in component CSS when a token exists. If a value is missing, add a token — do not invent a one-off.
+2. **Dense but calm.** This is a professional enterprise product. Default density is compact; whitespace is structural, never decorative padding.
+3. **Consistency beats cleverness.** A new page must look like it shipped the same day as every other page.
+4. **Touch expands, desktop compacts.** Compact desktop sizing is the default; coarse pointers get full touch targets automatically.
+5. **RTL is a first-class layout, not a translation.** Every rule here must hold in right-to-left scripts.
+6. **Compose from shared blocks; never re-implement one.** If two screens need the same thing, it belongs in the shared component library. Copy-pasted UI is how a product stops looking like one product.
+
+---
+
+## 1. Research basis
+
+These values are not invented. They are the intersection of published guidance for information-dense enterprise UI:
+
+| Source | What it establishes | How this system applies it |
+|---|---|---|
+| IBM Carbon — spacing & data table | 8px base with 2px mini-steps (2/4/8/12/16/24/32/40/48); table densities 24/32/40/48/64px | Our spacing scale is identical; our default table row is 32px |
+| Atlassian Design — spacing | 0–8px for compact UI, 12–24px for component padding, 32–80px for layout | Maps to `space-1..2`, `space-3..6`, `space-8..16` |
+| Microsoft Fluent — Standard vs Compact | Information-rich UI needs an explicit compact mode, ~14px body | 14px body, compact 32px controls as default |
+| WCAG 2.2 SC 2.5.8 (AA) | Interactive targets ≥ **24×24 CSS px** | `--ui-hit-min: 24px`; nothing interactive is smaller |
+| WCAG 2.2 SC 2.5.5 (AAA) / Material 3 | 44px / 48dp for touch | `--ui-control-touch: 48px`, applied automatically at `pointer: coarse` |
+| Dense-dashboard practice (industry standard) | 8–12px grid gaps, 12-column grid, 12–14px type, sticky headers, right-aligned numerics | Our grid gap, type scale and table rules |
+| Nielsen Norman / dashboard research | 4–6 primary metrics above the fold before cognitive load degrades decisions | KPI rows are capped at 6 cards |
+
+**Deliberate deviation, documented:** Any specific custom width (e.g., a dense left rail) must be explicitly justified and flagged as "do not correct" to prevent well-intentioned but harmful refactoring.
+
+---
+
+## 2. Token reference — the only allowed values
+
+Defined in `src/styles/tokens.css`. **This table is the contract.**
+
+### 2.1 Spacing
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-space-0` | 0 | flush joins only |
+| `--ui-space-05` | 2 | hairline offsets, tightest label/value pairs |
+| `--ui-space-1` | 4 | icon↔label gap, chip internals, field label→control |
+| `--ui-space-2` | 8 | compact gaps, toolbar item gap, badge padding |
+| `--ui-space-3` | 12 | compact card padding, form field stack gap, button x-padding |
+| `--ui-space-4` | 16 | standard card/panel/modal padding |
+| `--ui-space-5` | 20 | dense section vertical rhythm |
+| `--ui-space-6` | 24 | comfortable section padding, modal backdrop inset |
+| `--ui-space-8` | 32 | major group separation |
+| `--ui-space-10` | 40 | major vertical break |
+| `--ui-space-12` | 48 | page section separation |
+| `--ui-space-16` | 64 | rare top-level grouping |
+
+Never use 6px, 10px, 14px, 18px as spacing. Round to the scale.
+
+**Nested containers must not repeat the same gap.** Spacing compounds: a 16px section gap inside a 16px form gap inside a 16px row gap reads as one enormous gap, not as structure. Step the scale down as you nest, so hierarchy comes from *contrast* between levels:
+
+| Nesting level | Gap | Meaning |
+|---|---:|---|
+| Between sections | `space-3` (12) | Separate topics |
+| Between rows in a section | `space-3` (12) | Separate settings |
+| Between a label block and its controls | `space-2` (8) | One unit |
+| Between fields in a grid | `space-2` row / `space-3` column | Peers |
+| Between a label and its own control | `space-1` (4) | Inseparable |
+
+Rule of thumb: **each level inward is one step smaller, never equal or larger.** If a block feels airy, count the nested gaps before adding anything new — the fix is almost always removing a duplicated gap, not adding a divider.
+
+### 2.2 Control heights
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-hit-min` | 24 | absolute floor for any interactive target (WCAG AA) |
+| `--ui-control-xs` | 24 | inline/table-row actions, small buttons |
+| `--ui-control-compact` | 32 | **desktop default** — buttons, inputs, selects, toolbar controls |
+| `--ui-control-standard` | 40 | primary form controls, dialog primary actions, surface header min-height |
+| `--ui-control-touch` | 48 | applied automatically under `@media (pointer: coarse)` |
+
+### 2.3 Control widths
+
+A control's width is a usability cue: it tells the user how much input is expected. Stretching every field to fill its row throws that cue away.
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-field-width-xs` | 96 | Codes, quantities, currency codes |
+| `--ui-field-width-sm` | 140 | Short pickers, e.g. a status filter |
+| `--ui-field-width-md` | 176 | **Default filter width.** Fits ~18 characters |
+| `--ui-field-width-lg` | 240 | Longer pickers and compact text inputs |
+| `--ui-field-width-search` | 320 | Search fields |
+
+Rules:
+
+1. **Match the width to the expected input length.** Mismatched widths cause measurable hesitation.
+2. **Cap, do not stretch.** Set a max width instead of letting a control grow with the viewport.
+3. Form fields inside a field group may fill their grid cell; **toolbar controls may not**.
+4. Below 640px controls may fill, because a stacked layout no longer carries a width cue to lose.
+
+### 2.4 Table rows
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-table-row-ultra` | 28 | read-only reference tables |
+| `--ui-table-row-dense` | 32 | **default** for all data tables |
+| `--ui-table-row-standard` | 40 | rows containing inputs or controls |
+| `--ui-table-row-two-line` | 52 | primary + subtext rows |
+
+### 2.5 Grid gaps
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-grid-gap-dense` | 8 | KPI strips, tight widget grids |
+| `--ui-grid-gap` | 12 | **default** feature page grid |
+| `--ui-grid-gap-standard` | 16 | roomy detail layouts |
+
+### 2.6 Typography
+
+| Token | px | Weight | Line-height | Use |
+|---|---:|---|---|---|
+| `--ui-text-micro` | 11 | medium/bold | snug | eyebrows, badges, hints, uppercase labels |
+| `--ui-text-label` | 12 | semibold | snug | field labels, table headers, captions |
+| `--ui-text-table` | 13 | regular | snug | table body |
+| `--ui-text-body` | 14 | regular/medium | body | **default** copy, inputs, list text |
+| `--ui-text-subsection` | 15 | bold | tight | card/dialog titles (h3) |
+| `--ui-text-section` | 17 | bold | tight | section titles (h2) |
+| `--ui-text-page` | 20 | bold | tight | canvas page title (h1) |
+| `--ui-text-kpi` | 28 | bold | 1.0 | headline metric numbers only |
+
+Brand/display sizes (identity surfaces):
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-text-display` | 25 | auth/setup headline |
+| `--ui-text-wordmark` | 22 | collapsed navigation wordmark |
+| `--ui-text-wordmark-lg` | 28 | expanded navigation wordmark |
+
+**No raw `font-size` value may appear in any component CSS.** Every size resolves to a token.
+
+Line-height tokens: `--ui-leading-tight` 1.15, `--ui-leading-snug` 1.3, `--ui-leading-body` 1.45.
+
+**Never render body text below 12px.**
+
+### 2.7 Font weights
+
+The system font is loaded at **400 / 500 / 600 / 700 / 900 only**.
+
+| Token | Value |
+|---|---:|
+| `--ui-weight-regular` | 400 |
+| `--ui-weight-medium` | 500 |
+| `--ui-weight-semibold` | 600 |
+| `--ui-weight-bold` | 700 |
+| `--ui-weight-black` | 900 (wordmark only) |
+
+Using intermediate weights (550/620/etc.) makes the browser synthesize a weight, which renders differently across platforms. **This is enforced by a failing test.**
+
+### 2.8 Radius
+
+| Token | px | Use |
+|---|---:|---|
+| `--ui-radius-xs` | 6 | tiny chips, inline tags |
+| `--ui-radius-sm` | 8 | nav items |
+| `--ui-radius-md` | 10 | buttons, inputs, selects |
+| `--ui-radius-lg` | 14 | cards, table wrappers, toasts |
+| `--ui-radius-xl` | 18 | drawers, empty-state cards |
+| `--ui-radius-2xl` | 24 | modals |
+| `--ui-pill-radius` | 999 | badges, switches, circular controls |
+| `--ui-panel-radius` | 28 | the main application surface (brand shape) |
+
+### 2.9 Overlay / window tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--ui-overlay-width-sm/md/lg/xl` | 420 / 560 / 760 / 960px | Window width ceilings |
+| `--ui-overlay-max-block` | 720px | Window height ceiling |
+| `--ui-overlay-margin` | 24px (12px mobile) | Gap between window and viewport edge |
+| `--ui-overlay-radius` | 20px (16px mobile) | Window corner |
+| `--ui-overlay-scrim` | rgba(0,0,0,.28) | Backdrop tint under the blur |
+| `--ui-overlay-blur` | 10px | Backdrop blur |
+| `--ui-app-blur` | 3px | Blur applied to the whole app behind a window |
+| `--ui-z-overlay` | 1000 | Windows |
+| `--ui-z-toast` | 1100 | Transient messages above windows |
+
+### 2.10 Surface canvas
+
+| Token | Value | Meaning |
+|---|---|---|
+| `--ui-panel-padding` | 20px 24px | surface inner padding |
+| `--ui-panel-stack-gap` | 14px | header → body gap |
+| `--ui-surface-content-max` | 1180px | max width of the feature content column |
+| `--ui-surface-scroll-fade` | 20px | scroll-edge fade depth |
+
+---
+
+## 3. The main application surface
+
+The main surface is the brand canvas. Its structure is owned by the application shell and **feature pages must not change it**.
+
+```
+.ui-panel                 the rectangle: 28px radius, 1px border, 20/24 padding
+├── .ui-panel__header     min-height 40px, 1px bottom divider, 12px pad-bottom
+│   ├── .ui-panel__heading   title (+ optional eyebrow)
+│   └── .ui-panel__actions   optional page-level actions
+└── .ui-panel__body       the only scroll container
+    └── .ui-panel__content  max 1180px, 12px gap, flex column ← feature page mounts here
+```
+
+Rules:
+
+1. **The page title lives in the shell header. Never repeat it inside the page.**
+2. The surface title is **sentence case**. Never `text-transform: uppercase` and never positive `letter-spacing` — Arabic has no uppercase and tracking breaks Arabic letter joining.
+3. `.ui-panel__body` is the **only** scroll container in the surface. A feature page must not create a second full-page scroller.
+4. Scrollbars are globally invisible. Because of that, the body carries a **state-driven mask fade**: an edge fades **only while content is actually hidden beyond it**. 
+   - Driven by a scroll observer → `data-scroll-top` / `data-scroll-bottom` on `.ui-panel__body`.
+   - A permanently-on fade is a **bug**, not a style.
+5. Feature pages never set their own `max-width` or outer margins — the content column already does it.
+6. The main surface must never be given `overflow: hidden` in a way that clips floating utility elements (e.g., global launchers).
+
+---
+
+## 4. Components
+
+### 4.1 Buttons
+
+| Size | Height | X-padding | Radius | Use |
+|---|---:|---:|---:|---|
+| `sm` | 24px | 8px | 10px | inside table rows, inline actions |
+| `md` | 32px | 12px | 10px | **default** — toolbars, forms, dialogs |
+| `lg` | 40px | 16px | 10px | primary submit, auth screens |
+
+- Gap between icon and label: `--ui-space-2`.
+- Weight: `--ui-weight-semibold`. Never bold-black.
+- Variants: `primary` (solid fill), `secondary` (outline), `ghost` (transparent), `danger` (destructive). Exactly one `primary` per view region.
+- Press feedback: `scale(0.97)`. Hover: surface/border shift only, never size change.
+- Disabled: `opacity 0.55` + `not-allowed`. Never hide a disabled reason — put it in a hint or tooltip.
+- Under `pointer: coarse`, all sizes become 48px automatically.
+
+### 4.2 Icon buttons
+
+Sizes 24 / 32 / 40px (`xs`/`compact`/`standard`), always circular, always with an accessible `aria-label` and matching `title`. Icon glyph stays 16–18px inside the larger hit area.
+
+### 4.3 Inputs, selects, textareas
+
+- Height 32px compact (default) / 40px standard forms; radius 10px; x-padding 12px; font 14px.
+- Textarea min-height 88px, padding 8px 12px, `resize: vertical` only.
+- Field structure: label (12px semibold) → control → hint **or** error (11px). Gap `--ui-space-1`.
+- Errors: red border + red message + `aria-invalid`. Never colour-only.
+- Placeholders are hints, never labels. Every control has a real label.
+
+### 4.4 Search and filter toolbars
+
+Search is one of the few controls users expect to recognise on sight. Its shape is fixed by a shared component and must not be rebuilt per page.
+
+Anatomy, in this order on one row:
+
+```
+[ 🔍 search field ] [ status filter ] [ sort ] ......... [ primary action ]
+        320px             140px         176px            pushed to the end
+```
+
+Rules:
+
+1. **A magnifying glass sits inside the field, at the start.** It is decorative (`aria-hidden`) since the field already has a name.
+2. **Never full width.** A search box spanning the page stops reading as a discrete control.
+3. **Provide a real submit button** where results are fetched. Label it "Search" — never "Go".
+4. **Clear control appears only when there is a query**, at the end of the field.
+5. **Placeholder is an example, never a label.** Every search field carries a real accessible name.
+6. Wrap the row in `role="search"` so assistive technology can jump to it.
+7. Filters keep capped widths (§2.3) and **wrap, never overflow**.
+8. Use a spacer component to push the page's primary action to the far end.
+
+### 4.5 Checkbox / switch
+
+Visual box 16–18px, but the label row is 32px min-height so the target clears WCAG. Switch track 36×20 with a 16px thumb.
+
+### 4.6 Cards
+
+| Kind | Padding | Radius |
+|---|---:|---:|
+| Dense metric card | 12px | 14px |
+| Standard card | 16px | 14px |
+| Empty-state card | 24px | 18px |
+
+1px soft border, card background. Do not nest a bordered card inside a bordered card — use a divider instead.
+
+### 4.7 Tables
+
+- Default row **32px**, header row **32px**, sticky header, 12px cell x-padding.
+- Body 13px; header 12px semibold, secondary colour.
+- Text left (start), **numbers right (end) with tabular numerals**, status badges centred.
+- Row hover: subtle neutral fill. No zebra striping unless it measurably helps.
+- Wrapper has 1px border + 14px radius and owns the horizontal scroll.
+- Empty tables render a centred, user-facing message row — never a blank body.
+- Under `pointer: coarse`, rows expand to 48px automatically.
+
+### 4.8 Badges
+
+22px min-height, 11px bold, pill radius, 8px x-padding. Tones carry **meaning only**: `success` complete/healthy, `warning` at risk, `danger` late/critical, `info` neutral system, `accent` category. Never decorative colour.
+
+### 4.9 Windows (modals, dialogs, drawers)
+
+Never build one. See **§12 The window system** — every window in the product comes from the shared overlay component. A feature that writes its own backdrop, sizing, or close button is a defect.
+
+### 4.10 Empty, loading, error, permission states
+
+Four states are mandatory for every data surface:
+
+| State | Requirement |
+|---|---|
+| Loading | Spinner or skeleton matching the final layout's dimensions. Never a layout jump. |
+| Empty | User-facing sentence + the primary action if the user is allowed to take it. |
+| Error | What failed in plain language + a retry affordance. Never a raw error code or stack. |
+| No permission | A clean explanation, or hide the surface entirely. Never a broken/disabled shell. |
+
+---
+
+## 5. Wording rules (user-visible text)
+
+**Banned in any user-visible string** — enforced by test:
+
+`not implemented` · `ui shell` · `no fake data` · `backend pending` · `audit pending` · `validation contract` · `coming soon` · `todo` · `tbd`
+
+Also never render internal identifiers (feature ids, route keys, table names, error codes) to end users.
+
+If a workflow is not genuinely usable: **hide the action**, or show a clean permission/empty state. Never ship a control that lies about what it does.
+
+Every visible sentence must help the user finish a task. Write for an end-user, not for a developer.
+
+---
+
+## 6. Arabic / RTL
+
+1. Use **logical** CSS properties: `padding-inline`, `margin-inline-start`, `inset-inline-end`, `text-align: start/end`. Never `left`/`right` for content flow.
+2. Never `text-transform: uppercase` on text that can be Arabic.
+3. Never positive `letter-spacing` on Arabic — it breaks letter joining.
+4. Icons that imply direction (back, next, collapse arrows) must mirror in RTL. Icons that do not imply direction (search, settings, calendar) must **not** mirror.
+5. Numbers, dates, currency and durations stay LTR inside RTL text.
+6. Every new page is reviewed in RTL before it is called done.
+
+---
+
+## 7. Motion
+
+| Motion | Duration | Easing |
+|---|---:|---|
+| Hover / colour | 120–180ms | ease |
+| Press | ≤120ms | ease-out |
+| Nav & utility panel collapse | 280–350ms | `cubic-bezier(0.4, 0, 0.2, 1)` |
+| Panel entrance | ~260ms | ease-out |
+
+- Never animate data. Tables, values and rows appear instantly.
+- No decorative wordmark animation.
+- Every animation and transition must be disabled under `prefers-reduced-motion: reduce`.
+
+### Duration and easing tokens are separate
+
+`--ui-motion-*` tokens carry **duration + easing** and are for the `transition` shorthand.
+`--ui-ease-*` tokens carry **easing only** and are for the `animation` shorthand.
+
+```css
+/* WRONG — in `animation`, the second <time> is the DELAY. */
+animation: fade-in 200ms var(--ui-motion-spring) both;
+
+/* RIGHT */
+animation: fade-in var(--ui-duration-overlay) var(--ui-ease-spring) both;
+transition: opacity var(--ui-motion-nav);
+```
+
+---
+
+## 8. Layout & responsiveness
+
+12-column grid inside the content column. Allowed spans: 3, 4, 6, 8, 12.
+
+| Breakpoint | Behaviour |
+|---|---|
+| ≥1280px | Full shell: navigation + surface + utility panel |
+| 1100–1279px | Utility panel narrows |
+| 769–1099px | Three zones retained; utility panel may collapse to a launcher |
+| ≤768px | Stacked; surface padding drops to 16px, radius to 20px |
+| `pointer: coarse` | All controls expand to 48px |
+
+Standard patterns: KPI row (4×3 or 3×4 columns, max 6 cards) · master/detail (8 + 4) · table-first (12) · document preview (3 + 9).
+
+---
+
+## 9. Colour
+
+Shell stays soft monochrome — near-black chrome, off-white surface, neutral text. Never pure `#000`/`#fff`.
+
+Semantic colour is permitted **only** to communicate state: red critical/late, amber at-risk, green healthy/complete, blue informational, indigo accent/selection. No decorative or rainbow palettes. All colour must come from `--ui-color-*` / semantic tokens, never a literal hex in component CSS.
+
+Text contrast must meet WCAG AA (4.5:1 body, 3:1 large text and UI boundaries).
+
+---
+
+## 10. Accessibility floor
+
+- Every interactive element ≥ 24×24px, keyboard reachable, with a visible focus ring (`:focus-visible`, 2px, 2px offset).
+- Icon-only controls always have an accessible name.
+- Headings are hierarchical: surface title is the only `h1`; sections use `h2`; cards use `h3`.
+- Dialogs use `role="dialog"` + `aria-modal` + a label, and return focus on close.
+- Live regions (`role="status"`) for async results.
+- Never communicate state by colour alone — pair it with text or an icon.
+
+---
+
+## 11. The building blocks
+
+**The UI is assembled, not drawn.** Every screen is composed from the shared component library (`@/ui` or `src/components`). Feature folders hold **data and composition**; they never introduce new UI vocabulary.
+
+### 11.1 The kit
+
+| Block | Use |
+|---|---|
+| `Button` · `IconButton` | All actions |
+| `Field` · `Input` · `Select` · `Textarea` · `Checkbox` · `Switch` | All form controls |
+| **`SearchField`** · **`FilterBar`** · **`FilterSelect`** · **`FilterBarSpacer`** | **Every search and filter toolbar** (§4.4) |
+| `Card` · `Toolbar` · `PageGrid` · `PageHeader` | Page composition |
+| `DataTable` | Every tabular surface |
+| `Badge` | Status and counts |
+| `EmptyState` · `LoadingState` · `ErrorState` | The four required data states |
+| **`Overlay`** · **`FormDialog`** · **`ConfirmDialog`** | **Every window** (§12) |
+| **`SettingsSection`** · **`SettingRow`** · **`ChoiceGroup`** · **`SettingsStack`** | **Every configuration surface** (§13) |
+| `Drawer` · `Toast` | Side panels and transient messages |
+
+### 11.2 Rules
+
+1. **Import from the shared library.** Never reach into a sibling feature for UI.
+2. **A feature may style layout, never appearance.** Grid areas and column spans are the feature's business. Padding, radius, colour, and control size are the kit's.
+3. **If two screens need the same thing, it belongs in the kit** — not copied.
+4. **Adding a block means adding its tests in the same change.**
+5. **Check this table before writing new UI.** Duplication is rejected in review and by CI.
+
+### 11.3 When to add a block
+
+Add one when a pattern appears a **second** time, or when getting it right requires knowledge a feature author should not need to carry — focus trapping, scroll locking, search affordance, disclosure state. Those belong in one tested place.
+
+A block is finished when it has: a single clear purpose, tokens for every value, loading/empty/error handling where it owns data, an accessible name, keyboard support, RTL correctness, and tests.
+
+### 11.4 Theming is centralized
+
+Every colour, size, radius, weight, and duration resolves to a token in `src/styles/tokens.css`. **Changing the theme means editing that one file**, and the entire product follows. A literal colour in component CSS breaks that guarantee.
+
+---
+
+## 12. The window system
+
+**One component powers every window: `Overlay`.** Creation, editing, confirmations, detail panels — all the same component.
+
+| Component | Use |
+|---|---|
+| `Overlay` | Base window. Custom content and footer. |
+| `FormDialog` | Create/edit. Supplies form wiring, submit/cancel, pending state, error surface. |
+| `ConfirmDialog` | Confirmations. Supplies confirm/cancel and destructive tone. |
+
+### 12.1 Structure — fixed, not negotiable
+
+```
+header   title + optional description + close      never scrolls
+body     the ONLY scroll region                    flex: 1, min-height: 0
+footer   actions                                   never scrolls, never clipped
+```
+
+Actions **must** be in the footer. An action inside the scroll area can be scrolled out of reach.
+
+### 12.2 Sizing — viewport first, ceiling second
+
+| Size | Max width | Use |
+|---|---:|---|
+| `sm` | 420px | Confirmations, single field |
+| `md` | 560px | **Default.** Standard create/edit |
+| `lg` | 760px | Multi-column forms |
+| `xl` | 960px | Dense detail or side-by-side content |
+
+```css
+max-block-size: min(calc(100dvh - 2 * margin), 720px);
+```
+
+- **Use `dvh`, never `vh`** — mobile browser chrome makes `vh` taller than the visible area.
+- **`min-height: 0` on the scrolling body is mandatory.** A flex child defaults to `min-height: auto` and refuses to shrink.
+- Under 640px the window docks to the bottom and its actions go full width.
+- Under 560px tall the window takes nearly the full height.
+
+### 12.3 Backdrop — blur the whole application
+
+- The overlay **portals to `document.body`** to escape parent `transform` containing blocks.
+- The **entire app blurs** behind an open window, not just the region the window sits in.
+- Blur plus a light scrim. `prefers-reduced-transparency` gets a solid scrim and no blur.
+
+### 12.4 Motion
+
+| Element | Duration | Easing |
+|---|---:|---|
+| Scrim fade | `--ui-duration-overlay-scrim` (110ms) | `ease-out` |
+| Surface | `--ui-duration-overlay` (140ms) | `--ui-ease-spring` |
+
+A window must feel like it is *already there*. Never add an `animation-delay` to an overlay.
+
+### 12.5 Behaviour — required, all of it
+
+- Escape closes (opt out only where loss is costly).
+- Backdrop press closes, but only when the press **starts and ends** on the scrim.
+- Focus moves into the window on open and returns to the trigger on close.
+- Focus is trapped; Tab and Shift+Tab wrap inside.
+- Background scroll is locked, with scrollbar-width compensation.
+- `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, and `aria-describedby`.
+- `data-autofocus="true"` marks the field that should receive focus.
+
+---
+
+## 13. Configuration surfaces
+
+Settings-style screens are built from shared blocks.
+
+- `SettingsSection` — a **controlled disclosure**. Icon, title, description, optional status, chevron rotates on open.
+- `SettingRow` — label + description + control. Wraps below when space runs out.
+- `ChoiceGroup` — segmented single-select with **radio semantics**.
+- `SettingsStack` — vertical rhythm between sections.
+
+Rules:
+
+1. **Never use `<details>`/`<summary>`.** Its marker must be hidden to match the design.
+2. Expanded state must be readable from the **header alone** — `aria-expanded` plus a rotating chevron.
+3. `aria-controls` must link every trigger to its panel.
+4. One section open at a time keeps long settings pages scannable.
+5. A single choice uses **radio semantics**, not pressed toggle buttons.
+6. Never place a status value in prose next to a control that changes it.
+7. Admin-only sections are hidden entirely from users who lack the permission.
+
+---
+
+## 14. Adaptive and bulletproof
+
+Every screen must survive any viewport, any content length, and any language. Non-negotiable:
+
+1. **Nothing may exceed the viewport.** Cap against `dvh`/`dvw` before applying any fixed size.
+2. **`dvh` over `vh`.** Always.
+3. **Every flex/grid child that scrolls needs `min-width: 0` / `min-height: 0`.**
+4. **Rows wrap, they do not overflow.** Use `flex-wrap: wrap` with a shrinkable text column.
+5. **Content-driven columns.** `repeat(auto-fit, minmax(200px, 1fr))` rather than a fixed count.
+6. **Long strings must not break layout.** Use `overflow-wrap: anywhere` or truncate with a title.
+7. **Test the extremes**: 320px wide, 560px tall, 4K, 200% zoom, and RTL (which often runs longer than LTR).
+8. **Never assume pointer type.** Coarse pointers get 48px targets automatically.
+9. **One scroll container per region.** Nested scrollers trap users.
+10. **No fixed heights on content.** Use `min-height` and let content breathe.
+
+---
+
+## 15. Layout correctness traps
+
+These are not style preferences. Each one commonly ships defects, and each is enforced by a test.
+
+### 15.1 `flex-basis` follows the main axis
+
+```css
+/* A row: basis is a WIDTH. Correct. */
+.row        { display: flex; }
+.row__text  { flex: 1 1 220px; }
+
+/* The same element in a column: basis is now a HEIGHT.
+   This silently reserves 220px of vertical space. */
+.row--stacked { flex-direction: column; }
+```
+
+**Any rule that changes `flex-direction` must reset a basis set for the other axis.**
+
+```css
+.row--stacked .row__text { flex: 0 0 auto; }
+```
+
+**When a gap looks wrong, inspect the box model before tuning a token.**
+
+### 15.2 A narrower flex child does not centre itself
+
+A flex child with a `max-width` smaller than its parent aligns to the **start**. Capped content columns need `margin-inline: auto` — the logical property, so RTL stays correct.
+
+### 15.3 Content must never sit flush against a clipped edge
+
+`overflow: hidden` clips at the **border box**. A focus ring drawn with `outline-offset` lives outside that box, so a control touching the edge loses part of its ring.
+
+Any clipping scroll container needs a small inline padding, and controls inside it must be width-capped (§2.3) rather than stretched to the boundary.
+
+### 15.4 Checklist for any new layout
+
+- [ ] Does any rule flip `flex-direction`? If so, is the basis reset?
+- [ ] Is a capped-width column centred with `margin-inline: auto`?
+- [ ] Does anything sit flush against a clipping edge?
+- [ ] Do toolbar controls have capped widths, or do they stretch?
+- [ ] Does the row wrap instead of overflowing at 320px?
+
+---
+
+## 16. Build & deployment safety
+
+The CI/CD pipeline builds from a subset of the repository, so code that compiles locally can still fail the deploy.
+
+Rules:
+
+1. **An app may only import from inside its own directory.** `src/app` cannot import from `design/`, `docs/`, or `src/api` if those paths are not copied into its build stage.
+2. **Repository-level checks live in `scripts/checks/`**, never inside a deployable app.
+3. **The gate script (e.g., `./scripts/verify.sh`) runs:** app test suites, token snapshots, build context validation, and simulated Docker/CI builds.
+4. **Never push without a green gate script.** A passing app test suite alone does not prove the build will succeed.
+5. When the build system's `COPY` or include list changes, update the context validation script in the same commit.
+
+---
+
+## 17. Definition of done for any UI work
+
+- [ ] Every spacing, size, radius, weight and font-size comes from a token in §2.
+- [ ] The page mounts inside the main content slot and adds no outer width or margin.
+- [ ] The page title is not duplicated inside the content area.
+- [ ] Loading, empty, error and no-permission states all exist and are user-facing.
+- [ ] No banned wording (§5) and no internal identifiers are visible.
+- [ ] Reviewed in RTL; logical properties used throughout.
+- [ ] Smallest interactive target ≥ 24px; verified at `pointer: coarse`.
+- [ ] Keyboard path and focus ring verified.
+- [ ] No second full-page scroll container; any new scroll region has an overflow affordance.
+- [ ] Dialogs fit the screen and never clip their actions.
+- [ ] Semantic colour carries meaning only.
+- [ ] Search and filters come from the shared `SearchField`/`FilterBar` components.
+- [ ] Toolbar control widths are capped and hint at the expected input (§2.3).
+- [ ] No rule flips `flex-direction` while leaving a basis set for the other axis (§15.1).
+- [ ] Capped-width columns are centred with `margin-inline: auto` (§15.2).
+- [ ] Nothing sits flush against a clipping scroll edge (§15.3).
+- [ ] Every window comes from `Overlay`/`FormDialog`/`ConfirmDialog`; none is hand-rolled.
+- [ ] Window actions are in the footer and reachable at 560px viewport height.
+- [ ] Configuration UI uses `SettingsSection`/`SettingRow`/`ChoiceGroup`.
+- [ ] Verified at 320px wide and 560px tall with nothing clipped or overflowing.
+- [ ] Nothing new was built that already exists in the block table (§11).
+- [ ] No import escapes the app directory into design/ docs/ or another app.
+- [ ] The gate script (e.g., `./scripts/verify.sh`) passes in full, including the deployment checks (§16).
