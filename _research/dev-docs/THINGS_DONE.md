@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-10-03 14:05 — three defects found by looking at the running product (seed money, shell grid, thread order)
+
+- **How they were found:** opening the app in a browser and reading the screen, not reviewing code.
+  Each is now fixed and locked by a check that fails without the fix.
+- **1 — the meters read $0.00 of $40.00.** (Already logged above; repeated here with its siblings
+  because they were found the same way.) The seed wrote `spent_monthly_cents` directly instead of
+  moving money through the ledger, which is what `budgetState` reads. The seed now records six runs
+  through `recordRun` ($12.50 / $8.20 / $18.90) plus one failed run for Zara's error state;
+  `packages/company/test/money.test.ts` (own file, own database) locks it, and the browser smoke
+  test asserts the rendered meter reads `$12.50`.
+- **2 — the top bar was stretched into a 540px empty band.** The shell's grid declared columns but no
+  rows, so the sidebar's full height — not the top bar's content — decided the first row's height.
+  Fixed with explicit rows (`auto 1fr auto`) and `grid-row: 1 / 3` on the sidebar; the mobile
+  breakpoint re-places all four items. Evidence: `_research/screenshots/p0-*.png` (before/after).
+- **3 — "the last message in a thread" was a coin flip.** The seeded messages shared one timestamp
+  and the query had no tiebreak, so Postgres could return either as "last". The seed gives the two
+  messages distinct times, and both `listThreads` queries order by `id` as the tiebreaker.
+- **Also:** `scripts/verify.sh` now refuses to start while an API holds port 8787, with the reason
+  printed in plain words — two PostgreSQL instances exhaust this machine's memory and the failure it
+  causes looks like an unrelated test crash. The e2e already runs on its own ports (8790/4174).
+- **Validation:** `bash scripts/verify.sh` → **passed 9 · failed 0 · skipped 0** (51 tests, 9 GUI
+  tests, 16 browser checks, the designer's 11). Live app: six views, meters $12.50/$8.20/$18.90,
+  no console errors, top bar 66px — the token `--control + --s8`.
+- **Note on the machine:** the development API must be stopped while the gate runs. The guard makes
+  this explicit instead of leaving a mysterious worker crash.
+- **Commit:** `4bb8a8c` (local; no push — the session has no repository credentials).
+
+---
+
 ## 2026-10-03 13:35 — P0 built end to end: the workspace runs as one product, the GUI is real, and the gate is green
 
 - **Task (user):** "start first phase … make sure everything is suitable to work together and work
