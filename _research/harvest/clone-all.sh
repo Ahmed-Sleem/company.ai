@@ -104,3 +104,42 @@ git clone --depth 1 https://github.com/e2b-dev/E2B e2b
 git clone --depth 1 https://github.com/microsandbox/microsandbox microsandbox
 git clone --depth 1 https://github.com/a2aproject/A2A a2a
 git clone --depth 1 https://github.com/modelcontextprotocol/modelcontextprotocol mcp
+
+# --------------------------------------------------------------------------------------------
+# v3 additions (2026-10-03) — from _research/24-mix-and-match-inventory.md
+# Every owner/repo below was resolved against the GitHub API and its licence verified by
+# _research/tools/harvest-scan.py. The "read-only" list at the bottom is FORBIDDEN for code.
+# --------------------------------------------------------------------------------------------
+# --- decision inbox donors (the product's soul) ---
+git clone --depth 1 https://github.com/sekera-radim/impri impri          # MIT  approval inbox semantics
+git clone --depth 1 https://github.com/agentkitai/agentgate agentgate    # MIT  policy precedence + budget guard
+# --- board + UI patterns ---
+git clone --depth 1 https://github.com/shadcnblocks/kibo kibo            # MIT  kanban/gantt/editor + data-state patterns
+git clone --depth 1 https://github.com/janhesters/shadcn-kanban-board kanban-a11y  # MIT  screen-reader announcements
+git clone --depth 1 https://github.com/usekaneo/kaneo kaneo              # MIT  a modern project-management board
+git clone --depth 1 https://github.com/Georgegriff/react-dnd-kit-tailwind-shadcn-ui kanban-dnd-kit  # MIT
+git clone --depth 1 https://github.com/BloopAI/vibe-kanban vibe-kanban   # Apache-2.0  agent-run-per-card UX
+# --- roles/agents as content ---
+git clone --depth 1 https://github.com/markfulton/ai-employees ai-employees  # MIT  8 AI employees, plain-text roles
+# --- chat product references ---
+git clone --depth 1 https://github.com/danny-avila/LibreChat librechat    # MIT  model selector, spend fields, agents
+git clone --depth 1 https://github.com/vercel/streamdown streamdown      # verify package licence at adoption
+# --- graph tooling beyond doc 22 ---
+git clone --depth 1 https://github.com/graphology/graphology graphology   # MIT  metrics (centrality, communities)
+git clone --depth 1 https://github.com/jacomyal/sigma.js sigma.js         # MIT  WebGL renderer for large graphs
+# --- protocols ---
+git clone --depth 1 https://github.com/ag-ui-protocol/ag-ui ag-ui         # MIT  agent<->frontend event stream
+# --- the discovery index (re-scan quarterly) ---
+git clone --depth 1 https://github.com/Agent-Analytics/awesome-multi-agent-orchestrators awesome-orchestrators
+
+echo
+echo "=== v3 FORBIDDEN (verified 2026-10-03; ideas only, never code) ==="
+cat <<'BLOCKED'
+  AGPL-3.0 : makeplane/plane, minio/minio, plausible/analytics, origin-space/originui,
+             permify/permify, zitadel/zitadel, RedPlanetHQ/tegon
+  GPL-3.0  : typesense/typesense
+  MPL/EPL  : TypeCellOS/BlockNote (MPL), hcengineering/platform (EPL) — unmodified separate files only
+  own terms: tldraw, open-webui, n8n (fair-code)
+  NO LICENCE (all rights reserved): daytonaio/daytona, rakshit087/obsidian-graph-react,
+             paperclipai/companies
+BLOCKED

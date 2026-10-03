@@ -1,0 +1,25 @@
+# Licence anomalies — the list that must stay empty of surprises
+
+- **Agent-Analytics/awesome-multi-agent-orchestrators** — unknown (no licence file found — all rights reserved by default) · planned status: reference
+- **RedPlanetHQ/tegon** — copyleft (AGPL-3.0) · planned status: blocked
+- **TypeCellOS/BlockNote** — weak-copyleft (MPL-2.0 (from LICENSE text)) · planned status: reference
+- **daytonaio/daytona** — unknown (no licence file found — all rights reserved by default) · planned status: blocked
+- **dequelabs/axe-core** — weak-copyleft (MPL-2.0) · planned status: take
+- **formatjs/formatjs** — unknown (no licence file found — all rights reserved by default) · planned status: reference
+- **google/fonts** — unknown (no licence file found — all rights reserved by default) · planned status: take
+- **hcengineering/platform** — weak-copyleft (EPL-2.0) · planned status: reference
+- **makeplane/plane** — copyleft (AGPL-3.0) · planned status: blocked
+- **microsoft/autogen** — unknown (no licence file found — all rights reserved by default) · planned status: take
+- **minio/minio** — copyleft (AGPL-3.0) · planned status: blocked
+- **n8n-io/n8n** — unknown (unrecognised licence text: # license portions of this software are licensed as follows: - content of branches other t…) · planned status: blocked
+- **open-webui/open-webui** — unknown (unrecognised licence text: open webui license copyright (c) 2023- open webui inc. [created by timothy jaeryang baek] …) · planned status: blocked
+- **origin-space/originui** — copyleft (AGPL-3.0) · planned status: blocked
+- **paperclipai/companies** — unknown (no licence file found — all rights reserved by default) · planned status: blocked
+- **permify/permify** — copyleft (AGPL-3.0) · planned status: blocked
+- **pgvector/pgvector** — unknown (unrecognised licence text: portions copyright (c) 1996-2026, postgresql global development group portions copyright (…) · planned status: take
+- **plausible/analytics** — copyleft (AGPL-3.0) · planned status: blocked
+- **rakshit087/obsidian-graph-react** — unknown (no licence file found — all rights reserved by default) · planned status: blocked
+- **tldraw/tldraw** — unknown (unrecognised licence text: # tldraw license this license from tldraw, inc. (“tldraw”) governs your use of the accompa…) · planned status: blocked
+- **typesense/typesense** — copyleft (GPL-3.0) · planned status: blocked
+- **weaviate/weaviate** — unknown (unrecognised licence text: source code in this repository is variously licensed under the bsd-3-clause license, or th…) · planned status: reference
+- **zitadel/zitadel** — copyleft (AGPL-3.0) · planned status: blocked

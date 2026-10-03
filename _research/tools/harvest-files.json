@@ -1,0 +1,81 @@
+{
+  "_comment": "Manifest for `harvest-scan.py fetch` — the exact files worth reading in each donor repo. Every entry was resolved against the live repository on 2026-10-03; the scan re-checks it. Nothing here is copied into the product — files land in ~/harvest/scan/fetched for reading.",
+  "files": {
+    "xyflow/xyflow": [
+      "packages/system/src/utils/graph.ts",
+      "packages/react/src/components/A11yDescriptions/index.tsx",
+      "packages/react/src/container/GraphView/index.tsx"
+    ],
+    "danny-avila/LibreChat": [
+      "packages/data-schemas/src/methods/spendTokens.ts",
+      "client/src/Providers/MessagesViewContext.tsx",
+      "client/src/common/agents-types.ts"
+    ],
+    "assistant-ui/assistant-ui": [
+      "packages/react-google-adk/src/adkToolApproval.ts"
+    ],
+    "langchain-ai/langgraphjs": [
+      "libs/langgraph-core/src/interrupt.ts"
+    ],
+    "BerriAI/litellm": [
+      "litellm/proxy/spend_tracking/carried_budget_state.py",
+      "litellm/proxy/auth/budget_throttle.py",
+      "litellm/proxy/middleware/budget_reservation_release_middleware.py"
+    ],
+    "sekera-radim/impri": [
+      "server/src/interactive-decision.ts",
+      "ui/src/components/DecisionDialog.vue",
+      "ui/src/composables/useKeyboardNav.ts"
+    ],
+    "agentkitai/agentgate": [
+      "packages/server/src/lib/request-decision.ts",
+      "packages/server/src/lib/agent-budget.ts",
+      "packages/server/src/lib/agent-spend.ts",
+      "packages/server/src/lib/agents.ts"
+    ],
+    "janhesters/shadcn-kanban-board": [
+      "registry/new-york/ui/kanban.tsx"
+    ],
+    "shadcnblocks/kibo": [
+      "packages/kanban/index.tsx",
+      "packages/patterns/empty/standard/empty-standard-1.tsx",
+      "packages/patterns/alert/error/alert-error-1.tsx",
+      "packages/patterns/skeleton/list/skeleton-list-1.tsx"
+    ],
+    "markfulton/ai-employees": [
+      "AGENTS.md",
+      "employees/chief-of-staff/AGENTS.md",
+      "employees/sales-employee/work-profile.json"
+    ],
+    "paperclipai/paperclip": [
+      "packages/db/src/schema/agents.ts"
+    ],
+    "better-auth/better-auth": [
+      "packages/better-auth/src/plugins/organization/access/statement.ts"
+    ],
+    "d3/d3-force": [
+      "src/simulation.js",
+      "src/index.js"
+    ],
+    "obsidianmd/jsoncanvas": [
+      "README.md"
+    ],
+    "ag-ui-protocol/ag-ui": [
+      "sdks/typescript/packages/core/src/token-usage.ts",
+      "sdks/typescript/packages/core/src/index.ts"
+    ],
+    "dagrejs/dagre": [
+      "lib/layout.ts"
+    ],
+    "getzep/graphiti": [
+      "graphiti_core/search/search_config_recipes.py"
+    ],
+    "e2b-dev/E2B": [
+      "packages/js-sdk/src/index.ts",
+      "packages/js-sdk/src/sandbox/index.ts"
+    ],
+    "usekaneo/kaneo": [
+      "apps/web/src/components/kanban-board/index.tsx"
+    ]
+  }
+}

@@ -3,6 +3,8 @@ node_modules/
 dist/
 build/
 coverage/
+__pycache__/
+*.pyc
 *.log
 .DS_Store
 # generated checkpoints live in the workspace but never in git:

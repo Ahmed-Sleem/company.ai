@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-10-03 13:05 — the deep mix-and-match sweep: 177 repositories licence-verified, donor files read, four plans corrected
+
+- **Task (user answer, 2026-10-03):** before P0 — *"search deeply and extensively… a lot of GitHub repos have ready-made code; instead of creating this project from scratch we can collect, mix and match, adapt, edit and merge code all over, to be faster and more accurate"*. Also answered C3 (OpenAI + Anthropic + one cheap open lane *and* "there are pre-made gateways we can use directly") and C5 (hard caps), D1 (full thread + digest + decisions-only filter).
+- **Deliverable:** `_research/24-mix-and-match-inventory.md` — the file-level plan: **which file from which repo**, per screen (Team, Tasks, Inbox, Conversations, Network, Settings) and per layer (gateway, orchestration, memory, sandbox, durability, i18n, testing), with mode (depend / vendor / port / reference) and what must change before it is ours.
+- **Tooling (new, reproducible):** `_research/tools/harvest-scan.py` (stages `meta` / `trees` / `fetch` / `report`) + `_research/tools/harvest-files.json` (19 repos, 38 donor files). Raw evidence committed at `_research/data/harvest-scan-2026-10-03.json|md` and `…-licence-anomalies…md`; the per-repo file trees stay outside the repo in `~/harvest/scan/`.
+- **Scan result:** **177 repositories** checked; **152** are both planned for use and permissively licensed; **23** licence anomalies found and re-classified. Fixed two real bugs in the checker while doing it (MPL-2.0 text was misread as GPL because MPL cites the GPL; five guessed owner names resolved via the API instead of trusting the notes).
+- **Four "obvious picks" turned out to be forbidden — discovered mechanically:** `origin-space/originui`, `permify/permify`, `zitadel/zitadel`, `RedPlanetHQ/tegon` are **AGPL**, and `rakshit087/obsidian-graph-react` has **no licence file**. All re-classified to `blocked`. Consequence: the Network view stays exactly as doc `22` planned (xyflow + d3-force + dagre + jsoncanvas + our own spacing system) — the deliberate lockdown held under pressure, which is the best possible result of a scan.
+- **New, permissive donors found and read (files fetched, not just linked):**
+  - `sekera-radim/impri` (MIT) `server/src/interactive-decision.ts` — idempotent decision commit returning `ok` / `already_decided` / `concurrent`, plus the `decided_by` (machine id) vs `audit_log.actor` (human label) split → our Inbox audit discipline.
+  - `agentkitai/agentgate` (MIT) `lib/request-decision.ts` — pure, unit-testable decision precedence (budget → eval → override → policy → pending) → our Review-Gate rules. Its `agent-budget.ts` documents that its guard is **soft and fails open because it is not in the completion path** — ours is, so the owner's hard caps are genuinely enforceable.
+  - `paperclipai/paperclip` (MIT) `packages/db/src/schema/agents.ts` — the verified column shape for the agent/employee table (self-referencing `reportsTo`, monthly budget/spend in cents, status, capabilities, permissions, heartbeat, indexes) → our P0 schema.
+  - `janhesters/shadcn-kanban-board` (MIT) `registry/new-york/ui/kanban.tsx` — the screen-reader announcement layer (aria-live region, per-event announcements) our board must carry.
+  - `danny-avila/LibreChat` (MIT) `packages/data-schemas/src/methods/spendTokens.ts` — ledger fields (`tokenType` prompt/completion, model, per-model price map).
+  - `markfulton/ai-employees` (MIT) — eight employee definitions as plain text, incl. the discipline: `SCHEDULE.md` is the single home for every clock time and budget, and *"it never invents a number; every figure carries the file or screen it was read from and the date"*.
+  - `langchain-ai/langgraphjs` (MIT) `interrupt.ts` — verified HITL semantics (`interrupt(value, {responseSchema})` + `Command({resume})`, Zod-validated resume) — our Review Gate.
+  - `shadcnblocks/kibo` (MIT) — the four data states ship as tiny pattern files (empty/error/skeleton).
+  - `d3/d3-force`, `xyflow`, `better-auth` (org statements verified), `graphiti`, `E2B`, `dagre`, `kaneo`, `ag-ui` — files fetched and read.
+- **Gateway answer (C3's second half):** LiteLLM (MIT) stays primary — its `budget_throttle.py` shows over-budget keys are **hard-blocked by default** (throttling is opt-in), matching the owner's C5 choice. Bifrost (Apache-2.0, Go) recorded as the latency swap; Helicone (Apache-2.0) and Portkey (MIT core) as references; OpenRouter as a hosted fallback.
+- **New root file:** `THIRD_PARTY.md` — the licence ledger (policy table + planned dependencies per phase + ported-code provenance + the forbidden list). The P0 CI licence gate will enforce it. Also added `__pycache__/` + `*.pyc` to `.gitignore` for the new Python tooling, and restored `design/designer-demo/install.sh`'s executable bit (a stray mode change from an earlier copy, not a content change).
+- **Plan delta (no stack change):** P0 schema follows the verified paperclip shape; P1 board takes kibo primitives + the a11y announcement layer; P1 inbox takes the two approval donors' semantics; P2 message parts follow assistant-ui's approval model and ledger rows follow LibreChat's fields; P1 agent roles seeded from the ai-employees discipline. Phases, design and stack unchanged.
+- **Validation:** `node design/prototype/verify.mjs` → **11/11** (unchanged, run after the edits); the scan itself is reproducible with the four commands in §24.9 of the document; the committed evidence JSON carries the scan timestamp and all 177 verdicts.
+- **Still unscanned (named in §24.11):** file-level pass on ~25 further repos (xyflow examples, tremor panels, kaneo server routes, vibe-kanban run UI, graphology metrics, style-dictionary transforms, ag-ui events), the MCP connector set (P5), and a dedicated Arabic-first UI scan.
+
+---
+
 ## 2026-10-03 05:30 — PUBLISHED: the browser-verified prototype and the 12-shot gallery are on `main` (PR #3 merged) + the study report is written
 
 - **Task (user):** continue the same instruction — the browser pass and the gallery must end up in `main`, latest version, and the study/comprehension report is owed to the owner.

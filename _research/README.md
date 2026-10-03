@@ -30,9 +30,11 @@
 | `20-model-and-agent-lifecycle.md` | **Model lifecycle, model-to-model conversations, context management** — registry/pinning/deprecation, gateways, A2A, compaction research (cited) | Yes |
 | `21-questions-and-decisions.md` | **Decision log**: every open question explained with options, a recommendation and a status; answers recorded inline | Yes |
 | `22-harvest-deep-scan.md` | **Deep harvest scan**: everything usable on GitHub, layer by layer, with licences and the one-stack decision; how to merge/adapt without a Frankenstein | Yes |
+| `24-mix-and-match-inventory.md` | **The file-level mix-and-match plan**: 177 repos scanned and licence-verified, the exact donor files per screen (Team, Tasks, Inbox, Conversations, Network, Settings), the gateway answer with evidence, the anomaly list that changed four plans, and the merge discipline | Yes |
 | `23-publish-guide.md` | **How `main` gets updated**: plain-language guide (new session does it, or click-by-click in the browser) | Yes |
 | `dev-docs/` | Development documentation set required by the rules: plan, map, append-only done log, supporting notes, index | Yes |
 | `harvest/clone-all.sh` | Script that clones every reusable repo **outside** the git repo | Yes |
+| `tools/harvest-scan.py` + `tools/harvest-files.json` | The reproducible sweep: metadata + licence verification (177 repos), file trees, and the download of the exact donor files for reading | Yes |
 | `designer-brief.md` | **The hand-off file for the designer** — elements only, no structure, reserved network area | Yes |
 | `data/github-snapshot-2026-10-02.json` | Raw GitHub API evidence (reproducible) | Yes |
 | `data/competitors.csv` | Same data, spreadsheet-friendly | Yes |
