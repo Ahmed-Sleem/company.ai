@@ -1,4 +1,13 @@
-# 12 — The user's rule documents (CONTENT NOT RECEIVED YET)
+# 12 — The user's rule documents (RECEIVED 2026-10-03)
+
+**Status: RESOLVED — the rules arrived on 2026-10-03** (repo upload commit `4380202`).
+They now live in one place: `_research/rules/` — see `rules/README.md` for the classification
+(mandatory vs project-adaptable) and for how each rule combines with the locked pixel style.
+The root of the repository holds no rule files.
+
+---
+
+_Original tracking note, kept for history:_
 
 **Status: BLOCKED — the five attached files never arrived in the sandbox.**
 

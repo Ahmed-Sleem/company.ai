@@ -1,0 +1,59 @@
+/* =====================================================================================
+   Prototype changes vs the designer's demo — one block per review item.
+   -------------------------------------------------------------------------------------
+   Nothing here restyles the designer's work: it fixes the small issues recorded in
+   _research/17-demo-review.md (E2, E3, E7) and styles the blocks the prototype adds
+   (A2 task facts, A3 inbox reason, A6 global create). Tokens only — the few values that
+   are genuinely local are declared once in the block above. Loaded after the demo's own
+   styles, so these rules win where they overlap.
+   ===================================================================================== */
+:root{
+  --pg-hair:1px;
+  --pg-sr:1px;
+  --pg-min-card:220px;
+  --pg-min-card-narrow:200px;
+  --pg-min-roster-card:260px;
+}
+
+/* --- utilities the demo does not ship -------------------------------------------------- */
+.sr-only{position:absolute;width:var(--pg-sr);height:var(--pg-sr);padding:0;margin:calc(var(--pg-sr) * -1);
+  overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* --- E3: cards keep a usable minimum width before the next breakpoint ------------------ */
+/* Content-driven columns instead of a fixed count: the roster and the board stop
+   squeezing before they get too narrow, at every width from 801px up. */
+@media(min-width:801px){
+  .roster{grid-template-columns:repeat(auto-fill,minmax(var(--pg-min-roster-card),1fr))}
+  .board{grid-template-columns:repeat(auto-fit,minmax(var(--pg-min-card),1fr))}
+}
+
+/* --- E2: the four fixed stages stay; at 801–1190px a slightly narrower card reads better */
+/* (covered by the auto-fit rule above — this keeps the intent documented and greppable) */
+@media(min-width:801px) and (max-width:1190px){
+  .board{grid-template-columns:repeat(auto-fit,minmax(var(--pg-min-card-narrow),1fr))}
+}
+
+/* --- E7: never use the borderline --dim for text that carries meaning ------------------ */
+#g-root .dim,.g-reason .dim{color:var(--muted)}
+#g-root .g-hint{color:var(--muted)}
+
+/* --- A2: the AI facts on a task card --------------------------------------------------- */
+.g-facts{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s2);
+  padding-top:var(--s2);border-top:var(--pg-hair) solid var(--soft);align-items:center}
+.g-facts .task-id{color:var(--muted)}
+.g-facts>span{display:inline-flex;align-items:center;min-width:0}
+
+/* --- A3: the reason block in the decision inbox ---------------------------------------- */
+.g-reason{margin-top:var(--s3);padding-top:var(--s3);border-top:var(--pg-hair) solid var(--soft);
+  color:var(--muted);overflow-wrap:anywhere}
+.g-reason .spaced{margin-top:var(--s1)}
+.queue-summary .btn{margin-inline-start:var(--s3)}
+
+/* --- A6: the global create action in the topbar ---------------------------------------- */
+#g-new{flex-shrink:0}
+@media(pointer:coarse){#g-new{min-width:var(--touch)}}
+
+/* --- the graph page shares the demo's panels; keep its own toolbar controls compact ---- */
+#g-root .toolbar>*{flex-shrink:0}
+#g-root .segmented button{white-space:nowrap}
+@media(max-width:540px){#g-root .toolbar{gap:var(--s2)}#g-root .segmented{flex-wrap:wrap}}

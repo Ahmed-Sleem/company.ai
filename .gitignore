@@ -1,0 +1,16 @@
+# build/run artifacts (the product phases will add more)
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+# generated checkpoints live in the workspace but never in git:
+_research/checkpoints/
+
+# delivery helpers — never committed (the download page and the snapshot zip):
+design/download/
+design/index.html
+
+# the served short-path copy (the tracked snapshot lives in _research/snapshots/):
+design/dl.zip

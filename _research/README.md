@@ -23,11 +23,20 @@
 | `12-user-rules-received.md` | ⚠️ Status of the user's 5 rule documents (content not yet received) | Yes |
 | `14-obsidian-graph-and-canvas.md` | **How Obsidian does it** (d3-force + PixiJS, JSON Canvas) + library shortlist + our mapping | Yes |
 | `15-code-harvest-plan.md` | **Reuse plan**: what to download, licences, merge workflow, target monorepo layout | Yes |
+| `16-demo-review-pending.md` | Demo-review checklist (now resolved) + record of delivery routes when uploads fail | Yes |
+| `17-demo-review.md` | **Review of the designer's demo** — verdict, verified inventory, style spec, keep/edit/add/remove change request, verification log | Yes |
+| `18-changes-implemented.md` | **What was implemented now** — item-by-item status, the network view, verification + observed-failure evidence, rules compliance | Yes |
+| `19-plan-what-remains.md` | **The plan**: publish path, what is left, which code we take from where and how it is adapted, phases, next actions | Yes |
+| `20-model-and-agent-lifecycle.md` | **Model lifecycle, model-to-model conversations, context management** — registry/pinning/deprecation, gateways, A2A, compaction research (cited) | Yes |
+| `21-questions-and-decisions.md` | **Decision log**: every open question explained with options, a recommendation and a status; answers recorded inline | Yes |
+| `22-harvest-deep-scan.md` | **Deep harvest scan**: everything usable on GitHub, layer by layer, with licences and the one-stack decision; how to merge/adapt without a Frankenstein | Yes |
+| `23-publish-guide.md` | **How `main` gets updated**: plain-language guide (new session does it, or click-by-click in the browser) | Yes |
+| `dev-docs/` | Development documentation set required by the rules: plan, map, append-only done log, supporting notes, index | Yes |
 | `harvest/clone-all.sh` | Script that clones every reusable repo **outside** the git repo | Yes |
 | `designer-brief.md` | **The hand-off file for the designer** — elements only, no structure, reserved network area | Yes |
 | `data/github-snapshot-2026-10-02.json` | Raw GitHub API evidence (reproducible) | Yes |
 | `data/competitors.csv` | Same data, spreadsheet-friendly | Yes |
-| `rules/` | **User-supplied mandatory rules** (agent rules, coding rules, design rules) — mirrors of canonical root files | Root canonical files stay; mirrors archive with this folder |
+| `rules/` | **The four mandatory rule documents** (GUI standard, UI governance contract, design system, development requirements) + how they combine with the pixel style. Single home — not duplicated at the root | Yes |
 
 ## Rules
 
