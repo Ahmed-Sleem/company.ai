@@ -1,0 +1,172 @@
+/* =====================================================================================
+   Network view — Company OS prototype
+   Styling for graph.js. Tokens only: every value comes from
+   design/tokens/company-os-pixel.css or from the --g-* tokens declared here (one
+   definition per value, so a change is one edit). No raw colours, no raw lengths in the
+   rules below. RTL-safe: logical properties only, no left/right.
+   ===================================================================================== */
+:root{
+  /* --- geometry read by graph.js (one definition per value) --------------------------- */
+  --g-you-r:30;                /* the operator node */
+  --g-person-r:27;
+  --g-task-r:14;
+  --g-thread-r:18;
+  --g-hit-pad:8;               /* invisible hit area around a node */
+  --g-label-gap:13;            /* label baseline below a node */
+  /* label bands: a node's footprint includes the space its label needs, so a label can
+     never land on another node and no node can land on a label */
+  --g-label-reserve-person:16;
+  --g-label-reserve-task:13;
+  --g-label-reserve-thread:15;
+  --g-dept-gap:26;             /* clear space between two department hulls */
+  --g-ring-min-arc:88;         /* minimum arc between two nodes on the same ring */
+  --g-pack-iters:90;           /* separation passes once the simulation settles */
+  --g-label-max:18;            /* characters before a node label is shortened */
+  --g-hull-label-max:14;
+  --g-arrow:5;                 /* reporting arrow head */
+  --g-link:74;                 /* spring length: reports-to */
+  --g-link-task:52;            /* spring length: works-on */
+  --g-link-member-extra:26;    /* extra length for conversation links */
+  --g-repel:5200;              /* repulsion strength */
+  --g-gap:10;                  /* collision gap */
+  --g-max-v:14;                /* velocity cap */
+  --g-damp:.86;
+  --g-zoom-min:.45;
+  --g-zoom-max:2.2;
+  --g-fit-pad:28;   /* even margin around the fitted graph */
+  --g-hull-pad:16;
+  --g-hull-label-gap:5;
+  --g-ring-gap:130;            /* Rings layout: distance between reporting levels */
+  --g-ring-offset:44;          /* Rings layout: tasks/threads sit outside their ring */
+  --g-ring-flat:.66;           /* vertical squash of the rings */
+  --g-max-depth:8;             /* deepest ring drawn; guards cycles in edited org charts */
+  --g-seed-person:170;         /* deterministic start radius before the simulation runs */
+  --g-seed-thread:300;
+  --g-seed-task:370;
+  --g-alpha:.6;
+  --g-decay:.976;              /* per-frame cooling; the loop stops when it settles */
+  /* --- presentational tokens used in the rules below ---------------------------------- */
+  --g-hair:1px;
+  --g-stroke:2px;
+  --g-stroke-hi:3px;
+  --g-stroke-thick:4px;
+  --g-edge:2px;
+  --g-dash-tight:3px 4px;
+  --g-dim-opacity:.22;
+  --g-hull-opacity:.55;
+  --g-hull-radius:0;
+  --g-swatch:10px;
+  --g-swatch-line:16px;
+  --g-letter:.6px;
+  --g-side-w:300px;
+  --g-canvas-min:440px;
+  --g-canvas-vh:62dvh;
+  --g-canvas-max:760px;
+}
+
+/* ---- shell --------------------------------------------------------------------------- */
+.g-wrap{display:grid;grid-template-columns:minmax(0,1fr) var(--g-side-w);gap:var(--s4);align-items:start}
+@media(max-width:1190px){.g-wrap{grid-template-columns:minmax(0,1fr)}}
+.g-stage{position:relative;display:flex;flex-direction:column;border:var(--g-hair) solid var(--line);
+  background:var(--surface);border-radius:var(--radius);overflow:hidden}
+.g-canvas{display:block;width:100%;flex:1 1 auto;height:clamp(var(--g-canvas-min),var(--g-canvas-vh),var(--g-canvas-max));background:var(--surface);
+  touch-action:none;cursor:grab;outline:none}
+.g-canvas:focus-visible{outline:var(--ring);outline-offset:calc(var(--g-stroke) * -1)}
+.g-canvas[data-panning=true]{cursor:grabbing}
+
+/* ---- edges --------------------------------------------------------------------------- */
+.g-edge{stroke:var(--line);stroke-width:var(--g-edge);fill:none;stroke-linecap:round}
+.g-edge[data-kind=owns]{stroke-width:var(--g-hair);stroke-dasharray:var(--g-dash-tight);stroke:var(--dim)}
+.g-edge[data-kind=member]{stroke-width:var(--g-hair);stroke:var(--soft)}
+.g-edge[data-kind=reports]{stroke:var(--line)}
+.g-edge[data-dim=true]{opacity:var(--g-dim-opacity)}
+.g-edge[data-hi=true]{stroke:var(--accent)}
+.g-arrow{fill:var(--line)}
+.g-arrow[data-hi=true]{fill:var(--accent)}
+
+/* ---- hulls (departments) -------------------------------------------------------------- */
+.g-hull{fill:var(--raised);stroke:var(--soft);stroke-width:var(--g-hair);opacity:var(--g-hull-opacity)}
+.g-hull-label{fill:var(--muted);font:var(--xs) var(--font);letter-spacing:var(--g-letter)}
+[dir=rtl] .g-hull-label{letter-spacing:0}
+
+/* ---- nodes ---------------------------------------------------------------------------- */
+.g-node{cursor:pointer;color:var(--text)}
+.g-node .g-hit{fill:transparent}
+.g-node .g-body{fill:var(--raised);stroke:var(--line);stroke-width:var(--g-stroke)}
+.g-node[data-kind=task] .g-body{fill:var(--surface)}
+.g-node[data-kind=thread] .g-body{fill:var(--surface);stroke:var(--soft)}
+.g-node[data-selected=true] .g-body{stroke:var(--accent);stroke-width:var(--g-stroke-hi)}
+.g-node[data-dim=true]{opacity:var(--g-dim-opacity)}
+.g-node[data-hi=true] .g-body{stroke:var(--accent)}
+.g-node .g-avatar{shape-rendering:crispEdges;fill:currentColor}
+.g-node .g-label{fill:var(--text);font:var(--xs) var(--font);text-anchor:middle;direction:inherit;pointer-events:none}
+.g-node[data-dim=true] .g-label{fill:var(--dim)}
+
+/* status = ring colour + shape + a label in the side panel and the legend.
+   Colour is never the only signal (contract §9, §10). */
+.g-node .g-status{fill:none;stroke-width:var(--g-stroke)}
+.g-node[data-status=working] .g-status,
+.g-node[data-status=sent] .g-status{stroke:var(--accent)}
+.g-node[data-status=idle] .g-status{stroke:var(--line)}
+.g-node[data-status=paused] .g-status{stroke:var(--warning)}
+.g-node[data-status=error] .g-status{stroke:var(--danger)}
+.g-node[data-status=you] .g-status{stroke:var(--blue)}
+/* tasks: the stage is carried by the border colour and the stage mark */
+.g-node[data-stage=backlog] .g-body{stroke:var(--dim)}
+.g-node[data-stage=progress] .g-body{stroke:var(--accent)}
+.g-node[data-stage=review] .g-body{stroke:var(--warning)}
+.g-node[data-stage=done] .g-body{stroke:var(--accent);fill:var(--accent-bg)}
+.g-stage-mark{stroke:var(--dim);stroke-width:var(--g-stroke);fill:none}
+.g-node[data-stage=progress] .g-stage-mark{stroke:var(--accent)}
+.g-node[data-stage=review] .g-stage-mark{stroke:var(--warning)}
+.g-node[data-stage=done] .g-stage-mark{stroke:var(--accent)}
+.g-node[data-kind=thread] .g-glyph{fill:none;stroke:var(--blue);stroke-width:var(--g-stroke);stroke-linecap:round}
+
+/* ---- the legend sits inside the stage, below the canvas, in the flow — never on top ----- */
+.g-legend{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s3);align-items:center;
+  border-top:var(--g-hair) solid var(--soft);background:var(--surface);
+  padding:var(--s2) var(--s3);flex-shrink:0}
+.g-legend span{display:inline-flex;align-items:center;gap:var(--s2);font-size:var(--xs);color:var(--muted)}
+.g-swatch{width:var(--g-swatch);height:var(--g-swatch);border:var(--g-stroke) solid var(--line);background:var(--raised);flex-shrink:0}
+.g-swatch[data-swatch=task-backlog]{border-color:var(--dim)}
+.g-swatch[data-swatch=task-progress]{border-color:var(--accent);border-radius:50%}
+.g-swatch[data-swatch=task-review]{border-color:var(--warning);transform:rotate(45deg)}
+.g-swatch[data-swatch=task-done]{border-color:var(--accent);background:var(--accent-bg);border-radius:50%}
+.g-swatch[data-swatch=thread]{border-color:var(--blue);border-radius:50%}
+.g-swatch[data-swatch=reports]{width:var(--g-swatch-line);height:0;border-width:0;border-top:var(--g-stroke) solid var(--line)}
+.g-swatch[data-swatch=owns]{width:var(--g-swatch-line);height:0;border-width:0;border-top:var(--g-stroke) dashed var(--dim)}
+
+/* ---- side panel ------------------------------------------------------------------------ */
+.g-side{display:flex;flex-direction:column;gap:var(--s3)}
+.g-side .panel{padding:var(--s4)}
+.g-side h3{font-size:var(--base);margin-bottom:var(--s2)}
+.g-side dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s1) var(--s3);margin:0}
+.g-side dt{color:var(--dim);font-size:var(--xs)}
+.g-side dd{margin:0;font-size:var(--sm);overflow-wrap:anywhere}
+.g-side .row{gap:var(--s2)}
+.g-hint{font-size:var(--xs);color:var(--muted)}
+.g-kbdlist{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s1) var(--s3);font-size:var(--xs);color:var(--muted)}
+
+/* ---- list mode (the accessible equivalent of the canvas) ------------------------------- */
+.g-list{display:flex;flex-direction:column;gap:var(--s2)}
+.g-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s3);
+  border:var(--g-hair) solid var(--soft);background:var(--surface);border-radius:var(--radius);
+  padding:var(--s2) var(--s3);min-height:var(--touch);text-align:start;color:var(--text)}
+.g-row:hover{background:var(--hover);border-color:var(--dim)}
+.g-row[aria-current=true]{border-color:var(--accent);background:var(--accent-bg)}
+.g-row .g-row-sub{color:var(--muted);font-size:var(--xs);overflow-wrap:anywhere}
+.g-row .g-row-name{font-size:var(--sm);overflow-wrap:anywhere}
+
+/* ---- motion and input guarantees -------------------------------------------------------- */
+@media(prefers-reduced-motion:reduce){
+  .g-canvas,.g-row,.g-node{transition:none}
+}
+@media(forced-colors:active){
+  .g-node .g-body{stroke:CanvasText}
+  .g-node[data-selected=true] .g-body{stroke:Highlight;stroke-width:var(--g-stroke-thick)}
+  .g-hull{border:var(--g-hair) solid CanvasText}
+}
+@media(pointer:coarse){
+  .g-row{min-height:var(--touch)}
+  .g-legend{min-height:var(--touch)}
+}

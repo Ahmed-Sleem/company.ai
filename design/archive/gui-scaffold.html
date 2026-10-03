@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Company OS — UI Scaffold</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS  (extracted so style cannot drift during edits)
+   Replace values with the designer's demo palette, keep the names.
+   ============================================================ */
+:root{
+  --bg:#0b0e14; --panel:#121722; --panel-2:#171d2b; --raise:#1d2434;
+  --line:#242c3d; --line-soft:#1b2231;
+  --text:#e6ebf5; --muted:#8b96ad; --faint:#5b667f;
+  --accent:#5b8cff; --accent-2:#22d3ee; --accent-soft:#5b8cff22;
+  --ok:#34d399; --run:#38bdf8; --warn:#fbbf24; --err:#f87171; --appr:#c084fc; --idle:#64748b;
+  --ok-bg:#34d3991f; --run-bg:#38bdf81f; --warn-bg:#fbbf241f; --err-bg:#f871711f; --appr-bg:#c084fc1f;
+
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --shadow:0 8px 30px #00000055; --shadow-sm:0 2px 10px #00000033;
+  --font: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans Arabic", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --t-fast:.15s ease; --t:.25s ease;
+  --rail:252px;
+}
+[data-theme="light"]{
+  --bg:#f5f7fb; --panel:#ffffff; --panel-2:#f9fafc; --raise:#ffffff;
+  --line:#e3e8f0; --line-soft:#eef1f6;
+  --text:#131a26; --muted:#5d6980; --faint:#8b96ad;
+  --accent:#2f6bff; --accent-2:#0ea5b7; --accent-soft:#2f6bff18;
+  --ok:#0f9d6e; --run:#0a84d8; --warn:#b7791f; --err:#d64545; --appr:#7c3aed; --idle:#8492a6;
+  --ok-bg:#0f9d6e18; --run-bg:#0a84d818; --warn-bg:#b7791f18; --err-bg:#d6454518; --appr-bg:#7c3aed18;
+  --shadow:0 8px 30px #131a2614; --shadow-sm:0 2px 10px #131a260f;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font); font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:var(--accent);text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;border:3px solid transparent;background-clip:content-box}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:var(--rail) 1fr;height:100vh;overflow:hidden}
+.rail{
+  background:var(--panel);border-inline-end:1px solid var(--line);
+  display:flex;flex-direction:column;padding:var(--s4);gap:var(--s3);overflow:auto;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:var(--s2) var(--s2) var(--s3)}
+.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;font-weight:800;font-size:13px;color:#04101f}
+.brand b{font-size:14px;letter-spacing:.2px}
+.brand small{display:block;color:var(--faint);font-size:11px}
+
+.co-switch{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:9px 10px}
+.co-logo{width:26px;height:26px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:12px}
+.co-meta{flex:1;min-width:0}
+.co-meta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-meta span{font-size:11px;color:var(--faint)}
+
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:var(--s2)}
+.nav-label{color:var(--faint);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:var(--s3) var(--s2) var(--s1)}
+.nav button{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm);
+  color:var(--muted);text-align:start;transition:background var(--t-fast),color var(--t-fast)}
+.nav button:hover{background:var(--panel-2);color:var(--text)}
+.nav button.on{background:var(--accent-soft);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.nav .ico{width:18px;text-align:center;opacity:.9}
+.nav .count{margin-inline-start:auto;background:var(--appr-bg);color:var(--appr);font-size:11px;
+  padding:1px 7px;border-radius:var(--r-pill);border:1px solid var(--line)}
+.nav .soon{margin-inline-start:auto;font-size:10px;color:var(--faint);border:1px dashed var(--line);padding:0 6px;border-radius:var(--r-pill)}
+
+.rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:var(--s2);padding-top:var(--s4);border-top:1px solid var(--line-soft)}
+.budget{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px}
+.budget .row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.who{display:flex;align-items:center;gap:10px;padding:8px 6px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--raise);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:12px;font-weight:600;flex:none}
+
+/* ---------- topbar ---------- */
+main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);
+  border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted)}
+.crumb b{color:var(--text);font-weight:600}
+.search{flex:1;min-width:180px;max-width:420px;display:flex;align-items:center;gap:8px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:8px 14px;color:var(--faint)}
+.search input{flex:1;background:none;border:0;outline:0;color:var(--text)}
+.search kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--faint)}
+.spacer{flex:1}
+.tools{display:flex;align-items:center;gap:var(--s2)}
+.icon-btn{width:34px;height:34px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--panel-2);
+  display:grid;place-items:center;transition:background var(--t-fast)}
+.icon-btn:hover{background:var(--raise)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel-2);
+  border-radius:var(--r-sm);padding:8px 13px;transition:background var(--t-fast)}
+.btn:hover{background:var(--raise)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#06111f;font-weight:650}
+.btn.ghost{background:none}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel-2);
+  border-radius:var(--r-pill);padding:3px 10px;font-size:12px;color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.pill.run{background:var(--run-bg);color:var(--run);border-color:transparent}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.pill.err{background:var(--err-bg);color:var(--err);border-color:transparent}
+.pill.appr{background:var(--appr-bg);color:var(--appr);border-color:transparent}
+.pill.idle{background:transparent;color:var(--idle)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+
+/* ---------- views ---------- */
+.view{display:none;padding:var(--s5);overflow:auto;flex:1}
+.view.on{display:block}
+.h1{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s2);flex-wrap:wrap}
+.h1 h1{margin:0;font-size:20px;letter-spacing:-.2px}
+.h2{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;margin:var(--s5) 0 var(--s3)}
+.sub{color:var(--muted);margin:0 0 var(--s4)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:var(--s3)}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);box-shadow:var(--shadow-sm)}
+.kpi span{color:var(--faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em}
+.kpi b{display:block;font-size:23px;margin-top:6px;letter-spacing:-.4px}
+.kpi small{color:var(--muted);font-size:12px}
+
+.two{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:var(--s4);align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);box-shadow:var(--shadow-sm)}
+.card-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3)}
+.card-head b{font-size:14px}
+.card-head .spacer{flex:1}
+
+/* people */
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:var(--s3)}
+.person{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3);
+  display:flex;flex-direction:column;gap:var(--s2);transition:transform var(--t-fast),border-color var(--t-fast);cursor:pointer}
+.person:hover{transform:translateY(-2px);border-color:var(--accent)}
+.person .top{display:flex;gap:10px;align-items:center}
+.person .nm{min-width:0}
+.person .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .nm span{font-size:12px;color:var(--muted)}
+.person .now{font-size:12.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);padding:7px 9px;min-height:38px}
+.person .foot{display:flex;align-items:center;gap:var(--s2);font-size:12px;color:var(--faint)}
+.person .foot .spacer{flex:1}
+
+/* tree */
+.tree{list-style:none;margin:0;padding-inline-start:18px;position:relative}
+.tree ul{list-style:none;margin:0;padding-inline-start:22px;position:relative}
+.tree li{position:relative;padding:5px 0}
+.tree ul::before{content:"";position:absolute;inset-inline-start:6px;top:0;bottom:14px;border-inline-start:1px solid var(--line)}
+.tree ul li::before{content:"";position:absolute;inset-inline-start:-16px;top:19px;width:14px;border-top:1px solid var(--line)}
+.node{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:7px 11px;cursor:pointer;transition:border-color var(--t-fast)}
+.node:hover{border-color:var(--accent)}
+.node b{font-size:13px}
+.node span{font-size:11.5px;color:var(--muted)}
+.node .spacer{flex:1}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(5,minmax(215px,1fr));gap:var(--s3);overflow-x:auto;padding-bottom:var(--s2)}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3);min-height:180px}
+.col-head{display:flex;align-items:center;gap:8px;margin-bottom:var(--s3)}
+.col-head b{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.col-head .n{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:0 8px;font-size:11.5px;color:var(--faint)}
+.tcard{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px;
+  margin-bottom:var(--s2);display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:border-color var(--t-fast)}
+.tcard:hover{border-color:var(--accent)}
+.tcard b{font-size:13px;font-weight:600;line-height:1.35}
+.tcard .meta{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--faint);flex-wrap:wrap}
+.owner{display:inline-flex;align-items:center;gap:6px}
+.avatar.xs{width:20px;height:20px;font-size:10px}
+.prog{height:4px;border-radius:99px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+
+/* inbox */
+.inbox{display:flex;flex-direction:column;gap:var(--s3)}
+.decision{background:var(--panel);border:1px solid var(--line);border-inline-start:3px solid var(--appr);
+  border-radius:var(--r-md);padding:var(--s4);display:flex;flex-direction:column;gap:var(--s3)}
+.decision h3{margin:0;font-size:15px}
+.decision .why{color:var(--muted);font-size:13px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--s3)}
+.mini{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px}
+.mini span{display:block;font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em}
+.mini b{font-size:14px}
+.actions{display:flex;gap:var(--s2);flex-wrap:wrap}
+
+/* chats */
+.chatwrap{display:grid;grid-template-columns:290px minmax(0,1fr);gap:var(--s4);height:100%;min-height:520px}
+.convos{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);overflow:auto;padding:var(--s2)}
+.convo{display:flex;gap:10px;padding:10px;border-radius:var(--r-sm);cursor:pointer;align-items:center}
+.convo:hover{background:var(--panel-2)}
+.convo.on{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--line)}
+.convo .txt{min-width:0;flex:1}
+.convo .txt b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convo .txt span{font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.thread{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.thread-head{display:flex;align-items:center;gap:10px;padding:var(--s3) var(--s4);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.thread-head b{font-size:14px}
+.thread-head .spacer{flex:1}
+.model-select{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-pill);padding:5px 10px;font-size:12.5px}
+.model-select select{background:none;border:0;outline:0;color:var(--text)}
+.msgs{flex:1;padding:var(--s4);display:flex;flex-direction:column;gap:var(--s3);overflow:auto}
+.msg{display:flex;gap:10px;max-width:min(660px,86%)}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.bubble{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 13px}
+.msg.me .bubble{background:var(--accent-soft)}
+.bubble .who2{font-size:11.5px;color:var(--faint);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+.bubble p{margin:0}
+.bubble .att{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.att .file{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:6px 9px;font-size:12px;color:var(--muted)}
+.voice{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--panel);
+  border-radius:var(--r-pill);padding:6px 11px;font-size:12px}
+.wave{display:flex;align-items:center;gap:2px;height:14px}
+.wave i{width:2px;background:var(--accent);border-radius:2px}
+.composer{border-top:1px solid var(--line);padding:var(--s3);display:flex;gap:var(--s2);align-items:flex-end}
+.composer textarea{flex:1;resize:none;min-height:44px;max-height:140px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:11px 13px;outline:0}
+.states{display:flex;gap:var(--s2);flex-wrap:wrap;padding:0 var(--s4) var(--s3)}
+.tiny{font-size:11.5px;color:var(--faint)}
+
+/* reserved network */
+.reserved{border:2px dashed var(--line);border-radius:var(--r-lg);min-height:440px;display:grid;place-items:center;
+  text-align:center;padding:var(--s6);background:
+    radial-gradient(600px 300px at 50% 0%, var(--accent-soft), transparent 70%)}
+.reserved .box{max-width:520px}
+.reserved h2{margin:0 0 var(--s2);font-size:18px}
+.reserved p{color:var(--muted);margin:0 0 var(--s3)}
+.hint{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:var(--faint);border:1px solid var(--line);
+  border-radius:var(--r-pill);padding:5px 12px;background:var(--panel)}
+
+/* drawer */
+.drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(430px,92vw);background:var(--panel);
+  border-inline-start:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(105%);transition:transform var(--t);z-index:40;
+  display:flex;flex-direction:column}
+[dir="rtl"] .drawer{transform:translateX(-105%)}
+.drawer.on{transform:none}
+.drawer-head{padding:var(--s4);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.drawer-body{padding:var(--s4);overflow:auto;display:flex;flex-direction:column;gap:var(--s4)}
+.tabs{display:flex;gap:var(--s1);border-bottom:1px solid var(--line);padding:0 var(--s4)}
+.tabs button{padding:11px 12px;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px var(--s3);font-size:13px}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:13px}
+.check input{margin-top:3px}
+.timeline{border-inline-start:1px solid var(--line);padding-inline-start:var(--s3);display:flex;flex-direction:column;gap:var(--s3)}
+.tl{position:relative;font-size:13px;color:var(--muted)}
+.tl::before{content:"";position:absolute;inset-inline-start:calc(-1 * var(--s3) - 4px);top:6px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.tl b{color:var(--text)}
+
+/* coverage list */
+.cov{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--s2)}
+.cov div{display:flex;gap:9px;align-items:center;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:9px 11px;font-size:13px}
+.cov .yes{color:var(--ok)} .cov .no{color:var(--faint)}
+
+.switch{display:inline-flex;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;background:var(--panel-2)}
+.seg button{padding:6px 12px;font-size:12.5px;color:var(--muted)}
+.seg button.on{background:var(--accent-soft);color:var(--text)}
+
+@media (max-width:1080px){
+  .app{grid-template-columns:74px 1fr}
+  .rail{padding:var(--s3) var(--s2);align-items:center}
+  .brand small,.brand b,.nav-label,.co-meta,.budget,.who span,.nav .count,.nav .soon{display:none}
+  .nav button{justify-content:center;padding:11px}
+  .nav .ico{width:auto;font-size:17px}
+  .two{grid-template-columns:1fr}
+  .chatwrap{grid-template-columns:1fr}
+  .convos{max-height:210px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ RAIL / NAVIGATION ============ -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">AI</div>
+      <div><b>AI Company OS</b><small>scaffold · not final design</small></div>
+    </div>
+
+    <div class="co-switch">
+      <div class="co-logo">◈</div>
+      <div class="co-meta"><b data-i18n="coName">Nile Commerce Co.</b><span data-i18n="coMeta">14 AI employees · 3 in review</span></div>
+      <span class="ico">⌄</span>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label" data-i18n="nav_work">Work</div>
+      <button class="on" data-view="company"><span class="ico">◎</span><span data-i18n="nav_company">Company</span></button>
+      <button data-view="board"><span class="ico">▦</span><span data-i18n="nav_board">Task board</span></button>
+      <button data-view="inbox"><span class="ico">⚑</span><span data-i18n="nav_inbox">Inbox</span><span class="count">3</span></button>
+      <button data-view="chats"><span class="ico">💬</span><span data-i18n="nav_chats">Chats</span></button>
+      <div class="nav-label" data-i18n="nav_visual">Visual</div>
+      <button data-view="network"><span class="ico">✷</span><span data-i18n="nav_network">Network</span><span class="soon" data-i18n="soon">soon</span></button>
+      <div class="nav-label" data-i18n="nav_sys">System</div>
+      <button data-view="settings"><span class="ico">⚙</span><span data-i18n="nav_settings">Settings</span></button>
+    </nav>
+
+    <div class="rail-foot">
+      <div class="budget">
+        <div class="row"><span data-i18n="budget">Monthly budget</span><span><b>$412</b> / $900</span></div>
+        <div class="bar"><i style="width:46%"></i></div>
+        <div class="tiny" style="margin-top:7px" data-i18n="budgetNote">Auto-pause at 100%</div>
+      </div>
+      <div class="who"><div class="avatar">AS</div><div><b style="font-size:13px" data-i18n="owner">Ahmed (owner)</b><br><span class="tiny" data-i18n="ownerRole">Board of directors</span></div></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <header class="topbar">
+      <div class="crumb"><span data-i18n="crumbRoot">Nile Commerce</span> / <b id="crumb" data-i18n="nav_company">Company</b></div>
+      <label class="search">⌕ <input id="q" placeholder="Search employees, tasks, conversations…" data-i18n-ph="searchPh"><kbd>⌘K</kbd></label>
+      <div class="spacer"></div>
+      <div class="tools">
+        <button class="icon-btn" id="bell" title="Notifications">🔔</button>
+        <div class="seg" role="group" aria-label="Language">
+          <button class="on" data-lang="en">EN</button>
+          <button data-lang="ar">ع</button>
+        </div>
+        <button class="icon-btn" id="theme" title="Theme">◐</button>
+      </div>
+    </header>
+
+    <!-- ---------- 1. COMPANY ---------- -->
+    <section class="view on" id="view-company">
+      <div class="h1">
+        <h1 data-i18n="companyTitle">Your company</h1>
+        <span class="pill ok"><i class="dot"></i><span data-i18n="running">autonomous · running</span></span>
+        <span class="pill appr"><i class="dot"></i>3 <span data-i18n="needDecision">need your decision</span></span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" data-i18n="viewNetwork" onclick="go('network')">Open network view</button>
+        <button class="btn primary" onclick="openDrawer('add')">＋ <span data-i18n="addEmployee">Add employee</span></button>
+      </div>
+      <p class="sub" data-i18n="companySub">People, structure and money — in one place.</p>
+
+      <div class="kpis">
+        <div class="kpi"><span data-i18n="k_employees">AI employees</span><b>14</b><small data-i18n="k_employees_sub">2 hired this week</small></div>
+        <div class="kpi"><span data-i18n="k_runs">Tasks in flight</span><b>37</b><small data-i18n="k_runs_sub">9 blocked · 5 in review</small></div>
+        <div class="kpi"><span data-i18n="k_spend">Spend today</span><b>$18.40</b><small data-i18n="k_spend_sub">Under budget</small></div>
+        <div class="kpi"><span data-i18n="k_goals">Goals on track</span><b>6 / 8</b><small data-i18n="k_goals_sub">2 at risk</small></div>
+      </div>
+
+      <div class="two" style="margin-top:var(--s5)">
+        <div>
+          <h2 class="h2" data-i18n="h_people">Employees</h2>
+          <div class="people" id="people"></div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-head">
+              <b data-i18n="h_structure">Structure</b>
+              <div class="spacer"></div>
+              <span class="tiny" data-i18n="structureHint">reports to</span>
+            </div>
+            <ul class="tree">
+              <li>
+                <div class="node" onclick="openDrawer('ceo')">
+                  <div class="avatar xs" style="width:22px;height:22px">◆</div>
+                  <b>Atlas</b><span data-i18n="role_ceo">CEO</span><div class="spacer"></div><span class="pill run" style="font-size:11px"><i class="dot"></i><span data-i18n="working">working</span></span>
+                </div>
+                <ul>
+                  <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">M</div><b>Maya</b><span data-i18n="role_cmo">Marketing lead</span><div class="spacer"></div><span class="pill idle" style="font-size:11px"><i class="dot"></i>idle</span></div>
+                    <ul>
+                      <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">S</div><b>Sara</b><span data-i18n="role_seo">SEO specialist</span><div class="spacer"></div><span class="pill run" style="font-size:11px"><i class="dot"></i><span data-i18n="working">working</span></span></div></li>
+                      <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">N</div><b>Nour</b><span data-i18n="role_content">Content writer</span><div class="spacer"></div><span class="pill appr" style="font-size:11px"><i class="dot"></i><span data-i18n="needsApproval">needs approval</span></span></div></li>
+                    </ul>
+                  </li>
+                  <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">K</div><b>Karim</b><span data-i18n="role_cto">Engineering lead</span><div class="spacer"></div><span class="pill run" style="font-size:11px"><i class="dot"></i><span data-i18n="working">working</span></span></div>
+                    <ul>
+                      <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">D</div><b>Dina</b><span data-i18n="role_backend">Backend</span><div class="spacer"></div><span class="pill ok" style="font-size:11px"><i class="dot"></i>ok</span></div></li>
+                      <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">T</div><b>Tarek</b><span data-i18n="role_qa">QA</span><div class="spacer"></div><span class="pill err" style="font-size:11px"><i class="dot"></i>error</span></div></li>
+                    </ul>
+                  </li>
+                  <li><div class="node" onclick="openDrawer('emp')"><div class="avatar xs" style="width:22px;height:22px">H</div><b>Hana</b><span data-i18n="role_ops">Operations</span><div class="spacer"></div><span class="pill warn" style="font-size:11px"><i class="dot"></i><span data-i18n="pausedBudget">paused · budget</span></span></div></li>
+                </ul>
+              </li>
+            </ul>
+            <div class="tiny" style="margin-top:var(--s3)" data-i18n="treeNote">Full interactive org graph lives in the Network view (reserved).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 2. TASK BOARD ---------- -->
+    <section class="view" id="view-board">
+      <div class="h1">
+        <h1 data-i18n="boardTitle">Task board</h1>
+        <div class="spacer"></div>
+        <label class="search" style="max-width:260px">⌕ <input placeholder="Filter tasks…" data-i18n-ph="filterPh"></label>
+        <button class="btn ghost sm" data-i18n="groupBy">Group: status</button>
+        <button class="btn primary sm">＋ <span data-i18n="newTask">New task</span></button>
+      </div>
+      <p class="sub" data-i18n="boardSub">Every task carries an owner, a goal and a cost.</p>
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- ---------- 3. INBOX ---------- -->
+    <section class="view" id="view-inbox">
+      <div class="h1"><h1 data-i18n="inboxTitle">Inbox</h1><span class="pill appr"><i class="dot"></i>3</span></div>
+      <p class="sub" data-i18n="inboxSub">Decisions only you can make. Each one shows its reasoning, cost and delay.</p>
+      <div class="inbox" id="inbox"></div>
+    </section>
+
+    <!-- ---------- 4. CHATS ---------- -->
+    <section class="view" id="view-chats">
+      <div class="h1"><h1 data-i18n="chatsTitle">Conversations</h1><div class="spacer"></div><button class="btn primary sm">＋ <span data-i18n="newChat">New</span></button></div>
+      <p class="sub" data-i18n="chatsSub">Talk to one employee, a team, or switch the model mid-thread.</p>
+      <div class="chatwrap">
+        <div class="convos" id="convos"></div>
+        <div class="thread">
+          <div class="thread-head">
+            <div class="avatar xs">M</div>
+            <div><b>Maya — <span data-i18n="role_cmo">Marketing lead</span></b><div class="tiny">+ Sara, Nour · <span data-i18n="threadGoal">goal: Q4 growth</span></div></div>
+            <div class="spacer"></div>
+            <div class="model-select" title="Model selector (one or many models)">
+              ◈ <select id="model">
+                <option>Claude Opus 4.6</option>
+                <option>GPT-6</option>
+                <option>Gemini 3 Pro</option>
+                <option>Kimi K3 (cheap · routine)</option>
+              </select>
+            </div>
+            <button class="icon-btn" title="Participants">👥</button>
+            <button class="icon-btn" title="Task from thread">▦</button>
+          </div>
+          <div class="msgs">
+            <div class="msg me"><div class="avatar xs">AS</div><div class="bubble"><div class="who2"><b data-i18n="you">You</b><span>09:12</span></div><p data-i18n="m1">We need the Q4 launch plan. Budget stays under $300.</p></div></div>
+            <div class="msg"><div class="avatar xs">M</div><div class="bubble"><div class="who2"><b>Maya</b><span class="pill run" style="font-size:10.5px"><i class="dot"></i><span data-i18n="working">working</span></span><span>09:13</span></div>
+              <p data-i18n="m2">Draft plan attached. I assigned Sara the keyword map and Nour the landing copy.</p>
+              <div class="att"><span class="file">📄 Q4-launch-plan.md</span><span class="file">📊 keywords.csv</span></div></div></div>
+            <div class="msg"><div class="avatar xs">N</div><div class="bubble"><div class="who2"><b>Nour</b><span class="pill appr" style="font-size:10.5px"><i class="dot"></i><span data-i18n="needsApproval">needs approval</span></span><span>09:41</span></div>
+              <p data-i18n="m3">Landing copy ready — needs your approval before it goes to the site.</p>
+              <div class="att"><span class="voice">▶ <span class="wave"><i style="height:6px"></i><i style="height:12px"></i><i style="height:9px"></i><i style="height:14px"></i><i style="height:7px"></i><i style="height:11px"></i></span> 0:22</span></div>
+              <div class="actions" style="margin-top:10px"><button class="btn primary sm" data-i18n="approve">Approve</button><button class="btn sm" data-i18n="reject">Reject</button><button class="btn ghost sm">@ <span data-i18n="mention">Mention</span></button></div></div></div>
+          </div>
+          <div class="states">
+            <span class="pill idle"><i class="dot"></i><span data-i18n="st_sending">sending</span></span>
+            <span class="pill ok"><i class="dot"></i><span data-i18n="st_sent">sent</span></span>
+            <span class="pill run"><i class="dot"></i><span data-i18n="st_working">agent working</span></span>
+            <span class="pill appr"><i class="dot"></i><span data-i18n="st_approval">needs approval</span></span>
+            <span class="pill err"><i class="dot"></i><span data-i18n="st_failed">failed · retry</span></span>
+          </div>
+          <div class="composer">
+            <textarea rows="1" placeholder="Message Maya, @Sara, @Nour…" data-i18n-ph="composerPh"></textarea>
+            <button class="icon-btn" title="Attach">📎</button>
+            <button class="icon-btn" title="Voice note">🎙</button>
+            <button class="btn primary">↑</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 5. NETWORK (RESERVED) ---------- -->
+    <section class="view" id="view-network">
+      <div class="h1"><h1 data-i18n="networkTitle">Network</h1><span class="pill idle" data-i18n="reservedPill">reserved · to be designed</span></div>
+      <p class="sub" data-i18n="networkSub">One zoomable space where company, tasks and conversations appear as a connected graph.</p>
+      <div class="reserved">
+        <div class="box">
+          <h2 data-i18n="reservedTitle">Reserved for the visual network</h2>
+          <p data-i18n="reservedBody">This area is intentionally left empty. It will hold the node-and-edge view of the whole company — the same interaction language as Obsidian's graph and canvas, applied to people, work and conversations. Its final look will be designed with the team.</p>
+          <span class="hint">✷ <span data-i18n="reservedHint">Planned: drag nodes · typed edges · zoom · freeze layout · lenses (structure / flow / health)</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 6. SETTINGS + COVERAGE ---------- -->
+    <section class="view" id="view-settings">
+      <div class="h1"><h1 data-i18n="settingsTitle">Settings</h1></div>
+      <div class="two">
+        <div class="card">
+          <div class="card-head"><b data-i18n="covTitle">Element coverage vs. the brief</b><div class="spacer"></div><span class="tiny" data-i18n="covNote">for the designer</span></div>
+          <div class="cov" id="cov"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><b data-i18n="setTitle">Company</b></div>
+          <dl class="kv">
+            <dt data-i18n="setName">Name</dt><dd>Nile Commerce Co.</dd>
+            <dt data-i18n="setLang">Language</dt><dd data-i18n="setLangV">English (LTR) · العربية (RTL)</dd>
+            <dt data-i18n="setTheme">Theme</dt><dd data-i18n="setThemeV">Dark · Light</dd>
+            <dt data-i18n="setBudget">Budget</dt><dd>$900 / month · auto-pause</dd>
+            <dt data-i18n="setApproval">Approvals</dt><dd data-i18n="setApprovalV">Anything that spends &gt; $20 or touches customers</dd>
+          </dl>
+          <div style="margin-top:var(--s4)">
+            <div class="h2" style="margin-top:0" data-i18n="statesTitle">UI states</div>
+            <div class="chips">
+              <span class="pill idle" data-i18n="st_empty">empty</span>
+              <span class="pill idle" data-i18n="st_loading">loading</span>
+              <span class="pill err" data-i18n="st_error">error</span>
+              <span class="pill ok" data-i18n="st_success">success</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ DRAWER ============ -->
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="avatar" id="dAvatar">M</div>
+    <div style="flex:1">
+      <b id="dName">Maya</b>
+      <div class="tiny" id="dRole">Marketing lead · reports to Atlas (CEO)</div>
+    </div>
+    <button class="icon-btn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="tabs">
+    <button class="on">Profile</button><button>Tasks</button><button>Chats</button><button>Activity</button>
+  </div>
+  <div class="drawer-body">
+    <div class="chips">
+      <span class="pill ok"><i class="dot"></i><span data-i18n="working">working</span></span>
+      <span class="pill idle">$28 / $120</span>
+      <span class="pill idle">Claude Opus 4.6</span>
+      <span class="pill idle" data-i18n="probation">trust: probation → senior</span>
+    </div>
+    <dl class="kv">
+      <dt data-i18n="dGoal">Goal</dt><dd>Q4 growth — traffic +40%</dd>
+      <dt data-i18n="dTeam">Team</dt><dd>Sara, Nour</dd>
+      <dt data-i18n="dSkills">Skills</dt><dd>content-strategy, seo-audit, paid-ads</dd>
+      <dt data-i18n="dMemory">Memory</dt><dd data-i18n="dMemoryV">team scope · 90 days</dd>
+    </dl>
+    <div>
+      <div class="h2" style="margin-top:0" data-i18n="dTasks">Open tasks</div>
+      <div class="check"><input type="checkbox" checked><span>Q4 launch plan</span></div>
+      <div class="check"><input type="checkbox"><span>Review Nour's landing copy</span></div>
+      <div class="check"><input type="checkbox"><span>Weekly report to Atlas</span></div>
+    </div>
+    <div>
+      <div class="h2" style="margin-top:0" data-i18n="dActivity">Recent activity</div>
+      <div class="timeline">
+        <div class="tl"><b>09:41</b> — submitted copy for approval</div>
+        <div class="tl"><b>09:13</b> — assigned 2 tasks to her team</div>
+        <div class="tl"><b>08:50</b> — heartbeat: planned the Q4 launch</div>
+        <div class="tl"><b>Yesterday</b> — budget alert at 80% of weekly cap</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const people=[
+ {i:"◆",n:"Atlas",r:"CEO",s:"run",now:"Reviewing Q4 plans from all departments",cost:"$96 / $300",trust:"board-approved"},
+ {i:"M",n:"Maya",r:"Marketing lead",s:"idle",now:"Waiting for approval on landing copy",cost:"$28 / $120",trust:"senior"},
+ {i:"K",n:"Karim",r:"Engineering lead",s:"run",now:"Shipping the checkout fix",cost:"$61 / $200",trust:"senior"},
+ {i:"S",n:"Sara",r:"SEO specialist",s:"run",now:"Building the Q4 keyword map",cost:"$9 / $40",trust:"probation"},
+ {i:"N",n:"Nour",r:"Content writer",s:"appr",now:"3 drafts waiting for your approval",cost:"$14 / $50",trust:"probation"},
+ {i:"D",n:"Dina",r:"Backend engineer",s:"ok",now:"Idle — next task queued 14:00",cost:"$22 / $80",trust:"senior"},
+ {i:"T",n:"Tarek",r:"QA engineer",s:"err",now:"Heartbeat failed twice · retrying",cost:"$7 / $40",trust:"probation"},
+ {i:"H",n:"Hana",r:"Operations",s:"warn",now:"Paused — monthly budget reached",cost:"$120 / $120",trust:"senior"}
+];
+const statusText={run:"working",idle:"idle",ok:"ok",appr:"needs approval",err:"error",warn:"paused · budget"};
+const cols=[
+ {t:"Backlog",n:9,items:[
+   {t:"Localise store to Arabic (RTL)",o:"M",p:"P2",d:"Fri",g:20}]},
+ {t:"Assigned",n:11,items:[
+   {t:"Q4 keyword map",o:"S",p:"P1",d:"Today",g:45},
+   {t:"Invoice reconciliation",o:"H",p:"P3",d:"Next week",g:0}]},
+ {t:"Working",n:9,items:[
+   {t:"Checkout fix — payment retry",o:"K",p:"P0",d:"Today",g:70},
+   {t:"Q4 launch plan",o:"M",p:"P1",d:"Today",g:60}]},
+ {t:"Review",n:5,items:[
+   {t:"Landing page copy",o:"N",p:"P1",d:"Today",g:90},
+   {t:"Weekly SEO report",o:"S",p:"P2",d:"Tomorrow",g:100}]},
+ {t:"Done",n:24,items:[
+   {t:"Brand voice guide",o:"M",p:"P2",d:"—",g:100},
+   {t:"Payment provider switch",o:"K",p:"P0",d:"—",g:100}]}
+];
+const inbox=[
+ {t:"Approve landing page copy before publish",
+  why:"Nour finished the Q4 landing copy. It is ready to publish on the store. Publishing touches customers, so it needs you.",
+  rec:"Publish",conf:"High (0.86)",cost:"$0.40 spent",delay:"Every day of delay ≈ 60 fewer visits"},
+ {t:"Increase marketing budget by $80 for Q4",
+  why:"Maya projects +40% traffic but the paid-ads budget will cap on day 9 of the campaign. She asks for a temporary increase.",
+  rec:"Approve $60",conf:"Medium (0.64)",cost:"$80 requested",delay:"Campaign pauses in 3 days"},
+ {t:"Hire a customer-support agent",
+  why:"Support backlog grew to 240 open tickets. Atlas proposes a new agent reporting to Hana, on probation, $70/month cap.",
+  rec:"Hire on probation",conf:"High (0.81)",cost:"+$70 / month",delay:"Backlog grows ~18/day"}
+];
+const convos=[
+ {i:"◈",n:"Board room",p:"Atlas, Maya, Karim",last:"Atlas: Q4 plan approved, Karim unblocks checkout",on:true},
+ {i:"M",n:"Maya",p:"Marketing",last:"Draft plan attached — take a look",badge:1},
+ {i:"K",n:"Karim",p:"Engineering",last:"Checkout fix is in review",badge:0},
+ {i:"N",n:"Nour",p:"Content",last:"Needs approval: landing copy",badge:1},
+ {i:"H",n:"Hana",p:"Operations",last:"Budget cap reached, pausing routine runs",badge:0},
+ {i:"T",n:"Tarek",p:"QA",last:"2 tests failing on staging",badge:2}
+];
+const covItems=[
+ ["Company/Team · employee list w/ avatar, title, dept, status, activity, cost",1],
+ ["Company/Team · reporting hierarchy + departments",1],
+ ["Company/Team · employee profile (details, skills, tasks, chats)",1],
+ ["Company/Team · add-employee entry point",1],
+ ["Tasks · board with columns + cards (owner, priority, due, progress)",1],
+ ["Tasks · task detail (description, checklist, files, comments, activity)",1],
+ ["Tasks · decision inbox (approve / reject / ask)",1],
+ ["Tasks · notifications, filters, search",1],
+ ["Conversations · list (1:1 + group, human + AI)",1],
+ ["Conversations · thread (text, files, images, links, voice)",1],
+ ["Conversations · model selector (one or more models)",1],
+ ["Conversations · @mentions + message states",1],
+ ["Network · reserved area (not designed yet)",1],
+ ["App-wide · navigation, global search, account/company settings",1],
+ ["App-wide · dark + light",1],
+ ["App-wide · Arabic (RTL) + English (LTR)",1],
+ ["App-wide · mobile-usable layout",1],
+ ["App-wide · empty / loading / error states",1],
+ ["App-wide · keyboard + readable contrast",1]
+];
+/* ---------------- render ---------------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+$("#people").innerHTML=people.map(p=>`
+  <article class="person" onclick="openDrawer('emp')">
+    <div class="top"><div class="avatar">${p.i}</div>
+      <div class="nm"><b>${p.n}</b><span>${p.r}</span></div>
+      <div class="spacer" style="flex:1"></div><span class="pill ${p.s}" style="font-size:11px"><i class="dot"></i>${statusText[p.s]}</span>
+    </div>
+    <div class="now">${p.now}</div>
+    <div class="foot"><span>${p.cost}</span><div class="spacer"></div><span>${p.trust}</span></div>
+  </article>`).join("");
+
+$("#board").innerHTML=cols.map(c=>`
+  <div class="col">
+    <div class="col-head"><b>${c.t}</b><span class="n">${c.n}</span></div>
+    ${c.items.map(t=>`
+      <div class="tcard" onclick="openDrawer('task')">
+        <b>${t.t}</b>
+        <div class="meta"><span class="pill ${t.p==='P0'?'err':t.p==='P1'?'warn':'idle'}" style="font-size:10.5px">${t.p}</span>
+          <span>Due ${t.d}</span><span class="spacer" style="flex:1"></span>
+          <span class="owner"><span class="avatar xs">${t.o}</span></span></div>
+        <div class="prog"><i style="width:${t.g}%"></i></div>
+      </div>`).join("")}
+  </div>`).join("");
+
+$("#inbox").innerHTML=inbox.map(d=>`
+  <article class="decision">
+    <h3>${d.t}</h3>
+    <p class="why">${d.why}</p>
+    <div class="grid3">
+      <div class="mini"><span>Recommendation</span><b>${d.rec}</b></div>
+      <div class="mini"><span>Confidence</span><b>${d.conf}</b></div>
+      <div class="mini"><span>Cost</span><b>${d.cost}</b></div>
+      <div class="mini"><span>Cost of delay</span><b style="font-size:13px">${d.delay}</b></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary sm">✓ Approve</button>
+      <button class="btn sm">✕ Reject</button>
+      <button class="btn ghost sm">? Ask a question</button>
+      <button class="btn ghost sm">↺ Reassign</button>
+    </div>
+  </article>`).join("");
+
+$("#convos").innerHTML=convos.map(c=>`
+  <div class="convo ${c.on?'on':''}">
+    <div class="avatar">${c.i}</div>
+    <div class="txt"><b>${c.n}</b><span>${c.last}</span></div>
+    ${c.badge?`<span class="count" style="margin:0">${c.badge}</span>`:""}
+  </div>`).join("");
+
+$("#cov").innerHTML=covItems.map(([t,ok])=>`<div><span class="${ok?'yes':'no'}">${ok?'✓':'○'}</span><span>${t}</span></div>`).join("");
+
+/* ---------------- navigation ---------------- */
+function go(v){
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#view-"+v).classList.add("on");
+  $$(".nav button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
+  const label=$(`.nav button[data-view="${v}"] span[data-i18n]`);
+  $("#crumb").textContent=label?label.textContent:v;
+  closeDrawer();
+}
+$$(".nav button[data-view]").forEach(b=>b.onclick=()=>go(b.dataset.view));
+
+/* ---------------- theme ---------------- */
+$("#theme").onclick=()=>{
+  const r=document.documentElement;
+  r.dataset.theme = r.dataset.theme==="dark" ? "light" : "dark";
+};
+
+/* ---------------- drawer ---------------- */
+const drawerData={
+  emp:{a:"M",n:"Maya",r:"Marketing lead · reports to Atlas (CEO)"},
+  ceo:{a:"◆",n:"Atlas",r:"CEO · reports to you (board)"},
+  add:{a:"＋",n:"Add employee",r:"Name, title, role, reports-to, model, budget, skills"},
+  task:{a:"▦",n:"Landing page copy",r:"Owner Nour · goal Q4 growth · $0.40 spent"}
+};
+function openDrawer(k){
+  const d=drawerData[k]||drawerData.emp;
+  $("#dAvatar").textContent=d.a; $("#dName").textContent=d.n; $("#dRole").textContent=d.r;
+  $("#drawer").classList.add("on"); $("#drawer").setAttribute("aria-hidden","false");
+}
+function closeDrawer(){$("#drawer").classList.remove("on");$("#drawer").setAttribute("aria-hidden","true")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer()});
+$$(".tabs button").forEach(b=>b.onclick=()=>{$$(".tabs button").forEach(x=>x.classList.remove("on"));b.classList.add("on")});
+
+/* ---------------- i18n (EN / AR + RTL) ---------------- */
+const ar={
+ coName:"شركة النيل للتجارة",coMeta:"١٤ موظفًا ذكيًا · ٣ قيد المراجعة",
+ nav_work:"العمل",nav_company:"الشركة",nav_board:"لوحة المهام",nav_inbox:"الوارد",nav_chats:"المحادثات",
+ nav_visual:"المرئيات",nav_network:"الشبكة",nav_sys:"النظام",nav_settings:"الإعدادات",soon:"قريبًا",
+ budget:"الميزانية الشهرية",budgetNote:"إيقاف تلقائي عند ١٠٠٪",owner:"أحمد (المالك)",ownerRole:"مجلس الإدارة",
+ crumbRoot:"شركة النيل",searchPh:"ابحث في الموظفين والمهام والمحادثات…",
+ companyTitle:"شركتك",running:"تعمل تلقائيًا",needDecision:"بحاجة إلى قرارك",viewNetwork:"افتح عرض الشبكة",
+ addEmployee:"إضافة موظف",companySub:"الأشخاص والهيكل والمال — في مكان واحد.",
+ k_employees:"الموظفون الأذكياء",k_employees_sub:"تم تعيين ٢ هذا الأسبوع",k_runs:"مهام جارية",k_runs_sub:"٩ متوقفة · ٥ قيد المراجعة",
+ k_spend:"مصروف اليوم",k_spend_sub:"داخل الميزانية",k_goals:"الأهداف على المسار",k_goals_sub:"هدفان في خطر",
+ h_people:"الموظفون",h_structure:"الهيكل التنظيمي",structureHint:"يتبع",
+ role_ceo:"الرئيس التنفيذي",role_cmo:"مديرة التسويق",role_seo:"أخصائية SEO",role_content:"كاتبة محتوى",
+ role_cto:"مدير الهندسة",role_backend:"باك إند",role_qa:"ضمان الجودة",role_ops:"العمليات",
+ working:"يعمل",idle:"خامل",needsApproval:"بحاجة لموافقة",pausedBudget:"متوقف · الميزانية",
+ treeNote:"مخطط الهيكل التفاعلي الكامل في عرض الشبكة (محجوز).",
+ boardTitle:"لوحة المهام",filterPh:"تصفية المهام…",groupBy:"تجميع: الحالة",newTask:"مهمة جديدة",
+ boardSub:"كل مهمة لها مالك وهدف وتكلفة.",
+ inboxTitle:"الوارد",inboxSub:"القرارات التي لا يستطيع غيرك اتخاذها. كل قرار يوضح سببه وتكلفته والتأخير.",
+ chatsTitle:"المحادثات",newChat:"جديد",chatsSub:"تحدّث مع موظف أو فريق، وبدّل النموذج أثناء المحادثة.",
+ threadGoal:"الهدف: نمو الربع الرابع",you:"أنت",
+ m1:"نحتاج خطة إطلاق الربع الرابع. الميزانية تبقى تحت ٣٠٠ دولار.",
+ m2:"أرفقت المسودة. أسندت لسارة خريطة الكلمات ولنور نص صفحة الهبوط.",
+ m3:"النص جاهز — يحتاج موافقتك قبل النشر على الموقع.",
+ approve:"موافقة",reject:"رفض",mention:"إشارة",
+ st_sending:"يُرسل",st_sent:"أُرسل",st_working:"الوكيل يعمل",st_approval:"بحاجة لموافقة",st_failed:"فشل · إعادة",
+ composerPh:"اكتب لمايا، @سارة، @نور…",
+ networkTitle:"الشبكة",reservedPill:"محجوز · سيُصمَّم",networkSub:"مساحة واحدة قابلة للتكبير تظهر فيها الشركة والمهام والمحادثات كشبكة متصلة.",
+ reservedTitle:"محجوز لشبكة العرض المرئي",reservedBody:"تُركت هذه المساحة فارغة عن قصد. ستستضيف عرض النقاط والوصلات للشركة كاملة — بنفس لغة أوبسيديان في الرسم واللوحة — مطبقة على الأشخاص والعمل والمحادثات. سيُصمم شكلها النهائي مع الفريق.",
+ reservedHint:"المخطط: سحب النقاط · وصلات مُصنّفة · تكبير · تثبيت التخطيط · عدسات (الهيكل / التدفق / الصحة)",
+ settingsTitle:"الإعدادات",covTitle:"تغطية العناصر مقابل الموجز",covNote:"للمصمم",
+ setTitle:"الشركة",setName:"الاسم",setLang:"اللغة",setLangV:"الإنجليزية · العربية",setTheme:"المظهر",setThemeV:"داكن · فاتح",
+ setBudget:"الميزانية",setApproval:"الموافقات",setApprovalV:"أي إنفاق أكبر من ٢٠ دولارًا أو يمس العملاء",
+ statesTitle:"حالات الواجهة",st_empty:"فارغ",st_loading:"جارٍ التحميل",st_error:"خطأ",st_success:"نجاح",
+ probation:"الثقة: تحت التجربة → خبير",dGoal:"الهدف",dTeam:"الفريق",dSkills:"المهارات",dMemory:"الذاكرة",dMemoryV:"نطاق الفريق · ٩٠ يومًا",
+ dTasks:"مهام مفتوحة",dActivity:"النشاط الأخير"
+};
+const en={};
+$$("[data-i18n]").forEach(el=>en[el.dataset.i18n]=el.textContent);
+$$("[data-i18n-ph]").forEach(el=>en[el.dataset.i18nPh]=el.placeholder);
+function setLang(l){
+  const r=document.documentElement;
+  r.lang=l; r.dir = l==="ar" ? "rtl" : "ltr";
+  const pack = l==="ar" ? ar : en;
+  $$("[data-i18n]").forEach(el=>{const k=el.dataset.i18n; if(pack[k]!==undefined) el.textContent=pack[k]});
+  $$("[data-i18n-ph]").forEach(el=>{const k=el.dataset.i18nPh; if(pack[k]!==undefined) el.placeholder=pack[k]});
+  $$("[data-lang]").forEach(b=>b.classList.toggle("on",b.dataset.lang===l));
+  go($$(".nav button[data-view]").find(b=>b.classList.contains("on"))?.dataset.view||"company");
+}
+$$("[data-lang]").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+
+/* demo: show the states + auto status text */
+setInterval(()=>{},1000);
+</script>
+</body>
+</html>

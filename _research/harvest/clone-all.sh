@@ -70,3 +70,37 @@ echo "  - paperclipai/companies (no licence file = all rights reserved; ideas on
 echo
 echo "Harvested into: $TARGET"
 echo "Next: record commit SHAs + licences in THIRD_PARTY_LICENSES.md (see ../15-code-harvest-plan.md)"
+
+# --------------------------------------------------------------------------------------------
+# v2 additions (2026-10-03) — from _research/22-harvest-deep-scan.md
+# Clone side-by-side outside the app tree; read the licence file of every repo before vendoring.
+# --------------------------------------------------------------------------------------------
+# --- UI shell, chat, canvas
+git clone --depth 1 https://github.com/shadcn-ui/ui shadcn-ui
+git clone --depth 1 https://github.com/radix-ui/primitives radix-ui
+git clone --depth 1 https://github.com/assistant-ui/assistant-ui assistant-ui
+git clone --depth 1 https://github.com/nolansym/cult-ui cult-ui
+git clone --depth 1 https://github.com/xyflow/xyflow xyflow
+git clone --depth 1 https://github.com/d3/d3-force d3-force
+git clone --depth 1 https://github.com/dagrejs/dagre dagre
+git clone --depth 1 https://github.com/obsidianmd/jsoncanvas jsoncanvas
+git clone --depth 1 https://github.com/excalidraw/excalidraw excalidraw
+# --- app plumbing
+git clone --depth 1 https://github.com/better-auth/better-auth better-auth
+git clone --depth 1 https://github.com/drizzle-team/drizzle-orm drizzle-orm
+git clone --depth 1 https://github.com/honojs/hono hono
+git clone --depth 1 https://github.com/timgit/pg-boss pg-boss
+# --- agent runtime + model layer
+git clone --depth 1 https://github.com/langchain-ai/langgraphjs langgraphjs
+git clone --depth 1 https://github.com/mastra-ai/mastra mastra
+git clone --depth 1 https://github.com/BerriAI/litellm litellm
+# --- observability
+git clone --depth 1 https://github.com/langfuse/langfuse langfuse
+git clone --depth 1 https://github.com/traceloop/openllmetry openllmetry
+# --- memory
+git clone --depth 1 https://github.com/getzep/graphiti graphiti
+# --- execution / sandbox / protocols
+git clone --depth 1 https://github.com/e2b-dev/E2B e2b
+git clone --depth 1 https://github.com/microsandbox/microsandbox microsandbox
+git clone --depth 1 https://github.com/a2aproject/A2A a2a
+git clone --depth 1 https://github.com/modelcontextprotocol/modelcontextprotocol mcp

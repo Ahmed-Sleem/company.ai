@@ -1,0 +1,103 @@
+# Supporting notes
+
+Merged special notes: rule conflicts and their resolutions, GUI requirements, RTL, tokens,
+verification, mobile policy, known limitations.
+
+## 1. Rule conflicts and resolutions (read before UI work)
+
+The four rule documents were written for a different product; the pixel style is locked by the user.
+Resolutions (full reasoning in `_research/rules/README.md`):
+
+| Conflict | Resolution |
+|---|---|
+| `UI Governance Contract` §2.8 radius scale (6→28px) vs the pixel skin's `--radius: 0px` | **Pixel wins.** Invoke the contract's own §1 "documented deviation — do not correct" clause. The stepped corner frames are the brand shape. |
+| Contract §2.2 control heights (32px compact) vs demo `--control: 34px` | Demo wins (34px); controls still clear the 24px WCAG floor and expand to 48px on coarse pointers. |
+| `DESIGN_SYSTEM.md` §1.5(4) "no native `<dialog>`" | **Native `<dialog>` + `showModal()` is kept.** `GENERAL_GUI_AGENT_RULES.md` §11.2 requires focus containment, inert background and focus return — native dialogs provide all three. Recorded deviation. |
+| Contract §2.6 type scale (11→28) vs demo scale (11→28 + pixel face) | Compatible. Demo adds a pixel family for hierarchy only; contract's minimum (12px body) is respected (body 14px). |
+| `DESIGN_SYSTEM.md` "glass / chrome transparency is non-negotiable" | That is the other product's identity. Here: solid surfaces, no blur — the demo's look. Recorded deviation. |
+| Contract §9 "no decorative colour, semantic only" | Kept. The graph legend assigns colour by **meaning** (status/stage) and always pairs it with a shape + label, never colour alone. |
+| Contract §7 motion 120–180ms vs demo `--speed: 130ms` | Same range. Graph interactions use the demo's 130ms and no data animation (contract §7 "never animate data"). |
+
+## 2. GUI requirements in force (condensed)
+
+- **Tokens only.** Every colour, size, radius, shadow, duration resolves to
+  `design/tokens/company-os-pixel.css`. No raw hex/pixel literals in component CSS.
+- **Four data states** everywhere data appears: loading, empty, error, no-permission — plus the
+  demo's `restricted`.
+- **Window system:** one dialog implementation (the demo's `openDialog`), actions in the footer,
+  `dvh`-capped, focus trapped and returned.
+- **Wording:** no `coming soon` / `tbd` / `todo` / internal identifiers in the UI. The demo's copy
+  already complies.
+- **Accessibility floor:** ≥24×24 targets (48 on coarse pointers), visible 2px focus ring, icon-only
+  controls named, headings hierarchical, live regions for async, never colour alone.
+- **Verification duties:** test normal, extreme and failure conditions; log evidence; never claim
+  completion without it (see §5 below).
+
+## 3. RTL
+
+Structural, not translated: logical properties only (`inset-inline-*`, `margin-inline`, `border-inline-end`,
+`text-align:start`); zero `left`/`right` in the demo; the mobile drawer mirrors explicitly; direction-
+implying icons mirror, non-directional ones do not. New UI (the graph) follows the same rules and is
+checked in both directions.
+
+## 4. Tokens
+
+Source of truth: `design/tokens/company-os-pixel.{css,json}`. Dark and light are the same variable
+names with different values; semantic meaning is fixed
+(working/sent/done → accent · error/failed/critical → danger · paused/high/approval → warning).
+**Additions must reuse these meanings rather than introduce hues.**
+
+Deviation to remember: `--dim` (#819388 dark) is for non-essential labels only — never for text that
+carries meaning (review item E7).
+
+## 5. Verification of the current prototype (evidence)
+
+Command: `node design/prototype/verify.mjs` — **10/10 pass** (run 2026-10-03).
+
+| Check | Result |
+|---|---|
+| Prototype is byte-identical to a fresh build from the demo | 377,510 B, identical |
+| `graph.js` and the demo's app script parse | `node --check` |
+| Layout converges, stays finite, deterministic | 77 nodes / 82 edges → settled to 0.000 px/tick; rings finite |
+| No raw colours or stray lengths in new CSS/JS | clean (media-query breakpoints are the documented platform exception) |
+| No physical `left`/`right` in new CSS or markup | clean — logical properties only |
+| Demo integrity (views, themes, RTL, dialogs, storage) | intact |
+| Network page renders (en + ar, five states, no-data guard) | markup clean, no `undefined` |
+| **No node / label / hull overlap** (force and rings) | worst clearance +10.0px, hulls clear, span ≤1698px |
+| CSS geometry tokens match their JS fallbacks | 36/36 in step |
+| Served over HTTP | `company-os.html` 200 / 384,559 B; `graph.js` 200; `graph.css` 200 |
+
+Each check was also **observed failing** (raw colour, syntax error, hand-edited prototype, physical
+property) and then restored — the evidence table is in `_research/18-changes-implemented.md` §3.
+
+**Not verified here (no browser or device in this environment):** rendering and contrast in both
+themes, focus order, pointer gestures, screen-reader announcement order, 200% zoom / 320×568, and
+Arabic shaping of the new panel. The gate prints this list itself so the gap cannot be mistaken for
+a pass.
+
+### Checkpoint
+
+``_research/checkpoints/company_ai_phase_d2_network_view.zip`` — full project snapshot (the repo minus `.git`),
+plus `company_ai_phase_d0_docs.zip` for the documentation/rules phase. Checkpoints live **outside**
+the repository per `DEVELOPMENT_REQUIREMENTS.md` §6 and are never committed.
+
+## 6. Mobile policy (template, to confirm)
+
+Desktop-first (the demo's layout is a desktop shell). On mobile: navigation becomes a drawer;
+the task board collapses to one column; the **network view falls back to its list mode** (canvas
+gestures are a poor fit on touch and the list gives a real accessible path). Documented per
+`DEVELOPMENT_REQUIREMENTS.md` §6.
+
+## 7. Known limitations and open items
+
+1. **No browser was available** in the environment that produced the prototype: rendering,
+   focus order, contrast and gesture behaviour are verified by reading code and by headless
+   simulation, not by eye. Must be checked in a real browser before the next decision.
+2. **Avatar art normalisation** is done at runtime (32-grid art scaled 1.5× onto the 48-grid);
+   the proper fix is a re-cut of those 16 portraits at 48×48 — ask the designer.
+3. **i18n** is still an inline dictionary (review item E6/A1); the product must move it to resource
+   files. The graph module already resolves its own strings through pairs (en/ar).
+4. **Simulated values** (run counts, policy labels in the prototype) are derived from sample data and
+   are labelled as sample data in the UI. The product must not carry them as real state.
+5. **`--dim` contrast** at 11px is borderline in dark mode; raised to `--muted` wherever the text
+   carries meaning.
