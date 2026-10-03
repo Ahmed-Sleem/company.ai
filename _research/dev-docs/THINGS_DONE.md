@@ -5,6 +5,18 @@
 
 ---
 
+## 2026-10-03 05:30 — PUBLISHED: the browser-verified prototype and the 12-shot gallery are on `main` (PR #3 merged) + the study report is written
+
+- **Task (user):** continue the same instruction — the browser pass and the gallery must end up in `main`, latest version, and the study/comprehension report is owed to the owner.
+- **Route:** branch `publish/browser-verified-prototype` → commit `8046123` → **PR #3** → merge commit **`fe2bfaab`** on `main` (route 23.2 style; the temp token was used for this session's git/API only — not in any file — and the local clone's remote was reset to the plain URL afterwards). Remote branch deleted after merge; local `main` fast-forwarded and clean.
+- **Verified on the remote itself:** `main` tip `fe2bfaab`, **73 files**, **12/12 screenshots present**, `design/prototype/probe-browser.mjs` present.
+- **Snapshot zip rebuilt for this milestone:** `_research/snapshots/company_ai_FULL_2026-10-03.zip` — **71 files, 2,873,322 bytes, sha256 `c0d5f31b4fe2569041e97e4ea458811d8aa11d7d44611cae5539b1d2c9dda13c`** (grown from 58 files because the 12 screenshots and the browser probe are now included; `.git` and `node_modules` excluded). Verified by extracting to a clean folder: 71 files, 12 screenshots, `node design/prototype/verify.mjs` → **11/11**.
+- **Study / handover report — `_research/dev-docs/HANDOFF-ACK.md`** (a copy is handed to the owner as the session deliverable): what was read (all four rule documents, the design tree, `_research/` 00–23, the code), the vision in my words, the twelve-point working contract I will hold to (tokens only, untouchable demo, structural RTL, four data states, green gate before every push, observe each new check failing first, one definition per value, nothing overlaps, `_research/` deletable, no secrets, rules change only with explicit approval, append-only logging), the inherited deviations, today's four defects with their evidence and the honest NOT-CHECKED list, the locked stack and phase order, and the recommendations on the open questions C3–F6 — plus the exact P0 sequence I will start on.
+- **Still owed to the owner (needs their input):** answers to C3–C5, D1–D5, E1–E3, F1–F6 (recommendations are in the report; none of it blocks P0).
+- **Validation after the merge:** `node design/prototype/verify.mjs` → 11/11 · `python3 design/prototype/build-prototype.py --check` → all ok · designer demo blob `7dd2e203…` unchanged.
+
+---
+
 ## 2026-10-03 04:40 — the browser pass is done: 4 defects found and fixed, the 12 gallery shots are in the repo, gate 11/11 + probe 7/7
 
 - **Task (user):** *"apply this patch, merge all to main … now download the full updated repo, read it, read the rules (they are mandatory), study what we are doing, because you will work on it"* — the handoff's first-week list, items 2 and 3.
