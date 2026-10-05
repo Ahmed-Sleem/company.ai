@@ -68,10 +68,12 @@ describe('shell', () => {
 describe('team and budget', () => {
   it('lists the demo’s agents with their budget state', async () => {
     const body = await (await get('/api/agents')).json();
-    expect(body.agents).toHaveLength(3);
+    expect(body.agents).toHaveLength(8); // the designer's roster, not a sample
     const aria = body.agents.find((a: { name: string }) => a.name === 'Aria');
     expect(aria.budget.limitCents).toBe(4000);
+    expect(aria.budget.spentCents).toBe(1250);
     expect(aria.budget.exceeded).toBe(false);
+    expect(body.agents.find((a: { name: string }) => a.name === 'Chloe').role).toBe('Content designer');
   });
 });
 

@@ -8,6 +8,8 @@ import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
 import { Panel } from '../components/Panel';
 import { DataState, type DataStateKind } from '../components/DataState';
+import { Badge, toneOf } from '../components/Badge';
+import { dateTime, localized, money } from '../lib/format';
 
 type Decision = Awaited<ReturnType<typeof api.decisions>>['decisions'][number];
 
@@ -53,20 +55,23 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
         {decisions?.map((decision) => (
           <article className="decision" key={decision.id} style={{ marginBlockEnd: 'var(--s4)' }}>
             <div>
-              <h3>{decision.title}</h3>
-              <p>{decision.diff.summary}</p>
+              <p className="task-id">{decision.shortRef}</p>
+              <h3>{localized(decision.title, decision.titleAr, lang)}</h3>
+              <p>{localized(decision.diff.summary, decision.diff.summaryAr, lang)}</p>
               <dl>
                 <dt>{t('rule', lang)}</dt>
                 <dd>{`${decision.rule.id} · ${decision.rule.observed} / ${decision.rule.threshold} ${decision.rule.unit}`}</dd>
                 <dt>{t('change', lang)}</dt>
                 <dd>{`${decision.diff.before ?? '—'} → ${decision.diff.after ?? '—'}`}</dd>
                 <dt>{t('audit', lang)}</dt>
-                <dd>{new Date(decision.audit.raisedAt).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</dd>
+                <dd>{dateTime(decision.audit.raisedAt, lang)}</dd>
               </dl>
             </div>
             <div className="meta">
               <span className="tag">{decision.kind}</span>
-              <span>{decision.status}</span>
+              <Badge tone={toneOf(decision.risk)}>{decision.risk}</Badge>
+              <Badge tone={toneOf(decision.status)}>{decision.status}</Badge>
+              {decision.costCents > 0 ? <span>{money(decision.costCents, lang)}</span> : null}
             </div>
             <div className="actions">
               <button className="btn primary" type="button" disabled={busy === decision.id}

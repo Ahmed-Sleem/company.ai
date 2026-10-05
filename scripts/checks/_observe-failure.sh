@@ -26,6 +26,7 @@ probe() { # name, file, content, check
 
 probe "raw-values" "apps/web/src/styles/_probe.css" ".x{color:#ff00ff}" "scripts/checks/raw-values.mjs"
 probe "logical-properties" "apps/web/src/styles/_probe.css" ".x{margin-left:8px}" "scripts/checks/logical-properties.mjs"
+probe "namespace-lock" "apps/web/src/_probe.ts" "const kind = id.split('_')[0];" "scripts/checks/namespace-lock.mjs"
 probe "build-context" "apps/web/src/_probe.ts" "import x from '../../design/prototype/company-os.html';" "scripts/checks/build-context.mjs"
 probe "licence-gate" "node_modules/_probe-agpl/package.json" '{"name":"_probe-agpl","version":"1.0.0","license":"AGPL-3.0"}' "scripts/checks/licence-gate.mjs"
 probe "docs" "_research/dev-docs/THINGS_DONE.md" "no headings at all" "scripts/checks/docs.mjs"

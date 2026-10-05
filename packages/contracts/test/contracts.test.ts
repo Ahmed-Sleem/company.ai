@@ -26,7 +26,9 @@ import {
   MESSAGE,
   RUN,
   canTransition,
+  offeredTransitions,
   requiresHumanApproval,
+  TRANSITION_REASONS,
   decideInitialStatus,
   costCents,
 } from '../src/index.js';
@@ -187,5 +189,32 @@ describe('schema behaviour', () => {
       costCents: 0, traceId: null, error: null, startedAt: '2026-10-03T00:00:00+00:00', endedAt: null,
     });
     expect(run.modelId).not.toBe(run.requestedModelId);
+  });
+});
+
+describe('the offers the server makes are the rule, not a guess', () => {
+  it('offers only the edges of the state machine', () => {
+    expect(offeredTransitions('backlog', { hasApprovedDecision: false }).map((o) => o.to)).toEqual(['progress']);
+    expect(offeredTransitions('progress', { hasApprovedDecision: false }).map((o) => o.to)).toEqual(['review', 'backlog']);
+    expect(offeredTransitions('done', { hasApprovedDecision: false })).toEqual([]);
+  });
+
+  it('refuses review → done until a person has decided, and says why', () => {
+    const blocked = offeredTransitions('review', { hasApprovedDecision: false });
+    const finish = blocked.find((offer) => offer.to === 'done');
+    expect(finish?.ok).toBe(false);
+    expect(finish?.reason?.en).toBe(TRANSITION_REASONS.needs_approval.en);
+    expect(finish?.reason?.ar).toBe(TRANSITION_REASONS.needs_approval.ar);
+
+    const allowed = offeredTransitions('review', { hasApprovedDecision: true });
+    expect(allowed.find((offer) => offer.to === 'done')?.ok).toBe(true);
+  });
+
+  it('never offers a move that the state machine forbids', () => {
+    for (const from of TASK_STAGES) {
+      for (const offer of offeredTransitions(from, { hasApprovedDecision: true })) {
+        expect(canTransition(from, offer.to), `${from} → ${offer.to}`).toBe(true);
+      }
+    }
   });
 });

@@ -53,6 +53,29 @@ contract's enforcement (§3.4 of `GENERAL_GUI_AGENT_RULES.md`).
    commission a single-grid set from the designer?
 4. **Backend for the network layout:** persist node positions per user (recommended) or per company?
 
+## P1 — Shell + Team + Tasks + Inbox (started 2026-10-03)
+
+Acceptance criteria, unchanged from the table above: **parity with the prototype on real state**,
+four data states per surface, RTL + themes verified. The rules were re-read before starting this
+phase (see the log entry for the phase-start recheck).
+
+The parity list is taken from the designer's demo, screen by screen, not from memory:
+
+| Screen | The demo shows | P0 had | P1 adds |
+|---|---|---|---|
+| Tasks | head + **New task**; four stats (open / in progress / in review / completed); toolbar (search, priority filter, owner filter, **Board\|List**); board columns with dot + label + count and a per-column "No tasks here"; list = table (Task, Owner, Stage, Priority, Due date, Progress); card = id, priority badge, title, owner, due, meter; a distinct "no matches" state; click opens the task dialog | a plain four-column board | all of it, on real state, plus **honest move controls** driven by the server's own transition rules |
+| Inbox | head; queue summary (count + "Local changes only"); decision cards (raiser avatar, title, risk badge, "from · role / cost", the ask, Approve / Reject / **Ask a question**); an "All caught up" empty state; **Decision history** table (Request, Requested by, Stage, Activity) | decision list with rule/change/audit and Approve/Reject | all of it, plus the question path and the history table |
+| Team | roster cards (avatar, name, role, focus line, skills, spend meter, status dot); search/filter; agent dialog with model, capabilities, budget and recent runs | roster cards + meters | the dialog, the filters, and the recent-runs ledger view |
+
+Steps (each one is implemented, tested, verified in a browser, gated, pushed and logged on its own):
+
+1. **P1.1 Tasks parity + honest moves** — server-computed allowed transitions, the full demo layout,
+   task dialog, and a browser check that moves a card and sees the gate refuse the wrong move.
+2. **P1.2 Task create + edit** — "New task" and the fields the demo shows, with validation in one place.
+3. **P1.3 Inbox parity** — queue summary, raiser/cost/risk, Ask a question, Decision history.
+4. **P1.4 Team parity** — roster details, filters, agent dialog with its ledger.
+5. **P1.5 Settings parity** — palettes/fonts/language/states as the demo has them.
+
 ## P0 status (2026-10-03)
 
 **Built and green.** The workspace runs as one product: `packages/{tokens,contracts,company,gateway}`,

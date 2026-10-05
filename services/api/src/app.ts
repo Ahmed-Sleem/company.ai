@@ -11,6 +11,8 @@ import { zValidator as zv } from '@hono/zod-validator';
 import { z } from 'zod';
 import {
   DECISION_VERDICT,
+  offeredTransitions,
+  taskStage,
   viewStateQuery,
   TASK_TRANSITION,
   VIEW_IDS,
@@ -122,9 +124,30 @@ export function createApp(deps: AppDeps) {
     return c.json({ agent, budget: await budgetState(deps.db, agent.id) });
   });
 
+  /**
+   * The board's data: every task, who owns it, and — the important part — which moves this
+   * server will actually accept right now, each with its reason when it will not.
+   * The interface renders these offers; it never decides for itself what is allowed, because
+   * a second copy of the rule is a second answer waiting to disagree with the first.
+   */
   app.get('/api/tasks', async (c) => {
     const company = await companyOf();
-    return c.json({ tasks: await listTasks(deps.db, company.id) });
+    const tasks = await listTasks(deps.db, company.id);
+    const agents = await listAgents(deps.db, company.id);
+    const approved = await listDecisions(deps.db, company.id, 'approved');
+    const approvedTaskIds = new Set(approved.map((row) => row.taskId).filter(Boolean) as string[]);
+    return c.json({
+      tasks: tasks.map((task) => {
+        const owner = agents.find((agent) => agent.id === task.ownerAgentId);
+        return {
+          ...task,
+          owner: owner ? { id: owner.id, name: owner.name, role: owner.role } : null,
+          // The stored stage is parsed through the contract, so a value the database should
+          // never hold fails here — loudly, at the boundary — instead of reaching the board.
+          offers: offeredTransitions(taskStage.parse(task.stage), { hasApprovedDecision: approvedTaskIds.has(task.id) }),
+        };
+      }),
+    });
   });
 
   app.post(

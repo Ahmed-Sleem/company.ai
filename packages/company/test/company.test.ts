@@ -46,19 +46,32 @@ afterAll(async () => {
 });
 
 describe('seed and reads', () => {
-  it('starts with the demo’s company, org and board', async () => {
+  it('starts with a company, an org and a board that hang together', async () => {
+    // The exact values are the designer's, and `parity.test.ts` checks every one of them
+    // against the demo file. This test is about the shape being usable at all.
     const agents = await listAgents(db, companyId);
-    expect(agents.map((a) => a.name).sort()).toEqual(['Aria', 'Leo', 'Zara']);
-    expect(agents.find((a) => a.name === 'Zara')?.status).toBe('error');
-    expect(agents.find((a) => a.name === 'Leo')?.reportsTo).toBe(agents.find((a) => a.name === 'Aria')?.id);
+    expect(agents.length).toBeGreaterThanOrEqual(3);
+    for (const agent of agents) {
+      expect(agent.id).toBeTruthy();
+      expect(agent.name.length).toBeGreaterThan(0);
+    }
+    const tasks = await db.select().from(schema.tasks);
+    expect(tasks.length).toBeGreaterThanOrEqual(3);
+    for (const task of tasks) {
+      expect(task.shortRef, 'every task carries a display ref').toMatch(/^TSK-\d+$/);
+      expect(agents.some((agent) => agent.id === task.ownerAgentId), 'every task has an owner').toBe(true);
+      expect(['backlog', 'progress', 'review', 'done']).toContain(task.stage);
+    }
+    const refs = new Set(tasks.map((task) => task.shortRef));
+    expect(refs.size, 'display refs are unique').toBe(tasks.length);
   });
 
   it('enforces the 0–100 progress bound in the database itself', async () => {
     let message = '';
     try {
       await db.insert(schema.tasks).values({
-        companyId, title: 'Bad progress', ownerAgentId: agentIds[0]!, progress: 140,
-      });
+        companyId, title: 'Bad progress', ownerAgentId: agentIds[0]!, progress: 140, ref: 'TSK-999',
+      } as never);
     } catch (error) {
       const e = error as Error & { cause?: Error };
       message = `${e.message} ${e.cause?.message ?? ''}`;

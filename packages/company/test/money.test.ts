@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPgliteDb, schema, seed, budgetState, monthSpendCents, type Db } from '../src/index.js';
+import { demo } from './demo-fixture.js';
 
 let db: Db;
 let close: () => Promise<void>;
@@ -25,16 +26,16 @@ afterAll(async () => {
 
 describe('the demo money is real', () => {
   it('records the demo spend in the ledger, not only in the cached counter', async () => {
-    // The demo's meters show $12.50, $8.20 and $18.90.
-    const expected = [1250, 820, 1890];
+    // The amounts are the designer's, read from the demo rather than typed here.
     const rows = await db.select().from(schema.agents);
-    for (const [index, id] of agentIds.entries()) {
-      const state = await budgetState(db, id);
-      expect(state.spentCents, `agent ${index} spend from the ledger`).toBe(expected[index]);
-      expect(rows.find((row) => row.id === id)?.spentMonthlyCents, `agent ${index} cached counter`)
-        .toBe(expected[index]);
+    for (const person of demo.agents()) {
+      const row = rows.find((candidate) => candidate.name === person.name)!;
+      const state = await budgetState(db, row.id);
+      expect(state.spentCents, `${person.name} spend from the ledger`).toBe(person.spentCents);
+      expect(row.spentMonthlyCents, `${person.name} cached counter`).toBe(person.spentCents);
     }
-    expect(await monthSpendCents(db, agentIds[0]!)).toBe(1250);
+    const aria = rows.find((row) => row.name === 'Aria')!;
+    expect(await monthSpendCents(db, aria.id)).toBe(1250);
   });
 
   it('leaves the ledger the only source of the number the meter shows', async () => {

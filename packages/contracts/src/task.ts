@@ -70,6 +70,39 @@ export function requiresHumanApproval(from: TaskStage, to: TaskStage): boolean {
   return from === 'review' && to === 'done';
 }
 
+/**
+ * What the product will actually accept right now, with the reason when it will not.
+ *
+ * `canTransition` answers "is this an allowed edge in the state machine"; this answers
+ * "may this task move there, given what is known about its decision" — and it is the single
+ * place that answer is produced. The API returns these offers; the interface renders them and
+ * does not second-guess them; the write path re-checks through `transitionTask`.
+ */
+export interface TransitionOffer {
+  to: TaskStage;
+  ok: boolean;
+  /** Why not, when `ok` is false. English and Arabic, like every other string. */
+  reason: { en: string; ar: string } | null;
+}
+
+export const TRANSITION_REASONS = {
+  needs_decision: { en: 'A person has to approve this first.', ar: 'يجب أن يوافق شخص أولًا.' },
+  needs_approval: { en: 'Waiting for the approval that lets this finish.', ar: 'بانتظار الموافقة التي تسمح بإتمام هذه المهمة.' },
+} as const;
+
+export function offeredTransitions(
+  from: TaskStage,
+  options: { hasApprovedDecision: boolean },
+): TransitionOffer[] {
+  return TASK_TRANSITIONS[from].map((to) => {
+    if (!requiresHumanApproval(from, to)) return { to, ok: true, reason: null };
+    // review → done is the gate: it needs the decision row that a person produced.
+    return options.hasApprovedDecision
+      ? { to, ok: true, reason: null }
+      : { to, ok: false, reason: TRANSITION_REASONS.needs_approval };
+  });
+}
+
 export const TASK_TRANSITION = z
   .object({
     taskId,

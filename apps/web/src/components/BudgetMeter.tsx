@@ -4,6 +4,7 @@
  */
 import type { Lang } from '../lib/i18n';
 import { t } from '../lib/i18n';
+import { money as formatMoney } from '../lib/format';
 
 export function BudgetMeter({
   label,
@@ -18,11 +19,10 @@ export function BudgetMeter({
 }) {
   const ratio = limitCents > 0 ? Math.min(1, spentCents / limitCents) : 0;
   const over = limitCents > 0 && spentCents >= limitCents;
-  const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   return (
     <div>
       <div className="metric-label" id={`${label}-meter-label`}>
-        <span>{`${money(spentCents)} ${t('spendOf', lang)} ${money(limitCents)}`}</span>
+        <span>{`${formatMoney(spentCents, lang)} ${t('spendOf', lang)} ${formatMoney(limitCents, lang)}`}</span>
         {over && <span className="tag high">{t('blocked', lang)}</span>}
       </div>
       <div
@@ -32,7 +32,7 @@ export function BudgetMeter({
         aria-valuemin={0}
         aria-valuemax={limitCents}
         aria-valuenow={spentCents}
-        aria-valuetext={`${money(spentCents)} ${t('spendOf', lang)} ${money(limitCents)}`}
+        aria-valuetext={`${formatMoney(spentCents, lang)} ${t('spendOf', lang)} ${formatMoney(limitCents, lang)}`}
       >
         <span style={{ inlineSize: `${Math.round(ratio * 100)}%` }} />
       </div>
