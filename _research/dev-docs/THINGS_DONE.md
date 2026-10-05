@@ -5,6 +5,54 @@
 
 ---
 
+## 2026-10-03 15:20 — P1 starts: the designer's company is now the company in the database (step P1.1a)
+
+- **Task (user):** "start first phase … make sure everything is suitable to work together and work
+  with the GUI" — P1's acceptance criteria are parity with the prototype **on real state**.
+- **Rule recheck before the phase (standing instruction):** both rule documents read again
+  (`DEVELOPMENT_REQUIREMENTS.md` §1–§9 headings, `GENERAL_GUI_AGENT_RULES.md` §5 and §6 in full).
+  The operative constraints taken into this phase: one implementation per concept and per rule;
+  every action has defined idle/pending/success/empty/error states; tokens only; no second copy of
+  a rule in the interface.
+- **What was wrong:** the product showed a simplified company — three employees, five tasks, a
+  hand-written rule for who could move where, and a display reference produced by slicing a UUID.
+  The designer's demo carries eight employees, ten tasks, three decisions, two languages, a
+  department, a focus line, a portrait, a risk level and a money impact.
+- **Schema (migration `0001`, hand-finished):** `agents` gained `name_ar`, `role_ar`, `department`,
+  `focus`, `focus_ar`, `avatar`; `tasks` gained `short_ref`, `title_ar`, `description`,
+  `description_ar`; `decisions` gained `short_ref`, `title_ar`, `risk`, `cost_cents`.
+  Drizzle generated plain `NOT NULL` columns, which cannot apply to a table that already has rows;
+  the committed migration adds them nullable, backfills with a real value, then makes them required.
+- **Display refs are database-generated values.** `TSK-142` / `DEC-31` come from a Postgres sequence
+  through a column default (starting above the designer's own numbers). No code slices, decodes or
+  invents an identifier — enforced by a new check, below.
+- **New check — the namespace lock (`scripts/checks/namespace-lock.mjs`).** Fails the gate when
+  product code decodes a prefix out of an id, builds an id from the clock/random/a counter, or
+  truncates an id for display. It reported three places on its first run: two real (the task card
+  sliced a UUID as a fallback ref; the same line guessed a ref) and one false positive (truncating an
+  error body — the rule was narrowed, because a check that cries wolf is a check nobody reads).
+  Added to the gate's step 6 and to `_observe-failure.sh` (12/12 probe behaviours correct).
+- **Parity is enforced, not claimed.** `packages/company/test/parity.test.ts` reads
+  `design/designer-demo/ai-company-os.html` and compares every employee (name, Arabic name, role,
+  Arabic role, department, status, portrait, focus line, Arabic focus line, budget, skills, manager),
+  every task (ref, both titles, owner, stage, priority, progress, due date, description) and every
+  decision (ref, both titles, raiser, risk, cost, both asks) — plus the operator's name. Observed
+  failing first: one seeded budget changed to 3100 gave
+  *"AssertionError: Leo budget: expected 3100 to be 3000"*, then reverted green.
+  The money test now takes its expected amounts from that same file instead of typed numbers.
+- **Interface wins from the data:** Arabic screens show Arabic names, roles, focus lines, task
+  titles, descriptions and decision asks (they showed English); the roster shows departments; the
+  inbox shows the decision reference, its risk badge and its cost; one money formatter and one date
+  formatter now serve the whole app (the meter had its own pair).
+- **Validation:** `bash scripts/verify.sh` → **passed 9 · failed 0 · skipped 0** — 60 tests
+  (was 51: +6 parity, +3 contract offers), 9 GUI tests, 6 repository checks, the production build,
+  16 browser checks, the designer's 11 checks.
+- **Limitation / next:** the board is still the plain four columns; the demo's stats row, filters,
+  board/list switch, task dialog and the move controls are the next step (P1.1b). The offers the
+  server will accept are already returned by `GET /api/tasks` and tested in contracts.
+
+---
+
 ## 2026-10-03 14:05 — three defects found by looking at the running product (seed money, shell grid, thread order)
 
 - **How they were found:** opening the app in a browser and reading the screen, not reviewing code.
