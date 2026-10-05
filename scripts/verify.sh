@@ -12,11 +12,11 @@
 #   5. web tests           — the shell, the four data states, RTL, theme (jsdom)
 #   6. repo checks         — raw values, logical properties, build context, licences, docs
 #   7. build               — the production web build (this is what gets served)
-#   8. browser smoke       — real Chromium against the real API (15 checks)
-#   9. design gate         — the designer's own prototype still passes its 11 checks
+#   8. design gate         — the designer's own prototype still passes its 11 checks
+#   9. browser smoke       — real Chromium against the real API (16 checks)
 #
-# Steps that need Playwright (8, 9) are skipped with a clear note if Chromium is not installed;
-# every other step is required.
+# The design gate (8) always runs: it needs no browser. Step 9 needs Chromium and prints the
+# three commands that install it if it is missing; every other step is required.
 # =============================================================================================
 set -u
 cd "$(dirname "$0")/.."
@@ -32,13 +32,20 @@ run() { # label, command…
     FAILED=$((FAILED+1))
   fi
 }
-skip_if_no_browser() {
-  if node -e "require.resolve('playwright')" 2>/dev/null && [ -d "$HOME/.cache/ms-playwright" ]; then
-    return 0
-  fi
-  printf '\033[33m· skipped: Playwright/Chromium are not installed (see README: dev setup)\033[0m\n'
-  SKIPPED=$((SKIPPED+1))
-  return 1
+has_browser() {
+  # Playwright the package, then Chromium the browser. Both, or the smoke test cannot run.
+  node -e "require.resolve('playwright')" 2>/dev/null || return 1
+  node -e "
+    const { chromium } = require('playwright');
+    process.exit(chromium.executablePath() && require('node:fs').existsSync(chromium.executablePath()) ? 0 : 1);
+  " 2>/dev/null || return 1
+  return 0
+}
+explain_no_browser() {
+  printf '\033[33m· skipped: Chromium is not installed. To run every step:\033[0m\n'
+  printf '    npm install\n'
+  printf '    npx playwright install chromium\n'
+  printf '    sudo npx playwright install-deps chromium   # Linux system libraries\n'
 }
 
 # ── guard: a running development API starves the tests on a small machine ──────────────────
@@ -67,9 +74,14 @@ run "6/9 repository checks" bash -c '
   done'
 run "7/9 production web build" npm run build -w @company/web --silent
 
-if skip_if_no_browser; then
-  run "8/9 browser smoke test (real API + real Chromium)" node apps/web/e2e/smoke.mjs
-  run "9/9 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
+# The design gate needs no browser — it must run on every machine, every time.
+run "8/9 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
+
+if has_browser; then
+  run "9/9 browser smoke test (real API + real Chromium)" node apps/web/e2e/smoke.mjs
+else
+  explain_no_browser
+  SKIPPED=$((SKIPPED+1))
 fi
 
 printf '\n\033[1m── gate summary ──\033[0m\n'

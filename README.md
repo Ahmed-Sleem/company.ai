@@ -19,6 +19,9 @@ production build · **16** browser checks against the real API · the designer's
 # once: install everything (needs Node 20+)
 npm install
 
+# once, only for the browser check inside the gate (skip it and that step tells you so)
+npx playwright install chromium && sudo npx playwright install-deps chromium
+
 # terminal 1 — the API (starts on http://127.0.0.1:8787, uses a local database, no keys, no spend)
 npx tsx services/api/src/server.ts
 
