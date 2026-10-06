@@ -78,6 +78,9 @@ export function App() {
     const onHash = () => {
       setView(readView());
       setForcedState(readForcedState());
+      // The demo's `head()` focuses its title when a screen changes, so a screen-reader user hears
+      // where they have arrived instead of being left at the link they clicked.
+      requestAnimationFrame(() => document.getElementById('page-title')?.focus());
     };
     addEventListener('hashchange', onHash);
     return () => removeEventListener('hashchange', onHash);

@@ -158,12 +158,40 @@ try {
   const statValues = await page.$$eval('.stat-value', (nodes) =>
     nodes.map((node) => Number(node.textContent)));
   const [open, progress, review, done] = statValues;
-  const backlog = (await page.textContent('.column[aria-label="Backlog"]'))?.match(/^Backlog(\d+)/)?.[1];
+  // The columns are found by the word they print (the design's vocabulary key beside the dot).
+  const columnHeads = await page.$$eval('.column', (columns) => columns.map((column) => ({
+    word: column.querySelector('.column-head span:not(.dot)')?.textContent ?? '',
+    count: Number(column.querySelector('.column-head span:last-child')?.textContent ?? NaN),
+  })));
+  const backlog = columnHeads.find((head) => head.word === 'backlog')?.count;
   check('the four statistics are read from the rows, not written in',
-    statValues.length === 4 && open === progress + review + Number(backlog) && open === cards - done,
-    `open ${open} = ${progress} + ${review} + ${backlog} backlog, and ${open} = ${cards} − ${done} done`);
+    statValues.length === 4 && columnHeads.length === 4 &&
+      open === progress + review + backlog && open === cards - done,
+    `open ${open} = ${progress} + ${review} + ${backlog} backlog, and ${open} = ${cards} − ${done} done · columns: ${columnHeads.map((h) => `${h.word} ${h.count}`).join(', ')}`);
   check('the board offers the list view the demo has',
-    (await page.textContent('.toolbar'))?.includes('List') ?? false);
+    (await page.$$eval('.toolbar', (nodes) => nodes.some((node) => node.textContent?.includes('List')))));
+
+  // the designer's portraits, drawn on the cards: what the API names is what the page draws
+  const apiTasks = await (await fetch(`http://127.0.0.1:${API_PORT}/api/tasks`)).json();
+  const portraits = await page.evaluate(() => Object.fromEntries(
+    [...document.querySelectorAll('[data-task]')].map((card) => [
+      card.textContent?.slice(0, 40),
+      {
+        index: card.querySelector('.avatar')?.getAttribute('data-avatar'),
+        pathLength: card.querySelector('.avatar svg path')?.getAttribute('d')?.length ?? 0,
+      },
+    ]),
+  ));
+  const drawn = Object.values(portraits);
+  check('every card carries a portrait, and it is the agent’s own',
+    drawn.length === apiTasks.tasks.length &&
+      drawn.every((row) => row.pathLength > 100 && row.index !== null) &&
+      new Set(drawn.map((row) => row.pathLength)).size > 1,
+    `${drawn.length} portraits, ${new Set(drawn.map((row) => row.pathLength)).size} distinct`);
+  const firstCard = drawn[0];
+  const firstAgent = apiTasks.tasks.find((task) => (task.owner?.avatar ?? 0) === Number(firstCard.index));
+  check('the portrait index matches the one the database stored',
+    firstAgent !== undefined && Number(firstCard.index) === firstAgent.owner.avatar);
 
   // the review gate, in the interface: a task in review cannot be finished without a decision
   await page.click('[data-task]:has-text("Rehearse the migration")');
@@ -183,7 +211,7 @@ try {
   await page.click('dialog button:has-text("Move to In review")');
   const landed = await page.waitForFunction(() => {
     const review = [...document.querySelectorAll('.column')]
-      .find((column) => column.querySelector('.column-head')?.textContent?.includes('In review'));
+      .find((column) => column.querySelector('.column-head span:not(.dot)')?.textContent === 'review');
     return review?.textContent?.includes('Billing integration tests') ?? false;
   }, null, { timeout: 8_000 }).then(() => true).catch(() => false);
   check('a move the server allows lands in the right column', landed);

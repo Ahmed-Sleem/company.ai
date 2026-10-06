@@ -59,6 +59,64 @@
 
 ---
 
+## 2026-10-06 00:20 — P1.1b: the Tasks screen is the designer's screen, and one real defect fell out of it
+
+- **Task (user):** continue P1 — parity with the prototype on real state. This step is the Tasks surface.
+- **What the board now is:** the demo's own layout, on the database's own rows — the screen head
+  ("Work, moving forward." / "The next step is always in view." / eyebrow "Tasks / Overview"), the four
+  statistics (open tasks, in progress, in review, completed) counted from the rows rather than written
+  in, the toolbar (search, priority filter, owner filter, Board|List), the four columns with their dot,
+  their **vocabulary key** and their count, the inline "No tasks here" line in an empty column, the
+  list table (Task/Owner/Stage/Priority/Due date/Progress), the "Nothing matches" state for a filter
+  with no results, and a task dialog reached by clicking a card or a list row.
+- **The move buttons are the server's answer, not the interface's opinion.** Each card's dialog renders
+  exactly the transitions `GET /api/tasks` offered for that row; a refused transition is drawn
+  **disabled and carries the server's own reason** ("Waiting for the approval that lets this finish."),
+  and the write goes through `POST /api/tasks/:id/transition`, which re-checks the rule. The interface
+  holds no copy of the transition table, which is the point: one rule, one place.
+- **Vocabulary, from the design source and no other place:** stage and priority *phrases* come from
+  `STAGE_LABELS` / `PRIORITY_LABELS` in `@company/contracts`; the board's column heads and the badges
+  print the *vocabulary key* (`backlog`, `progress`, `review`, `done`, `medium`, `high`), because that
+  is what the demo prints (`${t(s)}` with no dictionary entry falls back to the key). Both readings
+  come from the demo, and they are now stated in one comment where they are used.
+- **The designer's portraits are in the product.** The demo draws every person as pixel art from a
+  65-portrait library; `scripts/gen-demo-avatars.mjs` extracts it verbatim into
+  `apps/web/src/lib/avatars.data.ts` (generated file, never hand-edited), `components/Avatar.tsx`
+  renders it exactly as the demo does — `PORTRAITS[index]`, falling back to the first portrait, hidden
+  from assistive technology because the name sits beside it — and every task card shows its owner's
+  face. `data-avatar` carries the index into the DOM so a check can see it.
+- **Formatting is the demo's, including its two locales on purpose:** dates `en-GB`/`ar-EG` with
+  `{day:'numeric', month:'short', timeZone:'UTC'}` → `5 Oct`, `٥ أكتوبر`; money and numbers `en-US`/
+  `ar-EG` → `$12.50`, `1,250`. The year is not shown, and the UTC pin is what stops a 23:30 timestamp
+  from reading as the next day.
+- **The defect this step found — and it was a bad one:** the board looked perfect and *nothing on it
+  could ever move*. `lib/api.ts` sent `actor: { kind: 'member', id: 'owner' }`; `TASK_TRANSITION` wants
+  a uuid, so every transition answered `422 {"fields":["actor.id"]}` and the board showed that as if
+  the *rule* had refused. Fixed at the source: `GET /api/session` publishes the acting member from the
+  `members` table, the client fetches it once and reuses it for every write, and
+  `POST /api/decisions/:id/decide` no longer falls back to the invented `mem_00000000000000000000`
+  either. Two API tests now hold that door shut (the invented id is refused, the published one moves
+  the task).
+- **A second defect, found the same way:** `?state=restricted` stuck to the app after switching views.
+  `App.tsx` now re-reads the state preview on `hashchange` (the demo's behaviour) and moves focus to
+  the new screen's `#page-title`, which is also how the demo announces a screen change.
+- **Files:** `apps/web/src/views/TasksView.tsx`, `components/{ScreenHead,Avatar,TaskCard,Dialog,DataState}.tsx`,
+  `lib/{api,format,i18n,avatars.data}.ts`, `styles/app.css`, `e2e/smoke.mjs`, `services/api/src/app.ts`,
+  `packages/company/src/repo.ts`, `design/tokens/company-os-pixel.{css,json}` (portrait sizes and the
+  two tracking tokens the head needs), regenerated `packages/tokens/generated/*`.
+- **Validation:** `bash scripts/verify.sh` → **GREEN 9/9** · tsc clean · root vitest **62** · web vitest
+  **29** (was 9) · design gate 11/11 · browser smoke **24/24** · raw-values 49 files clean ·
+  logical-properties clean · namespace-lock clean. Every new check was watched failing first: the move
+  buttons with `disabled` removed dropped exactly its assertion; the portrait data with one byte
+  removed dropped its checksum test; the portrait *and* the vocabulary selectors in the browser check
+  failed against the old build before the fix landed.
+- **Still open for this surface (P1.2):** the "New task" button, and the demo's task dialog as an
+  *editor* (Stage select, Owner select, Due date, Progress, Checklist, Files) rather than a reader.
+- **Honest limitations:** the dialog is a native `<dialog>`; the list's Owner column shows names only
+  (the demo shows the portrait too, which needs the API to carry avatars on the list rows).
+
+---
+
 ## 2026-10-03 15:20 — P1 starts: the designer's company is now the company in the database (step P1.1a)
 
 - **Task (user):** "start first phase … make sure everything is suitable to work together and work

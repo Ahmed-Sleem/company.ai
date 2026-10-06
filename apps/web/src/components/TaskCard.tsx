@@ -2,6 +2,7 @@
  * A task, as the demo draws it: the id, the priority, the title, who owns it, its date,
  * and how far along it is. It is one button — the whole card opens the task.
  */
+import { Avatar } from './Avatar';
 import { Badge, toneOf } from './Badge';
 import { date, localized, percent } from '../lib/format';
 import type { Lang } from '../lib/i18n';
@@ -16,7 +17,7 @@ export function TaskCard({ task, lang, onOpen }: { task: TaskRow; lang: Lang; on
       </span>
       <span className="task-title">{localized(task.title, task.titleAr, lang)}</span>
       <span className="task-meta">
-        <span className="initial">{task.owner?.name.slice(0, 1) ?? '—'}</span>
+        <Avatar index={task.owner?.avatar} size="sm" />
         <span>{task.owner?.name ?? ''}</span>
         <span className="grow" />
         <bdi>{date(task.dueDate, lang)}</bdi>

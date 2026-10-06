@@ -193,9 +193,20 @@ body {
 .meter.over > span { background: repeating-linear-gradient(90deg, var(--danger) 0, var(--danger) var(--app-stripe), transparent var(--app-stripe), transparent calc(var(--app-stripe) + var(--app-stroke))); }
 .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--sm); gap: var(--s2); }
 
-.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
-.column { background: var(--raised); border: var(--app-hair) solid var(--soft); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
-.column-head { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--sm); color: var(--muted); }
+/* The board, to the demo's own measures: open columns (no box around them), a wider gutter,
+   and a head that sits on the column's start edge with the count pushed to the end edge. */
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s4); align-items: start; }
+.column { min-inline-size: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.column-head {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  margin-block: 0 var(--s4);
+  padding: var(--s2);
+  font: var(--xs) var(--font);
+  color: var(--muted);
+}
+.column-head span:last-child { margin-inline-start: auto; color: var(--dim); }
 .card { background: var(--surface); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
 .card h3 { margin: 0; font-size: var(--base); font-family: var(--font); }
 .tag { display: inline-block; padding-inline: var(--s2); border: var(--app-hair) solid var(--line); font-size: var(--base); color: var(--muted); }
@@ -299,11 +310,11 @@ svg.tree { inline-size: 100%; block-size: var(--app-tree-h); background: var(--r
 .column-head { gap: var(--s2); }
 .empty-inline { color: var(--dim); font-size: var(--sm); margin: 0; padding-block: var(--s3); }
 
-.task { inline-size: 100%; text-align: start; cursor: pointer; display: flex; flex-direction: column; gap: var(--s2); font: inherit; color: var(--text); }
-.task:hover { background: var(--hover); }
-.task-id { color: var(--dim); font-size: var(--sm); }
-.task-title { font-size: var(--base); }
-.task-meta { display: flex; align-items: center; gap: var(--s2); color: var(--muted); font-size: var(--sm); }
+.task { inline-size: 100%; padding: var(--s4); text-align: start; cursor: pointer; display: flex; flex-direction: column; gap: var(--s3); font: inherit; color: var(--text); }
+.task:hover { background: var(--raised); border-color: var(--dim); }
+.task-id { font: var(--xs) var(--font); color: var(--dim); }
+.task-title { font-size: var(--base); font-weight: 500; line-height: 1.6; min-block-size: var(--s10); }
+.task-meta { display: flex; align-items: center; gap: var(--s2); font: var(--xs) var(--font); color: var(--dim); }
 .initial { display: inline-grid; place-items: center; inline-size: var(--s5); block-size: var(--s5); background: var(--raised); border: var(--app-hair) solid var(--line); color: var(--muted); }
 .row { display: flex; align-items: center; gap: var(--s2); }
 .row.between { justify-content: space-between; }
@@ -350,4 +361,52 @@ dialog.dialog::backdrop { background: var(--shadow); }
 
 @media (max-width: 800px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── people: the demo's portraits ─────────────────────────────────────────────────────────────
+   Sizes and treatment follow the demo's `.avatar` rules; the artwork is its own pixel paths. */
+.avatar {
+  inline-size: var(--avatar);
+  block-size: var(--avatar);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text);
+  background: var(--raised);
+  /* The silhouette needs a hairline edge; the token source states the hairline width. */
+  border: var(--app-hair) solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.avatar svg { inline-size: 100%; block-size: 100%; shape-rendering: crispEdges; }
+.avatar.sm { inline-size: var(--avatar-sm); block-size: var(--avatar-sm); border-radius: var(--s1); }
+.avatar.lg { inline-size: var(--avatar-lg); block-size: var(--avatar-lg); }
+.avatar.xl { inline-size: var(--avatar-xl); block-size: var(--avatar-xl); }
+
+/* ── screen head and headings ────────────────────────────────────────────────────────────────
+   Tailwind's preflight resets headings to `font-size: inherit`, so the design's hierarchy has to be
+   stated once, here, from the demo's own base rules (sizes and tracking are tokens; the pixel face
+   and the Arabic exception come from the token skin). */
+h1 { font-size: var(--title); line-height: 1.25; }
+h2 { font-size: var(--lg); }
+h3 { font-size: var(--base); }
+
+.pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s8); }
+.pagehead .eyebrow { margin-block-end: var(--s3); }
+.pagehead p { color: var(--muted); font-size: var(--base); margin-block-start: var(--s2); }
+.eyebrow { font-size: var(--xs); letter-spacing: var(--track-eyebrow); color: var(--dim); text-transform: uppercase; }
+
+/* The demo tightens its headlines in latin script only; Arabic keeps its own shaping. */
+:root:not([lang='ar']) h1 { letter-spacing: var(--track-tight); }
+:root:not([lang='ar']) .eyebrow { letter-spacing: var(--track-eyebrow); }
+[dir='rtl'] .eyebrow { letter-spacing: 0; }
+
+@media (max-width: 800px) {
+  .pagehead { margin-block-end: var(--s6); }
+}
+@media (max-width: 540px) {
+  .pagehead { flex-wrap: wrap; }
+  .pagehead > .row { inline-size: 100%; }
+  .eyebrow { display: none; }
 }

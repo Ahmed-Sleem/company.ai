@@ -13,6 +13,10 @@ export const STRINGS = {
   skip: { en: 'Skip to content', ar: 'تجاوز إلى المحتوى' },
   team: { en: 'Team', ar: 'الفريق' },
   tasks: { en: 'Tasks', ar: 'المهام' },
+  overview: { en: 'Overview', ar: 'نظرة عامة' },
+  // The Tasks screen's head, in the demo's own words (its dictionary, read from the file).
+  tasksTitle: { en: 'Work, moving forward.', ar: 'العمل يتقدم.' },
+  tasksSubtitle: { en: 'The next step is always in view.', ar: 'الخطوة التالية واضحة دائماً.' },
   inbox: { en: 'Inbox', ar: 'الوارد' },
   comms: { en: 'Conversations', ar: 'المحادثات' },
   network: { en: 'Network', ar: 'الشبكة' },

@@ -11,7 +11,7 @@ import { PRIORITY_LABELS, STAGE_LABELS, TASK_PRIORITIES, TASK_STAGES, type TaskS
 import { api, type TaskRow, type TransitionOffer } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
 import { date, localized, percent } from '../lib/format';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { Stat } from '../components/Stat';
 import { SearchField, Segmented, Select } from '../components/Controls';
@@ -105,7 +105,12 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   };
 
   return (
-    <Panel title={t('tasks', lang)} note={t('tasksNote', lang)}>
+    <>
+      <ScreenHead
+        eyebrow={`${t('tasks', lang)} / ${t('overview', lang)}`}
+        title={t('tasksTitle', lang)}
+        subtitle={t('tasksSubtitle', lang)}
+      />
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {tasks && tasks.length > 0 && (
           <section className="stats">
@@ -148,12 +153,16 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             {TASK_STAGES.map((stage) => {
               const inStage = rows.filter((task) => task.stage === stage);
               return (
-                <section className="column" key={stage} aria-label={label(stage)}>
-                  <header className="column-head">
+                <section className="column" key={stage}>
+                  <h2 className="column-head">
                     <span className={`dot ${stage === 'progress' ? 'accent' : ''}`} aria-hidden="true" />
-                    <span>{label(stage)}</span>
+                    {/* The demo prints the vocabulary key here (`${t(s)}` with no dictionary
+                        entry falls back to the key), which is why its board reads "backlog",
+                        "progress" — while the statistics above read "In progress". Same rule
+                        here, so the two screens say the same words. */}
+                    <span>{stage}</span>
                     <span>{inStage.length}</span>
-                  </header>
+                  </h2>
                   {inStage.map((task) => (
                     <TaskCard key={task.id} task={task} lang={lang} onOpen={setOpen} />
                   ))}
@@ -238,6 +247,6 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           </>
         )}
       </Dialog>
-    </Panel>
+    </>
   );
 }

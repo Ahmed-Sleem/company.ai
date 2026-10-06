@@ -47,6 +47,7 @@ color-scheme: dark;
   --font:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',monospace; /* UI/mono  */
   --sans:Arial,Tahoma,sans-serif;                                          /* body + AR */
   --xs:11px; --sm:12px; --base:13px; --body:14px; --lg:16px; --title:28px;
+  --track-tight:-0.7px; --track-eyebrow:1.4px;
 
   /* space */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px;
@@ -55,6 +56,9 @@ color-scheme: dark;
   --radius:6px;
   --control:34px;
   --touch:48px;
+
+  /* people — the portrait sizes stated in company-os-pixel.json → avatars.sizes */
+  --avatar:48px; --avatar-sm:28px; --avatar-lg:84px; --avatar-xl:110px;
 
   /* layout & motion */
   --nav:210px;

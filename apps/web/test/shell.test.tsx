@@ -103,9 +103,27 @@ describe('the shell matches the locked design', () => {
     location.hash = '#tasks';
     render(<App />);
     expect(await screen.findByText('Refine the streaming pipeline')).toBeTruthy();
-    for (const stage of ['Backlog', 'In progress', 'In review', 'Completed']) {
-      expect(screen.getAllByText(stage).length).toBeGreaterThan(0);
+    // The demo's words, in the two places it uses them: the columns print the vocabulary key
+    // (backlog/progress/review/done, beside the dot) and the statistics print the phrase.
+    for (const key of ['backlog', 'progress', 'review', 'done']) {
+      expect(screen.getAllByText(key).length).toBeGreaterThan(0);
     }
+    for (const phrase of ['In progress', 'In review', 'Completed']) {
+      expect(screen.getAllByText(phrase).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('moves focus to the new screen’s title, the way the demo does', async () => {
+    // The demo's `head()` renders <h1 id="page-title" tabindex="-1"> and focuses it when the screen
+    // changes, so a screen-reader user hears where they have arrived. Losing it is invisible until
+    // someone navigates by keyboard, which is exactly when it matters.
+    location.hash = '#team';
+    render(<App />);
+    await screen.findByText('Aria');
+    location.hash = '#tasks';
+    dispatchEvent(new HashChangeEvent('hashchange'));
+    await screen.findByRole('heading', { name: 'Work, moving forward.' });
+    await waitFor(() => expect(document.activeElement?.id).toBe('page-title'));
   });
 
   it('shows a decision with its rule, its change and an approve button', async () => {

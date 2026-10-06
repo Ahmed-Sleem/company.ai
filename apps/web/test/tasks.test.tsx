@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { TasksView } from '../src/views/TasksView';
+import { PORTRAITS } from '../src/lib/avatars.data';
 
 const ANA = '11111111-1111-4111-8111-111111111111';
 const LEO = '22222222-2222-4222-8222-222222222222';
@@ -23,7 +24,7 @@ const task = (over: Record<string, unknown>) => ({
   stage: 'backlog', priority: 'medium', progress: 0,
   dueDate: '2026-10-05T00:00:00.000Z',
   ownerAgentId: ANA,
-  owner: { id: ANA, name: 'Aria', role: 'Lead engineer' },
+  owner: { id: ANA, name: 'Aria', role: 'Lead engineer', avatar: 3 },
   offers: [{ to: 'progress', ok: true, reason: null }],
   createdAt: '2026-10-01T00:00:00.000Z',
   updatedAt: '2026-10-01T00:00:00.000Z',
@@ -75,12 +76,16 @@ describe('the board shows what the demo shows', () => {
     expect(stats.getByText('In progress').nextSibling?.textContent).toBe('1');
   });
 
-  it('shows each task’s reference, owner and progress', async () => {
-    render(<TasksView lang="en" />);
+  it('shows each task’s reference, owner, portrait and progress', async () => {
+    const { container } = render(<TasksView lang="en" />);
     await screen.findByText('Refine the streaming pipeline');
     expect(screen.getByText('TSK-142')).toBeTruthy();
     expect(screen.getAllByText('Leo').length).toBeGreaterThan(0);
     expect(screen.getByText('65%')).toBeTruthy();
+    // the owner comes with a portrait index and the card draws that portrait (the designer's own art)
+    const portrait = container.querySelector(`[data-task="${task({ n: 1 }).id}"] .avatar`);
+    expect(portrait?.getAttribute('data-avatar')).toBe('3');
+    expect(portrait?.querySelector('svg path')?.getAttribute('d')).toBe(PORTRAITS[3]!.path);
   });
 
   it('filters by priority, by owner and by search text', async () => {

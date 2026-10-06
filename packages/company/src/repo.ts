@@ -28,6 +28,7 @@ export async function listAgents(db: Db, companyId: string) {
       name: t.agents.name,
       role: t.agents.role,
       title: t.agents.title,
+      avatar: t.agents.avatar,
       status: t.agents.status,
       reportsTo: t.agents.reportsTo,
       capabilities: t.agents.capabilities,

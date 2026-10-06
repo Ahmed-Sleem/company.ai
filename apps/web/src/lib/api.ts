@@ -59,7 +59,7 @@ export interface TaskRow {
   progress: number;
   dueDate: string | null;
   ownerAgentId: string;
-  owner: { id: string; name: string; role: string } | null;
+  owner: { id: string; name: string; role: string; avatar?: number | null } | null;
   offers: TransitionOffer[];
   createdAt: string;
   updatedAt: string;
