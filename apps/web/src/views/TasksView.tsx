@@ -18,6 +18,7 @@ import { SearchField, Segmented, Select } from '../components/Controls';
 import { Badge, toneOf } from '../components/Badge';
 import { Dialog } from '../components/Dialog';
 import { TaskCard } from '../components/TaskCard';
+import { TaskForm, type TaskFormValues } from '../components/TaskForm';
 
 type Layout = 'board' | 'list';
 
@@ -45,12 +46,18 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [open, setOpen] = useState<TaskRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState<string | null>(null);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
+  /** `undefined` = closed, `null` = a new task, a row = editing that task. */
+  const [form, setForm] = useState<TaskRow | null | undefined>(undefined);
+  const [note, setNote] = useState<string | null>(null);
 
   const load = () => {
     setError(false);
-    return api
-      .tasks()
-      .then((result) => setTasks(result.tasks))
+    return Promise.all([api.tasks(), api.agents()])
+      .then(([result, roster]) => {
+        setTasks(result.tasks);
+        setAgents(roster.agents.map((agent) => ({ id: agent.id, name: agent.name })));
+      })
       .catch(() => setError(true));
   };
 
@@ -97,6 +104,41 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     }
   };
 
+  /**
+   * Save the form. The stage is sent with the other fields and the server routes it through the
+   * same rule the move buttons use, so the form cannot do anything the board cannot.
+   */
+  const saveTask = async (values: TaskFormValues) => {
+    // Which column the text belongs in follows the language being read — an Arabic edit must not
+    // overwrite the English title with Arabic text, nor the other way round.
+    const arabic = lang === 'ar';
+    const languageFields = {
+      ...(arabic ? { titleAr: values.title } : { title: values.title }),
+      ...(arabic ? { descriptionAr: values.description } : { description: values.description }),
+    };
+    const shape = {
+      ownerAgentId: values.ownerAgentId,
+      stage: values.stage,
+      priority: values.priority,
+      dueDate: values.dueDate,
+      ...languageFields,
+    };
+    if (form && form.id) {
+      await api.updateTask(form.id, shape);
+    } else {
+      // A new row needs its stored title in *both* readings: the contract requires one, and Arabic
+      // readers must see Arabic. So the text goes to the language's column, and the required column
+      // carries it too — the same fallback `localized()` applies when reading (`tr()` in the demo).
+      await api.createTask({
+        ...shape,
+        title: values.title,
+        ...(arabic ? { titleAr: values.title } : {}),
+      });
+    }
+    await load();
+    setNote(t(form ? 'taskUpdated' : 'taskAdded', lang));
+  };
+
   const counts = {
     open: (tasks ?? []).filter((task) => task.stage !== 'done').length,
     progress: (tasks ?? []).filter((task) => task.stage === 'progress').length,
@@ -110,6 +152,11 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
         eyebrow={`${t('tasks', lang)} / ${t('overview', lang)}`}
         title={t('tasksTitle', lang)}
         subtitle={t('tasksSubtitle', lang)}
+        action={
+          <button type="button" className="btn primary" onClick={() => setForm(null)}>
+            {t('newTask', lang)}
+          </button>
+        }
       />
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {tasks && tasks.length > 0 && (
@@ -209,9 +256,14 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       <Dialog
         open={open !== null}
         onClose={() => { setOpen(null); setRefused(null); }}
-        title={open ? `${open.shortRef} · ${localized(open.title, open.titleAr, lang)}` : ''}
+        title={open ? localized(open.title, open.titleAr, lang) : ''}
+        eyebrow={t('taskDetail', lang)}
         lang={lang}
-        actions={open?.offers.map((offer) => (
+        actions={open ? [
+          <button key="close" type="button" className="btn" onClick={() => { setOpen(null); setRefused(null); }}>
+            {t('close', lang)}
+          </button>,
+          ...open.offers.map((offer) => (
           <span key={offer.to} className="movegroup">
             <button
               type="button"
@@ -225,10 +277,23 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             </button>
             {!offer.ok && offer.reason ? <span className="reason">{offer.reason[lang]}</span> : null}
           </span>
-        ))}
+          )),
+          <button
+            key="edit"
+            type="button"
+            className="btn primary"
+            onClick={() => { setForm(open); setOpen(null); }}
+          >
+            {t('editTask', lang)}
+          </button>,
+        ] : null}
       >
         {open && (
           <>
+            <div className="row between wrap">
+              <span className="task-id">{open.shortRef}</span>
+              <Badge tone={toneOf(open.priority)}>{open.priority}</Badge>
+            </div>
             <dl className="details">
               <dt>{t('owner', lang)}</dt>
               <dd>{open.owner?.name ?? ''}</dd>
@@ -247,6 +312,15 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           </>
         )}
       </Dialog>
+      <TaskForm
+        open={form !== undefined}
+        lang={lang}
+        task={form ?? null}
+        agents={agents}
+        onSubmit={saveTask}
+        onClose={() => setForm(undefined)}
+      />
+      {note ? <p role="status" className="note">{note}</p> : null}
     </>
   );
 }

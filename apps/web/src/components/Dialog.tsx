@@ -6,11 +6,13 @@
 import { useEffect, useRef } from 'react';
 
 export function Dialog({
-  open, onClose, title, children, actions, lang,
+  open, onClose, title, eyebrow, children, actions, lang,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** The small line above the title (the demo's `openDialog(..., eyebrow)`), e.g. "Tasks". */
+  eyebrow?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
   lang: 'en' | 'ar';
@@ -33,7 +35,19 @@ export function Dialog({
       }
       dialog.setAttribute('open', '');
     }
-    if (!open && dialog.open) dialog.close();
+    if (!open && dialog.open) {
+      // Same split as opening: real browsers close the native element, and an environment without
+      // the method gets the attribute removed (which is what `open` reflects).
+      if (typeof dialog.close === 'function') {
+        try {
+          dialog.close();
+          return;
+        } catch {
+          /* fall through to the attribute */
+        }
+      }
+      dialog.removeAttribute('open');
+    }
   }, [open]);
   return (
     <dialog
@@ -45,7 +59,10 @@ export function Dialog({
       aria-label={title}
     >
       <header className="dialog-head">
-        <h2>{title}</h2>
+        <div>
+          {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
+          <h2>{title}</h2>
+        </div>
         <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
       </header>
       <div className="dialog-body">{children}</div>

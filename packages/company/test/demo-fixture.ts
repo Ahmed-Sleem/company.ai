@@ -63,6 +63,17 @@ export interface DemoDecision {
   ask: string; askAr: string;
 }
 
+/**
+ * The fields the demo's own task form carries, in the order they are drawn: the designer's
+ * `taskForm()` renders `<input|select|textarea name="…">` inside `<form id="task-form">`.
+ * Read from the file so the product's form cannot quietly drop or rename one.
+ */
+export function demoTaskFormFields(): string[] {
+  const form = /function taskForm\([^)]*\)\{.*?<form id="task-form".*?<\/form>/s.exec(html)?.[0];
+  if (!form) throw new Error(`demo fixture: the task form is not in ${DEMO_PATH}`);
+  return [...form.matchAll(/name="([a-z]+)"/g)].map((match) => match[1] as string);
+}
+
 export const demo = {
   agents: (): DemoAgent[] => rows('agents').map((row) => {
     const name = pair(row, 'name')!;

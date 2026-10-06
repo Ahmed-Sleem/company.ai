@@ -14,6 +14,18 @@ export const STRINGS = {
   team: { en: 'Team', ar: 'الفريق' },
   tasks: { en: 'Tasks', ar: 'المهام' },
   overview: { en: 'Overview', ar: 'نظرة عامة' },
+  // The task form, in the demo's words (its `taskForm()` and dictionary).
+  newTask: { en: 'New task', ar: 'مهمة جديدة' },
+  addTask: { en: 'Add task', ar: 'إضافة المهمة' },
+  saveChanges: { en: 'Save changes', ar: 'حفظ التغييرات' },
+  cancel: { en: 'Cancel', ar: 'إلغاء' },
+  title: { en: 'Title', ar: 'العنوان' },
+  // The demo's own confirmations, so the form says what the prototype says.
+  taskDetail: { en: 'Task detail', ar: 'تفاصيل المهمة' },
+  editTask: { en: 'Edit task', ar: 'تعديل المهمة' },
+  taskAdded: { en: 'Task added.', ar: 'تمت إضافة المهمة.' },
+  taskUpdated: { en: 'Task updated.', ar: 'تم تحديث المهمة.' },
+  saveFailed: { en: 'That did not save. Nothing was changed.', ar: 'لم يتم الحفظ. لم يتغيّر شيء.' },
   // The Tasks screen's head, in the demo's own words (its dictionary, read from the file).
   tasksTitle: { en: 'Work, moving forward.', ar: 'العمل يتقدم.' },
   tasksSubtitle: { en: 'The next step is always in view.', ar: 'الخطوة التالية واضحة دائماً.' },
@@ -77,7 +89,7 @@ export const STRINGS = {
   task: { en: 'Task', ar: 'المهمة' },
   stage: { en: 'Stage', ar: 'المرحلة' },
   priority: { en: 'Priority', ar: 'الأولوية' },
-  dueDate: { en: 'Due date', ar: 'تاريخ الاستحقاق' },
+  dueDate: { en: 'Due date', ar: 'الموعد النهائي' },
   progress: { en: 'Progress', ar: 'التقدّم' },
   description: { en: 'Description', ar: 'الوصف' },
   moveTo: { en: 'Move to', ar: 'انقل إلى' },

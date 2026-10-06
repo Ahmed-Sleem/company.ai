@@ -5,7 +5,7 @@
  * twice, an agent cannot approve its own work, a blocked call answers with a decision id.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createPgliteDb, schema, seed, recordRun, type Db } from '@company/company';
+import { createPgliteDb, raiseDecision, schema, seed, recordRun, type Db } from '@company/company';
 import { createGateway, dbRegistry, mockAdapter } from '@company/gateway';
 import { createApp, type App } from '../src/index.js';
 
@@ -139,6 +139,120 @@ describe('the review gate over HTTP', () => {
     const body = await res.json();
     expect(body.outcome.kind).toBe('already_decided');
     expect(body.outcome.status).toBe('approved');
+  });
+});
+
+describe('the task form over HTTP', () => {
+  /**
+   * The demo's task form creates and edits tasks. These tests hold the three things that could go
+   * wrong quietly: the reference a person reads must come from the database, a form save must not be
+   * a way around the review gate, and a task recorded as finished must carry the person who says so.
+   */
+  it('creates a task, and the database gives it the reference a person reads', async () => {
+    const res = await post('/api/tasks', {
+      title: 'Draft the November hiring plan',
+      ownerAgentId: agentIds[0],
+      priority: 'high',
+      dueDate: '2026-11-03',
+      stage: 'backlog',
+      description: 'Two pages, one page of numbers.',
+    });
+    expect(res.status).toBe(201);
+    const { task } = await res.json();
+    expect(task.shortRef).toMatch(/^TSK-\d{3,}$/);
+    expect(task.shortRef).not.toBe('TSK-142'); // a new number, not one of the designer's
+    expect(task.title).toBe('Draft the November hiring plan');
+    expect(task.stage).toBe('backlog');
+    expect(task.priority).toBe('high');
+    expect(task.progress).toBe(0);
+  });
+
+  it('refuses a task whose owner is not part of the company', async () => {
+    const res = await post('/api/tasks', {
+      title: 'Owned by nobody', ownerAgentId: crypto.randomUUID(),
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe('unknown_owner');
+  });
+
+  it('edits the form’s fields', async () => {
+    const created = await (await post('/api/tasks', { title: 'Before', ownerAgentId: agentIds[1] })).json();
+    const res = await app.request(`/api/tasks/${created.task.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'After', priority: 'critical', progress: 40, dueDate: '2026-10-30' }),
+    });
+    expect(res.status).toBe(200);
+    const { task } = await res.json();
+    expect(task.title).toBe('After');
+    expect(task.priority).toBe('critical');
+    expect(task.progress).toBe(40);
+    expect(task.stage).toBe('backlog'); // untouched: the form changed only what it was given
+  });
+
+  it('will not let the form finish a task that has not been approved', async () => {
+    // A task in review, with no approved decision behind it. The form offers the stage; the rule
+    // still refuses to move it, exactly as the board's move button would.
+    const created = await (await post('/api/tasks', {
+      title: 'Needs a decision', ownerAgentId: agentIds[0], stage: 'progress',
+    })).json();
+    await post(`/api/tasks/${created.task.id}/transition`, {
+      to: 'review', actor: { kind: 'agent', id: agentIds[0] },
+    });
+    const res = await app.request(`/api/tasks/${created.task.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stage: 'done' }),
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe('review_gate_needs_decision');
+    const rows = await db.select().from(schema.tasks);
+    expect(rows.find((row) => row.id === created.task.id)!.stage).toBe('review');
+  });
+
+  it('finishes an approved task without the interface carrying a decision id', async () => {
+    // Raise a decision on a task, approve it, then let the form finish the task. The client sends
+    // only the stage: the server resolves the decision the rule demands.
+    const created = await (await post('/api/tasks', {
+      title: 'Approved work', ownerAgentId: agentIds[0], stage: 'progress',
+    })).json();
+    const inReview = await post(`/api/tasks/${created.task.id}/transition`, {
+      to: 'review', actor: { kind: 'agent', id: agentIds[0] },
+    });
+    expect(inReview.status).toBe(200);
+    // Decisions are raised by the engine (a tripped cap, a finished review), so the row is created
+    // through the same function the gateway uses — then approved over HTTP, as a person would.
+    const raised = await raiseDecision(db, {
+      companyId,
+      kind: 'review',
+      taskId: created.task.id,
+      title: 'Finish approved work',
+      rule: { id: 'review.complete', observed: 1, threshold: 1, unit: 'count' },
+      diff: { kind: 'none', summary: 'A person approves the work.' },
+      audit: { actor: 'a person' },
+    });
+    expect(raised).toBeTruthy();
+    const approved = await post(`/api/decisions/${raised!.id}/decide`, { verdict: 'approve' });
+    expect(approved.status).toBe(200);
+
+    const res = await app.request(`/api/tasks/${created.task.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stage: 'done' }),
+    });
+    expect(res.status).toBe(200);
+    const { task } = await res.json();
+    expect(task.stage).toBe('done');
+    expect(task.approvedByMemberId).toBe(ownerId);
+  });
+
+  it('records who signed off when a task is created already finished', async () => {
+    const res = await post('/api/tasks', {
+      title: 'Shipped before it was written down', ownerAgentId: agentIds[2], stage: 'done',
+    });
+    expect(res.status).toBe(201);
+    const { task } = await res.json();
+    expect(task.approvedByMemberId).toBe(ownerId);
   });
 });
 

@@ -45,6 +45,10 @@ let tasks = [
 
 const calls: Array<{ url: string; method: string; body: unknown }> = [];
 
+/** A named control in the form, typed. `namedItem` returns an element *or* a RadioNodeList. */
+const field = (form: HTMLFormElement, name: string) =>
+  form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
 beforeEach(() => {
   calls.length = 0;
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -53,6 +57,13 @@ beforeEach(() => {
     calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : null });
     if (url.includes('/api/session')) {
       return new Response(JSON.stringify({ member: { id: ME, name: 'Vanil', role: 'owner' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    // The board loads the roster beside the tasks: the form's Owner select needs real agents.
+    if (url.endsWith('/api/agents')) {
+      return new Response(JSON.stringify({ agents: [
+        { id: ANA, name: 'Aria', role: 'Lead engineer', avatar: 3, status: 'working', budget: { limitCents: 4000, spentCents: 1250, remainingCents: 2750, exceeded: false } },
+        { id: LEO, name: 'Leo', role: 'Software engineer', avatar: 2, status: 'working', budget: { limitCents: 3000, spentCents: 820, remainingCents: 2180, exceeded: false } },
+      ] }), { status: 200, headers: { 'content-type': 'application/json' } });
     }
     if (url.includes('/transition')) return new Response(JSON.stringify({ task: { id: 'x', stage: 'review' } }), { status: 200 });
     return new Response(JSON.stringify({ tasks }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -125,6 +136,144 @@ describe('the board shows what the demo shows', () => {
   });
 });
 
+describe('the task form, on real state', () => {
+  const roster = { agents: [
+    { id: ANA, name: 'Aria', nameAr: 'آريا', role: 'Lead engineer', roleAr: null, department: null,
+      focus: null, focusAr: null, avatar: 3, status: 'working', modelId: null, capabilities: [],
+      budget: { limitCents: 4000, spentCents: 1250, remainingCents: 2750, exceeded: false } },
+    { id: LEO, name: 'Leo', nameAr: 'ليو', role: 'Software engineer', roleAr: null, department: null,
+      focus: null, focusAr: null, avatar: 2, status: 'working', modelId: null, capabilities: [],
+      budget: { limitCents: 3000, spentCents: 820, remainingCents: 2180, exceeded: false } },
+  ] };
+
+  const withRoster = () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : null });
+      if (url.endsWith('/api/agents')) return json(roster);
+      if (url.endsWith('/api/session')) return json({ member: { id: ME, name: 'Vanil', role: 'owner' } });
+      if (url.endsWith('/api/tasks') && method === 'POST') return json({ task: { ...task({ n: 9 }), title: 'A new task' } }, 201);
+      if (url.includes('/api/tasks/') && method === 'PATCH') return json({ task: task({ n: 1 }) });
+      if (url.includes('/transition')) return json({ task: { id: 'x', stage: 'review' } });
+      return json({ tasks });
+    }));
+  };
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+  it('opens an empty form from the head’s New task button, with the demo’s six fields', async () => {
+    withRoster();
+    render(<TasksView lang="en" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'New task' }));
+    const form = document.querySelector('#task-form') as HTMLFormElement;
+    expect(form).toBeTruthy();
+    // the demo's fields, by their names: title, owner, priority, due, stage, description
+    expect([...form.elements].map((el) => (el as HTMLInputElement).name).filter(Boolean))
+      .toEqual(['title', 'owner', 'priority', 'due', 'stage', 'description']);
+    expect((form.elements.namedItem('title') as HTMLInputElement).value).toBe('');
+    // the roster fills the Owner select — the real agents, not a hard-coded list
+    expect([...(form.elements.namedItem('owner') as HTMLSelectElement).options].map((o) => o.text))
+      .toEqual(['Aria', 'Leo']);
+    // the date is required, so it starts filled — an empty required field silently blocks the save
+    const due = (form.elements.namedItem('due') as HTMLInputElement);
+    expect(due.required).toBe(true);
+    expect(due.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('sends a new task to the server and shows it on the board', async () => {
+    withRoster();
+    render(<TasksView lang="en" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'New task' }));
+    const form = document.querySelector('#task-form') as HTMLFormElement;
+    fireEvent.change(field(form, 'title'), { target: { value: 'Draft the November plan' } });
+    fireEvent.change(field(form, 'stage'), { target: { value: 'progress' } });
+    fireEvent.change(field(form, 'priority'), { target: { value: 'high' } });
+    fireEvent.change(field(form, 'due'), { target: { value: '2026-11-03' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+
+    await waitFor(() => expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/api/tasks'))).toBe(true));
+    const posted = calls.find((call) => call.method === 'POST' && call.url.endsWith('/api/tasks'))!;
+    expect(posted.body).toMatchObject({
+      title: 'Draft the November plan', stage: 'progress', priority: 'high', dueDate: '2026-11-03',
+      ownerAgentId: ANA,
+    });
+    await screen.findByText('Task added.');
+  });
+
+  it('writes a new task’s text into the language being read', async () => {
+    withRoster();
+    render(<TasksView lang="ar" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'مهمة جديدة' }));
+    const form = document.querySelector('#task-form') as HTMLFormElement;
+    fireEvent.change(field(form, 'title'), { target: { value: 'خطة نوفمبر' } });
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة المهمة' }));
+    await waitFor(() => expect(calls.some((call) => call.method === 'POST')).toBe(true));
+    const posted = calls.find((call) => call.method === 'POST')!;
+    // Arabic goes into the Arabic column, and into the stored title too: the row needs one, and an
+    // Arabic reader must see Arabic. (On an *edit* the other column is left alone — tested below.)
+    expect(posted.body).toMatchObject({ titleAr: 'خطة نوفمبر', title: 'خطة نوفمبر' });
+  });
+
+  it('leaves the other language’s column alone when editing', async () => {
+    withRoster();
+    render(<TasksView lang="ar" />);
+    // the fixture's Arabic title for the first task is the same 'مهمة' for both rows; the ref tells them apart
+    fireEvent.click(await screen.findByRole('button', { name: /TSK-142/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'تعديل المهمة' }));
+    expect(document.querySelector('#task-form')).toBeTruthy();
+    fireEvent.change(document.querySelector('#task-form')!.querySelector('[name=title]')!, {
+      target: { value: 'تحسين المسار أكثر' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ التغييرات' }));
+    await waitFor(() => expect(calls.some((call) => call.method === 'PATCH')).toBe(true));
+    const patched = calls.find((call) => call.method === 'PATCH')!;
+    expect(patched.body).toMatchObject({ titleAr: 'تحسين المسار أكثر' });
+    expect(patched.body).not.toHaveProperty('title');
+  });
+
+  it('edits an existing task through the same form', async () => {
+    withRoster();
+    render(<TasksView lang="en" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Refine the streaming pipeline/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit task' }));
+    const form = document.querySelector('#task-form') as HTMLFormElement;
+    // the form arrives filled with the task's own values
+    expect((form.elements.namedItem('title') as HTMLInputElement).value).toBe('Refine the streaming pipeline');
+    expect((form.elements.namedItem('stage') as HTMLSelectElement).value).toBe('progress');
+    fireEvent.change(field(form, 'title'), { target: { value: 'Refine the pipeline further' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(calls.some((call) => call.method === 'PATCH')).toBe(true));
+    const patched = calls.find((call) => call.method === 'PATCH')!;
+    expect(patched.url).toContain(task({ n: 1 }).id);
+    expect(patched.body).toMatchObject({ title: 'Refine the pipeline further' });
+    await screen.findByText('Task updated.');
+  });
+
+  it('shows the server’s refusal when the form tries an illegal move', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : null });
+      if (url.endsWith('/api/agents')) return json(roster);
+      if (url.endsWith('/api/session')) return json({ member: { id: ME, name: 'Vanil', role: 'owner' } });
+      if (url.includes('/api/tasks/') && method === 'PATCH') {
+        return json({ error: { code: 'review_gate_needs_decision', message: 'A decision record is required to approve' } }, 409);
+      }
+      return json({ tasks });
+    }));
+    render(<TasksView lang="en" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Refine the streaming pipeline/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit task' }));
+    fireEvent.change(document.querySelector('#task-form')!.querySelector('[name=stage]')!, { target: { value: 'done' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    // the rule's own sentence, not a generic failure — and the form stays open so the work is not lost
+    await screen.findByText('A decision record is required to approve');
+    expect(document.querySelector('#task-form')).toBeTruthy();
+  });
+});
+
 describe('moving a task is the server’s decision, shown honestly', () => {
   it('offers the moves the server allowed, and disables the one it refused with its reason', async () => {
     render(<TasksView lang="en" />);
@@ -158,6 +307,9 @@ describe('moving a task is the server’s decision, shown honestly', () => {
   it('shows the server’s own refusal instead of a generic failure', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      if (url.endsWith('/api/agents')) {
+        return new Response(JSON.stringify({ agents: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
       if (url.includes('/transition')) {
         return new Response(JSON.stringify({ error: { code: 'review_gate_needs_approval', message: 'Waiting for the approval that lets this finish.' } }), { status: 409 });
       }

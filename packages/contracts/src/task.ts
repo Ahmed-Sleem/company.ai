@@ -51,6 +51,34 @@ export const TASK = z
 export type Task = z.infer<typeof TASK>;
 
 /** The allowed transitions. Anything else is a bug, not a user error. */
+/**
+ * The task form — the demo's own six fields (`taskForm()`): title, owner, priority, due date,
+ * stage and description. The bounds are the demo's (title maxlength 120, description 2000, a
+ * required date), so the interface and the API refuse the same input for the same reason.
+ *
+ * `stage` is accepted here because the demo's form offers it, but it is not written straight to the
+ * row on an edit: `PATCH /api/tasks/:id` routes a stage change through the same `transitionTask`
+ * the board's buttons use, so the review gate cannot be stepped around by using the form instead.
+ */
+export const TASK_CREATE = z
+  .object({
+    title: z.string().min(1).max(120),
+    titleAr: z.string().min(1).max(120).nullable().default(null),
+    description: z.string().max(2000).nullable().default(null),
+    descriptionAr: z.string().max(2000).nullable().default(null),
+    ownerAgentId: agentId,
+    stage: taskStage.default('backlog'),
+    priority: z.enum(TASK_PRIORITIES).default('medium'),
+    progress: z.number().int().min(0).max(100).default(0),
+    dueDate: z.string().date().nullable().default(null),
+  })
+  .strict();
+export type TaskCreate = z.infer<typeof TASK_CREATE>;
+
+/** Every field optional: the form sends what it changed. */
+export const TASK_UPDATE = TASK_CREATE.partial();
+export type TaskUpdate = z.infer<typeof TASK_UPDATE>;
+
 export const TASK_TRANSITIONS: Record<TaskStage, readonly TaskStage[]> = {
   backlog: ['progress'],
   progress: ['review', 'backlog'],

@@ -275,7 +275,6 @@ svg.tree { inline-size: 100%; block-size: var(--app-tree-h); background: var(--r
 .stat-note { color: var(--dim); font-size: var(--sm); }
 
 .toolbar { display: flex; align-items: center; gap: var(--s2); margin-block-end: var(--s4); flex-wrap: wrap; }
-.field { display: inline-flex; }
 .search, .select {
   min-height: var(--control);
   background: var(--surface);
@@ -409,4 +408,32 @@ h3 { font-size: var(--base); }
   .pagehead { flex-wrap: wrap; }
   .pagehead > .row { inline-size: 100%; }
   .eyebrow { display: none; }
+}
+
+/* ── the task form ───────────────────────────────────────────────────────────────────────────
+   The demo's `form-grid` inside its dialog: two columns, sixteen-pixel gutters, a label above each
+   control, and its own control treatment (`min-height: var(--control)`, one border, no shadow). */
+.field { display: flex; flex-direction: column; gap: var(--s2); font-size: var(--sm); color: var(--muted); min-inline-size: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+.form-grid .full { grid-column: 1 / -1; }
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: var(--app-hair) solid var(--line);
+  border-radius: var(--radius);
+  min-block-size: var(--control);
+  padding: var(--s2) var(--s3);
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+.form-grid textarea { resize: vertical; }
+.form-grid input::placeholder,
+.form-grid textarea::placeholder { color: var(--dim); }
+.form-grid :focus-visible { outline: var(--ring); outline-offset: var(--app-notch); }
+
+@media (max-width: 540px) {
+  .form-grid { grid-template-columns: 1fr; }
 }

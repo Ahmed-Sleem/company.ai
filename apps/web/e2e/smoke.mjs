@@ -217,6 +217,47 @@ try {
   check('a move the server allows lands in the right column', landed);
   await page.keyboard.press('Escape');
 
+  // 5b — the form the designer drew: create a task, see it on the board, then edit it
+  await page.goto(`http://127.0.0.1:${WEB_PORT}/#tasks`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('[data-task]');
+  await page.click('button:has-text("New task")');
+  await page.waitForSelector('#task-form', { timeout: 5_000 });
+  const formFields = await page.$$eval('#task-form [name]', (nodes) => nodes.map((node) => node.getAttribute('name')));
+  check('the form carries the demo’s six fields', JSON.stringify(formFields) === JSON.stringify(['title', 'owner', 'priority', 'due', 'stage', 'description']),
+    formFields.join(', '));
+  const prefilledDue = await page.inputValue('#task-form [name=due]');
+  check('the required date starts filled, as the demo’s does', /^\d{4}-\d{2}-\d{2}$/.test(prefilledDue), prefilledDue);
+  await page.fill('#task-form [name=title]', 'Draft the November hiring plan');
+  await page.selectOption('#task-form [name=stage]', 'progress');
+  await page.selectOption('#task-form [name=priority]', 'high');
+  await page.click('button:has-text("Add task")');
+  await page.waitForFunction(() => document.body.textContent?.includes('Draft the November hiring plan') ?? false, null, { timeout: 8_000 })
+    .then(() => check('a new task appears on the board with a database-made reference', true))
+    .catch(() => check('a new task appears on the board with a database-made reference', false));
+  const created = await page.evaluate(() => {
+    const card = [...document.querySelectorAll('[data-task]')].find((node) => node.textContent?.includes('Draft the November hiring plan'));
+    const progress = [...document.querySelectorAll('.column')].find((column) => column.querySelector('.column-head span:not(.dot)')?.textContent === 'progress');
+    return { ref: card?.querySelector('.task-id')?.textContent ?? null, inProgress: progress?.textContent?.includes('Draft the November hiring plan') ?? false };
+  });
+  check('it lands in the column its stage names, carrying a TSK- reference',
+    created.inProgress && /^TSK-\d{3,}$/.test(created.ref ?? ''), JSON.stringify(created));
+
+  // edit it: open the card, take the form, change the title, save
+  await page.click('[data-task]:has-text("Draft the November hiring plan")');
+  await page.waitForSelector('dialog[open]');
+  const detail = await page.textContent('dialog');
+  check('the task dialog opens on the detail with an Edit action',
+    (detail?.includes('Task detail') ?? false) && (detail?.includes('Edit task') ?? false));
+  await page.click('dialog button:has-text("Edit task")');
+  await page.waitForSelector('#task-form');
+  const filled = await page.inputValue('#task-form [name=title]');
+  check('the form opens filled with the task’s own values', filled === 'Draft the November hiring plan', filled);
+  await page.fill('#task-form [name=title]', 'Draft the December hiring plan');
+  await page.click('button:has-text("Save changes")');
+  await page.waitForFunction(() => document.body.textContent?.includes('Draft the December hiring plan') ?? false, null, { timeout: 8_000 })
+    .then(() => check('the edit is saved and the board shows it', true))
+    .catch(() => check('the edit is saved and the board shows it', false));
+
   // 6 — inbox with a real decision and a working decision commit
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });

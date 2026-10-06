@@ -85,6 +85,17 @@ export const api = {
       body: JSON.stringify({ to, actor: { kind: 'member', id: await actingMemberId() } }),
     }),
   session: () => request<{ member: { id: string; name: string; role: string } | null }>('/api/session'),
+  /** The demo's task form, both directions. The reference a person reads comes back from the server. */
+  createTask: (input: {
+    title: string; titleAr?: string | null; description?: string | null; descriptionAr?: string | null;
+    ownerAgentId: string; stage: TaskRow['stage']; priority: TaskRow['priority'];
+    progress?: number; dueDate?: string | null;
+  }) => request<{ task: TaskRow }>('/api/tasks', { method: 'POST', body: JSON.stringify(input) }),
+  updateTask: (taskId: string, patch: {
+    title?: string; titleAr?: string | null; description?: string | null; descriptionAr?: string | null;
+    ownerAgentId?: string; stage?: TaskRow['stage']; priority?: TaskRow['priority'];
+    progress?: number; dueDate?: string | null;
+  }) => request<{ task: TaskRow }>(`/api/tasks/${taskId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   decisions: (status?: string) =>
     request<{
       decisions: Array<{

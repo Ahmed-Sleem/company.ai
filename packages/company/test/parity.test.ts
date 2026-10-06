@@ -7,7 +7,8 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPgliteDb, budgetState, schema, seed, type Db } from '../src/index.js';
-import { demo } from './demo-fixture.js';
+import { TASK_CREATE } from '@company/contracts';
+import { demo, demoTaskFormFields } from './demo-fixture.js';
 
 let db: Db;
 let close: () => Promise<void>;
@@ -21,6 +22,28 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   await close();
+});
+
+describe('the product’s task form is the designer’s task form', () => {
+  /**
+   * The demo's `taskForm()` is six fields. The product's form must offer the same six, in the same
+   * order, spelled the same way — the interface is the designer's, and the API contract carries the
+   * same names so a screenshot and a payload can be read against each other.
+   */
+  it('offers the same six fields, in the demo’s order', () => {
+    expect(demoTaskFormFields()).toEqual(['title', 'owner', 'priority', 'due', 'stage', 'description']);
+  });
+
+  it('accepts exactly those fields, minus the ones the server owns', () => {
+    const keys = Object.keys(TASK_CREATE.shape);
+    for (const field of ['title', 'priority', 'stage', 'description']) {
+      expect(keys, `TASK_CREATE must carry ${field}`).toContain(
+        field === 'priority' ? 'priority' : field);
+    }
+    // the form's `owner` and `due` are the API's `ownerAgentId` and `dueDate`
+    expect(keys).toContain('ownerAgentId');
+    expect(keys).toContain('dueDate');
+  });
 });
 
 describe('the designer’s company is the company in the database', () => {

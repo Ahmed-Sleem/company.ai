@@ -14,7 +14,9 @@ import {
   offeredTransitions,
   taskStage,
   viewStateQuery,
+  TASK_CREATE,
   TASK_TRANSITION,
+  TASK_UPDATE,
   VIEW_IDS,
   type ViewId,
 } from '@company/contracts';
@@ -27,6 +29,9 @@ import {
   getAgent,
   getCompany,
   actingMember,
+  approvedDecisionForTask,
+  createTask,
+  getTask,
   listAgents,
   listDecisions,
   listModels,
@@ -35,6 +40,7 @@ import {
   listThreads,
   openDecisions,
   transitionTask,
+  updateTaskFields,
 } from '@company/company';
 import type { Db } from '@company/company';
 import type { Gateway } from '@company/gateway';
@@ -173,7 +179,73 @@ export function createApp(deps: AppDeps) {
         taskId: c.req.param('id'),
         to: body.to,
         actor: { kind: body.actor.kind, id: body.actor.id },
-        decisionId: body.decisionId,
+        // `review → done` needs the decision row that approved this task. The rule asks for it; the
+        // route finds it, so the interface does not have to know that finishing work needs a record.
+        decisionId: body.decisionId ?? await approvedDecisionForTask(deps.db, company.id, c.req.param('id')),
+      });
+      return c.json({ task });
+    },
+  );
+
+  /**
+   * A new task, from the form the designer drew (`taskForm()`): title, owner, priority, due date,
+   * stage, description.
+   *
+   * A task created straight into `done` records the member behind it, so the invariant "nothing is
+   * finished without a person" holds for rows that never went through the board as well.
+   */
+  app.post(
+    '/api/tasks',
+    zValidator('json', TASK_CREATE),
+    async (c) => {
+      const company = await companyOf();
+      const body = c.req.valid('json');
+      const agents = await listAgents(deps.db, company.id);
+      if (!agents.some((agent) => agent.id === body.ownerAgentId)) {
+        throw new RuleViolation('unknown_owner', 'That owner is not part of this company');
+      }
+      const member = await actingMember(deps.db, company.id);
+      const task = await createTask(deps.db, {
+        companyId: company.id,
+        ...body,
+        // Anything recorded as finished carries the person who says so.
+        approvedByMemberId: body.stage === 'done' ? (member?.id ?? null) : null,
+      });
+      return c.json({ task }, 201);
+    },
+  );
+
+  /**
+   * The form's save. Field edits are written straight through; a *stage* change is not — it goes
+   * through `transitionTask`, the same function the board's move buttons use, so the review gate
+   * holds whichever door someone comes in by.
+   */
+  app.patch(
+    '/api/tasks/:id',
+    zValidator('json', TASK_UPDATE),
+    async (c) => {
+      const company = await companyOf();
+      const body = c.req.valid('json');
+      const { stage, ...fields } = body;
+      const member = await actingMember(deps.db, company.id);
+      const current = await getTask(deps.db, company.id, c.req.param('id'));
+      if (!current) throw new RuleViolation('task_not_found', `No task ${c.req.param('id')}`);
+      // Only a *change* of stage goes through the gate. A form that saves without touching the
+      // stage must not be read as asking to move the task back where it already is.
+      if (stage && stage !== current.stage) {
+        await transitionTask(deps.db, {
+          companyId: company.id,
+          taskId: current.id,
+          to: stage,
+          actor: { kind: 'member', id: member?.id ?? '' },
+          decisionId: await approvedDecisionForTask(deps.db, company.id, current.id),
+          progress: fields.progress,
+        });
+      }
+      const task = await updateTaskFields(deps.db, {
+        companyId: company.id,
+        taskId: c.req.param('id'),
+        patch: fields,
       });
       return c.json({ task });
     },

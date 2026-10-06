@@ -59,6 +59,60 @@
 
 ---
 
+## 2026-10-06 01:30 — P1.2: the task form (create and edit), and three defects it surfaced
+
+- **Task (user):** continue P1 — parity with the prototype on real state, next step the task form.
+- **What now exists:** the demo's `taskForm()` as a product surface. The screen head carries the
+  **New task** button the designer drew; clicking a card or a list row opens the **Task detail**
+  dialog (eyebrow "Task detail", the reference and priority badge, the fields, and a footer of
+  Close + the move buttons + **Edit task**); and one `TaskForm` component serves both directions —
+  the same six fields, in the demo's order (`title, owner, priority, due, stage, description`), with
+  the demo's own two-column `form-grid` inside a dialog and its words: New task / Add task / Save
+  changes / Cancel.
+- **The rule is still in one place.** A stage chosen in the form is *not* written straight to the
+  row: `PATCH /api/tasks/:id` sends it through `transitionTask` — the same function the board's move
+  buttons use — so the review gate holds whichever door you come in by. A test proves it: the form
+  offering `done` on an unapproved task is refused with `review_gate_needs_decision` and the row
+  stays in `review`.
+- **The interface no longer needs to know that finishing work requires a record.** `PATCH` and the
+  transition route now resolve the approved decision themselves (`approvedDecisionForTask`), so a
+  person can complete an approved task without the browser carrying a decision id around.
+- **A new task never invents its reference.** `POST /api/tasks` inserts and lets the database's
+  sequence produce the value: the browser check created a task and saw `TSK-200`, and
+  `tests` refuse a task whose owner is not part of the company (`unknown_owner`, 409).
+- **Defects found while building it (each one a real one):**
+  1. **`?state=` previews stuck to the app** — reported last step, fixed there.
+  2. **A required empty date silently blocked the save.** The demo's date field is `required` *and*
+     pre-filled; ours was required and empty, so the browser refused to submit and the button simply
+     did nothing. The form now starts a new task with a date two days out (the demo's own distance
+     from its today), and a browser check asserts the field arrives filled.
+  3. **An Arabic screen would have written Arabic into the English column.** `createTask` was sent
+     the typed title as *the* title whatever the language. Now the text goes to the language's column,
+     and a new row also stores it in the required title column (the same fallback `tr()`/`localized`
+     apply when reading) — while an *edit* touches only the language's column, leaving the other
+     alone. Two tests pin both halves.
+- **Also fixed:** `Dialog` guards `close()` the way it guards `showModal()` (the test environment has
+  neither), and the board loads the roster beside the tasks because the form's Owner select needs
+  real agents.
+- **Files:** `apps/web/src/components/{TaskForm,Dialog}.tsx`, `views/TasksView.tsx`, `lib/{api,i18n}.ts`,
+  `styles/app.css`, `test/{tasks,shell,format,avatars}.test.tsx`, `e2e/smoke.mjs`,
+  `services/api/src/app.ts`, `services/api/test/api.test.ts`, `packages/company/src/repo.ts`,
+  `packages/contracts/src/task.ts` (`TASK_CREATE` / `TASK_UPDATE`), `packages/company/test/{demo-fixture,parity}.test.ts`.
+- **Validation:** `bash scripts/verify.sh` → **GREEN 9/9** · tsc clean · root vitest **70** (was 62) ·
+  web vitest **35** (was 29) · design gate 11/11 · browser smoke **31/31** (was 24). Every new check
+  observed failing first: six API tests failed `404` with the routes renamed, four web tests failed
+  before the form existed, the parity field-list test failed with one field renamed, and the browser
+  checks caught the missing `/api/agents` wiring in three older tests.
+- **Deviations, stated:** the demo puts Stage/Owner/Due/Progress controls inside the detail dialog
+  *and* in the form; the product keeps those fields in the one form (one implementation per concept),
+  which is why the detail dialog is a reader with an Edit button rather than a second editor. The
+  demo's Checklist and Files sections are not built yet — they belong with the worker phase (P2),
+  where a task actually produces files; the schema has nowhere to put them today.
+- **Not checked (standing list):** screen-reader announcement order in the new dialog, and the touch
+  feel of the form on a real device.
+
+---
+
 ## 2026-10-06 00:20 — P1.1b: the Tasks screen is the designer's screen, and one real defect fell out of it
 
 - **Task (user):** continue P1 — parity with the prototype on real state. This step is the Tasks surface.
