@@ -64,6 +64,9 @@ color-scheme: dark;
      and how much viewport height it may use */
   --dialog-w:700px; --dialog-gap:32px; --dialog-vgap:48px;
 
+  /* the palette swatch in Settings → Appearance (borrowed from the owner demo, 2026-10-06) */
+  --chip:15px;
+
   /* layout & motion */
   --nav:210px;
   --speed:130ms;
@@ -177,7 +180,139 @@ dialog{border:2px solid var(--line);box-shadow:4px 4px 0 var(--bg),6px 6px 0 var
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{
   outline:2px solid var(--accent);outline-offset:3px}
 
-/* ---- 4. The two media queries the design source left as intent, implemented -------- */
+/* ---- 4. Colour palettes — borrowed from the owner's demo, declared in
+   design/tokens/company-os-palettes.json. Written after the theme blocks on purpose: a
+   palette block and a theme block have equal specificity, so the later one wins for the
+   tokens they share, and the light+palette block is more specific than either. */
+:root[data-palette=ocean]{
+  --bg:#11151b;
+  --side:#151a22;
+  --surface:#191f28;
+  --raised:#202833;
+  --hover:#283342;
+  --line:#364557;
+  --soft:#293340;
+  --text:#e1e7ef;
+  --muted:#a6b3c3;
+  --dim:#899bb0;
+  --accent:#a9c8ec;
+  --accent-bg:#263a52;
+  --on-accent:#152538;
+}
+
+:root[data-theme=light][data-palette=ocean]{
+  --bg:#f3f6fa;
+  --side:#e9eef5;
+  --surface:#fbfcfe;
+  --raised:#edf2f8;
+  --hover:#e3ebf5;
+  --line:#c2ccda;
+  --soft:#dae2ed;
+  --text:#27374c;
+  --muted:#56697f;
+  --dim:#50637a;
+  --accent:#386292;
+  --accent-bg:#dfebf9;
+  --on-accent:#ffffff;
+}
+
+:root[data-palette=violet]{
+  --bg:#16131b;
+  --side:#1b1721;
+  --surface:#201c27;
+  --raised:#282330;
+  --hover:#322b3e;
+  --line:#463c53;
+  --soft:#322b3d;
+  --text:#e9e2ef;
+  --muted:#b7abc5;
+  --dim:#a092b0;
+  --accent:#c5b6e8;
+  --accent-bg:#3b2d50;
+  --on-accent:#291b3e;
+}
+
+:root[data-theme=light][data-palette=violet]{
+  --bg:#f7f4fa;
+  --side:#efeaf4;
+  --surface:#fdfbff;
+  --raised:#f1ebf8;
+  --hover:#eae1f3;
+  --line:#cfc3dc;
+  --soft:#e5daed;
+  --text:#392c47;
+  --muted:#6c597f;
+  --dim:#665375;
+  --accent:#735091;
+  --accent-bg:#ede2f6;
+  --on-accent:#ffffff;
+}
+
+:root[data-palette=amber]{
+  --bg:#191610;
+  --side:#1e1a14;
+  --surface:#242018;
+  --raised:#2c261c;
+  --hover:#352e23;
+  --line:#4b4030;
+  --soft:#362e22;
+  --text:#eee7d9;
+  --muted:#c0b29a;
+  --dim:#a79980;
+  --accent:#dfc18b;
+  --accent-bg:#463820;
+  --on-accent:#302210;
+}
+
+:root[data-theme=light][data-palette=amber]{
+  --bg:#faf7ef;
+  --side:#f1ece0;
+  --surface:#fffdf6;
+  --raised:#f5efdf;
+  --hover:#eee5d0;
+  --line:#d5c8ac;
+  --soft:#e8dec8;
+  --text:#413523;
+  --muted:#766346;
+  --dim:#705d40;
+  --accent:#7c571e;
+  --accent-bg:#f0e3c7;
+  --on-accent:#ffffff;
+}
+
+:root[data-palette=rose]{
+  --bg:#1a1316;
+  --side:#20171b;
+  --surface:#271c21;
+  --raised:#302329;
+  --hover:#3b2a31;
+  --line:#503a44;
+  --soft:#3a2931;
+  --text:#f0e1e6;
+  --muted:#c4aab3;
+  --dim:#b0939e;
+  --accent:#e3b0bd;
+  --accent-bg:#4a2c38;
+  --on-accent:#371d28;
+}
+
+:root[data-theme=light][data-palette=rose]{
+  --bg:#fbf4f6;
+  --side:#f3e9ed;
+  --surface:#fffafd;
+  --raised:#f7ebf0;
+  --hover:#efdfe6;
+  --line:#d9c1cb;
+  --soft:#ecd9e1;
+  --text:#492e3a;
+  --muted:#805b6b;
+  --dim:#795364;
+  --accent:#984e6a;
+  --accent-bg:#f5dfe7;
+  --on-accent:#ffffff;
+}
+
+/* ---- 5. The two media queries the design source left as intent, implemented -------- */
 @media(pointer:coarse){
   /* "48px touch targets on coarse pointers" — both axes, exactly as the prototype's T1 item. */
   :is(.btn,.navitem,.tabs button,.icon-btn,.searchbox input,.field input,.field select,

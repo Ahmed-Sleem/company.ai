@@ -70,6 +70,7 @@ export const themeTokens = {
     "--dialog-w": "700px",
     "--dialog-gap": "32px",
     "--dialog-vgap": "48px",
+    "--chip": "15px",
     "--nav": "210px",
     "--speed": "130ms",
     "--max": "1440px",
@@ -97,6 +98,21 @@ export const themeTokens = {
 } as const;
 
 export type ThemeName = 'dark' | 'light';
+
+/** The colour palettes Settings offers, in the owner's order. "byline" is the owner's own
+ *  wording, kept for provenance; the name a person reads comes from lib/i18n.ts. */
+export const palettes = [
+  { id: "sage", chip: "#accab3", byline: "Original sage" },
+  { id: "ocean", chip: "#a9c8ec", byline: "Ocean blue" },
+  { id: "violet", chip: "#c5b6e8", byline: "Soft violet" },
+  { id: "amber", chip: "#dfc18b", byline: "Warm amber" },
+  { id: "rose", chip: "#e3b0bd", byline: "Dusty rose" },
+] as const;
+
+export type PaletteId = (typeof palettes)[number]['id'];
+
+/** The palette the design source's own colours make: the default, and never an override. */
+export const defaultPalette: PaletteId = 'sage';
 
 /** Tokens that are not colours (space, type, layout), read once and frozen. */
 export const pixel = {

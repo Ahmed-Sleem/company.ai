@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import {
   SRC_CSS,
   SRC_JSON,
+  SRC_PALETTES,
   GENERATED,
   FONT_FILE,
   buildAll,
@@ -107,13 +108,18 @@ describe('generated output', () => {
     expect(css).toMatch(/@media\(prefers-reduced-motion:reduce\)\{[\s\S]*animation-duration:0\.001ms/);
   });
 
-  it('never introduces a colour that is not in the design source', () => {
+  // Changed 2026-10-06, observed failing first: adding the owner's palettes made this check
+  // report every palette colour as unknown. The guarantee is unchanged — a generated colour
+  // must be declared in a committed source — but there are two committed sources now, the
+  // designer's file and the owner's palette file.
+  it('never introduces a colour that neither committed source declares', () => {
     const source = readFileSync(SRC_CSS, 'utf8').toLowerCase();
+    const palettes = readFileSync(SRC_PALETTES, 'utf8').toLowerCase();
     const generated = String(files['tokens.css'] ?? '').toLowerCase();
     const newColors = new Set();
     for (const m of generated.matchAll(/#[0-9a-f]{3,8}\b/g)) newColors.add(m[0]);
     for (const c of newColors as Set<string>) {
-      const known = source.includes(c) || generated.includes(`var(--${c})`);
+      const known = source.includes(c) || palettes.includes(c) || generated.includes(`var(--${c})`);
       expect(known, `unknown colour ${c}`).toBe(true);
     }
   });

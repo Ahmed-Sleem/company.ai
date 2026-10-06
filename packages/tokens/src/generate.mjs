@@ -34,6 +34,7 @@ export const PKG = join(here, '..');
 export const REPO = join(PKG, '..', '..');
 export const SRC_CSS = join(REPO, 'design/tokens/company-os-pixel.css');
 export const SRC_JSON = join(REPO, 'design/tokens/company-os-pixel.json');
+export const SRC_PALETTES = join(REPO, 'design/tokens/company-os-palettes.json');
 export const GENERATED = join(PKG, 'generated');
 export const FONT_FILE = join(PKG, 'assets/PixelifySans.woff2');
 
@@ -107,7 +108,42 @@ export function buildContext(paths = {}) {
     }
   }
 
-  return { css, json, dark, light, darkBody, lightBody, mismatches };
+  return { css, json, dark, light, darkBody, lightBody, mismatches, palettes: loadPalettes(paths.palettesPath) };
+}
+
+/* ── the colour palettes (borrowed from the owner's demo) ───────────────────── */
+
+/**
+ * The palette source of truth: `design/tokens/company-os-palettes.json`, lifted from the
+ * owner's demo (`PALETTES` in `design/owner-demo/acme-studio-os.html`).
+ *
+ * The generator refuses to emit a palette that is not exactly the 13 colour tokens the demo
+ * switches, because a half-stated palette produces a half-themed screen — the kind of bug
+ * that only shows up in one theme on one screen.
+ */
+export function loadPalettes(path = SRC_PALETTES) {
+  const doc = JSON.parse(read(path));
+  const keys = doc.keys;
+  if (!Array.isArray(keys) || keys.length === 0) throw new Error('palette source: no key list');
+  const problems = [];
+  for (const [id, preset] of Object.entries(doc.presets ?? {})) {
+    if (!/^[a-z][a-z0-9-]*$/.test(id)) problems.push(`${id}: not a usable palette id`);
+    if (!/^#[0-9a-f]{3,8}$/i.test(String(preset.chip ?? ''))) problems.push(`${id}: chip is not a colour`);
+    const themed = ['dark', 'light'].filter((mode) => mode in preset);
+    if (themed.length === 0) continue; // the default palette: no overrides at all
+    if (themed.length !== 2) problems.push(`${id}: declares ${themed.join(' + ')} but a palette needs both themes`);
+    for (const mode of themed) {
+      const stated = Object.keys(preset[mode]);
+      const missing = keys.filter((k) => !stated.includes(k));
+      const extra = stated.filter((k) => !keys.includes(k));
+      if (missing.length) problems.push(`${id}.${mode}: missing ${missing.join(', ')}`);
+      if (extra.length) problems.push(`${id}.${mode}: unknown ${extra.join(', ')}`);
+    }
+  }
+  if (problems.length) {
+    throw new Error(`palette source is not usable:\n${problems.map((p) => `  · ${p}`).join('\n')}`);
+  }
+  return { doc, ids: Object.keys(doc.presets ?? {}) };
 }
 
 /* ── generated outputs ──────────────────────────────────────────────────────── */
@@ -128,9 +164,28 @@ function skinSection(css) {
   return css.slice(start, end).trim();
 }
 
-export function generateCss({ darkBody, lightBody, css }) {
+export function generateCss({ darkBody, lightBody, css, palettes }) {
   const darkVars = darkBody.trim();
   const lightVars = lightBody.trim();
+
+  /* Section 4 — the palettes. A preset restates the same colour tokens, dark and light; the
+     default palette declares nothing at all, so "no attribute" and "sage" are the same thing
+     and the design source's own colours are what everyone gets until they choose otherwise. */
+  const paletteBlocks = [];
+  for (const [id, preset] of Object.entries(palettes.doc.presets)) {
+    if (!preset.dark) continue;
+    const block = (selector, map) =>
+      `${selector}{\n${Object.entries(map).map(([k, v]) => `  --${k}:${v};`).join('\n')}\n}`;
+    paletteBlocks.push(block(`:root[data-palette=${id}]`, preset.dark));
+    paletteBlocks.push(block(`:root[data-theme=light][data-palette=${id}]`, preset.light));
+  }
+  const paletteSection =
+    `/* ---- 4. Colour palettes — borrowed from the owner's demo, declared in\n` +
+    `   design/tokens/company-os-palettes.json. Written after the theme blocks on purpose: a\n` +
+    `   palette block and a theme block have equal specificity, so the later one wins for the\n` +
+    `   tokens they share, and the light+palette block is more specific than either. */\n` +
+    (paletteBlocks.length ? paletteBlocks.join('\n\n') : '/* every preset is the default palette */');
+
   return `${HEADER('Company OS tokens — CSS.')}
 @import './theme.css';
 
@@ -155,7 +210,9 @@ ${lightVars}
 /* ---- 3. The pixel skin — verbatim from the design source ---------------------------- */
 ${skinSection(css)}
 
-/* ---- 4. The two media queries the design source left as intent, implemented -------- */
+${paletteSection}
+
+/* ---- 5. The two media queries the design source left as intent, implemented -------- */
 @media(pointer:coarse){
   /* "48px touch targets on coarse pointers" — both axes, exactly as the prototype's T1 item. */
   :is(.btn,.navitem,.tabs button,.icon-btn,.searchbox input,.field input,.field select,
@@ -197,10 +254,16 @@ ${['bg', 'side', 'surface', 'raised', 'hover', 'line', 'soft', 'text', 'muted', 
 `;
 }
 
-export function generateTs({ dark, light, json }) {
+export function generateTs({ dark, light, json, palettes }) {
   const obj = (map) =>
     '{\n' + [...map.entries()].map(([k, v]) => `    ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join('\n') + '\n  }';
   const colours = JSON.stringify(Object.keys(json.tokens.dark), null, 2);
+  const paletteList = palettes.ids
+    .map((id) => {
+      const preset = palettes.doc.presets[id];
+      return `  { id: ${JSON.stringify(id)}, chip: ${JSON.stringify(preset.chip)}, byline: ${JSON.stringify(preset.byline)} },`;
+    })
+    .join('\n');
   return `${HEADER('Typed mirror of the design tokens for TypeScript consumers.')}
 export const cssVariableNames = ${colours.replace(/"colorScheme"/g, '"colorScheme"')} as const;
 
@@ -210,6 +273,17 @@ export const themeTokens = {
 } as const;
 
 export type ThemeName = 'dark' | 'light';
+
+/** The colour palettes Settings offers, in the owner's order. "byline" is the owner's own
+ *  wording, kept for provenance; the name a person reads comes from lib/i18n.ts. */
+export const palettes = [
+${paletteList}
+] as const;
+
+export type PaletteId = (typeof palettes)[number]['id'];
+
+/** The palette the design source's own colours make: the default, and never an override. */
+export const defaultPalette: PaletteId = 'sage';
 
 /** Tokens that are not colours (space, type, layout), read once and frozen. */
 export const pixel = {

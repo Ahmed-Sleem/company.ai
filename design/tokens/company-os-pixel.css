@@ -57,6 +57,9 @@
      and how much viewport height it may use */
   --dialog-w:700px; --dialog-gap:32px; --dialog-vgap:48px;
 
+  /* the palette swatch in Settings → Appearance (borrowed from the owner demo, 2026-10-06) */
+  --chip:15px;
+
   /* layout & motion */
   --nav:210px;
   --speed:130ms;

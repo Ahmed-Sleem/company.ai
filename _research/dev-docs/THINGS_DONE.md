@@ -81,6 +81,67 @@
 
 ---
 
+## 2026-10-06 01:45 — reading the owner's second demo, and borrowing its colour palettes
+
+- **Task (user):** *"i made gui like another demo, with soem extra features, read it, we can borrow
+  things from it"* — read `acme-studio-os (1).html` and take what is worth taking.
+- **What was read, and where it is written down:** the file is now kept read-only at
+  `design/owner-demo/acme-studio-os.html` (byte-identical to the upload; blob
+  `1a450ddc1a722e37501bbe35550fac5fb8c95646`, sha256 `4856c864…`, with `design/owner-demo/SOURCE.md`
+  recording its provenance and the one unresolved question — the furniture art has no attribution).
+  `_research/dev-docs/OWNER_DEMO_READING.md` is the full comparison: 376,864 → 607,024 chars, 15 new
+  functions, **the six shared views byte-identical**, so P1.3/P1.4/P1.5 need no re-work and this
+  file can only be *additive*; the borrow list ranked (palettes, pixel icons, the world map, build
+  mode, forced-colors/CRT/collapsed rail); the three liabilities (English-only world strings, 1,179
+  raw hex literals, unattributed sprite art).
+- **What was built from it (first borrowing):** the **colour palette system**. Four presets on top of
+  the design source's own colours — ocean, violet, amber, rose, each restating the same 13 colour
+  tokens in dark and light. `design/tokens/company-os-palettes.json` is the source (values extracted
+  from the owner's `PALETTES`, `custom` deliberately **not** borrowed and recorded in `notBorrowed`
+  with a reason); `packages/tokens/src/generate.mjs` validates every preset (all 13 keys, both
+  themes, a real chip colour) and emits `:root[data-palette=…]` + `:root[data-theme=light][data-palette=…]`
+  blocks **after** the theme blocks, on purpose: equal specificity means the later one wins, and the
+  light+palette selector beats both. `lib/theme.ts` gained `readPalette`/`applyPalette`, which set
+  one attribute and know no colours; `Settings → Appearance` gained the owner's control, its wording
+  ("Color palette", "Choose a palette. All presets work in dark and light mode.") in both languages,
+  and `aria-pressed` instead of a colour-only mark. The first palette clears the attribute rather
+  than pinning it, because *no attribute* is what the design source's own colours look like — that is
+  the state every parity screenshot was taken in.
+- **A new measure for the token source:** `--chip:15px` joined `:root` in
+  `design/tokens/company-os-pixel.css` (documented beside the dialog geometry), because the raw-value
+  check allows no length literal outside the token block.
+- **Checks, and the two drift events they caught:**
+  - `packages/tokens/test/palettes.test.ts` (12 tests) reads `PALETTES` **out of the owner's demo**
+    and compares it with our copy, value by value, the way `parity.test.ts` locks the screens. Real
+    drill: setting `amber.light.line` to `#123456` failed naming exactly that token; a dropped preset
+    and a preset invented by the demo are both reported. It also measured that every palette clears
+    **AA 4.5:1** for the two pairs the UI actually draws (accent on accent-bg, muted on bg) — lowest
+    is rose/light at 4.57:1.
+  - The existing "no colour that is not in the design source" check **failed on first run** with the
+    palettes in — correct behaviour, and the check now names two committed sources instead of one.
+  - `apps/web/test/palette.test.tsx` (9 tests): the five names in EN and AR, exactly one pressed,
+    choosing really writes the attribute **and** remembers it, the first palette un-pins it, a junk
+    stored value falls back to sage, private mode survives, and Appearance stays reachable in the
+    error state (it sits outside `DataState` on purpose — a failed fetch must not hide it).
+  - Four **browser** checks joined the smoke (31 → 39, all passing): the owner's order and wording,
+    a repaint measured against sage **in the same theme** (comparing the two themes with each other
+    passed even when dark was broken — a real false pass, found and fixed), survival across a reload,
+    the palette answering in **both** themes, and the pressed mark moving back.
+  - **Forced colours, measured rather than assumed:** with `forcedColors: active`, the swatch kept
+    its colour but the chosen option lost its border colour *and* its shadow, so "chosen" stopped
+    looking chosen. Fixed the way the owner's demo does (an outline in the OS's own `Highlight`), and
+    the same probe now guards it: swatch `rgb(172, 202, 179)`, pressed outline `solid 2px`, and no
+    outline at all when forced colours are off. This is one item off the standing NOT-CHECKED list.
+- **Validation:** `bash scripts/verify.sh` → **9/9 green** — tsc clean · root vitest **82** (was 70:
+  tokens 11 + palettes 12) · web vitest **46** (was 37: palette 9) · design gate 11/11 · smoke
+  **39/39** · raw values 50 files clean · oxlint clean. Screenshots in `.data/shots/`:
+  `palette-dark-sage.png`, `palette-dark-ocean.png`, `palette-light-amber.png`, `palette-ar-ocean.png`
+  (the light and RTL passes were checked by eye, not only by assertion).
+- **Limitations:** the palettes are a preference, not data — nothing is stored in the database and
+  nothing syncs between machines yet. The demo's `custom` accent is not borrowed (needs a contrast
+  rule and a product decision). The pixel icons, the world map and build mode are read, ranked and
+  not yet built; the world map needs two answers from the owner first (see the reading document).
+
 ## 2026-10-06 01:30 — P1.2: the task form (create and edit), and three defects it surfaced
 
 - **Task (user):** continue P1 — parity with the prototype on real state, next step the task form.

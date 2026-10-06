@@ -30,9 +30,13 @@ company.ai/
 │   │   ├── ai-company-os.html       the designer's demo — the visual reference (never edited)
 │   │   ├── SOURCE.md                provenance + blob sha + how to re-verify
 │   │   └── install.sh               offline verify / --force re-download helper
+│   ├── owner-demo/
+│   │   ├── acme-studio-os.html      the OWNER's demo — borrow source (never edited)
+│   │   └── SOURCE.md                provenance, blob sha, and the unresolved art licence
 │   ├── tokens/
 │   │   ├── company-os-pixel.css     THE DESIGN SYSTEM — tokens, themes, pixel skin (documented)
-│   │   └── company-os-pixel.json    same values, machine-readable (for the token pipeline)
+│   │   ├── company-os-pixel.json    same values, machine-readable (for the token pipeline)
+│   │   └── company-os-palettes.json the five colour palettes, borrowed from the owner's demo
 │   ├── prototype/
 │   │   ├── company-os.html          the demo + documented patches + the network view  ← the prototype
 │   │   ├── graph.js                 network view: layout, render, interaction, persistence
@@ -53,6 +57,7 @@ company.ai/
     ├── data/                        GitHub API snapshot + competitors CSV (evidence)
     ├── rules/                       THE FOUR RULE DOCUMENTS (single home) + how they combine here
     └── dev-docs/                    this documentation set (index in README.md)
+        └── OWNER_DEMO_READING.md    what the owner's demo adds, the borrow list, and its liabilities
 ```
 
 ## Integration points (when the product is built)

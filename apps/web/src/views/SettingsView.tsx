@@ -1,12 +1,47 @@
 /**
  * Settings — the company and the model registry. The prices shown are the ones the ledger
  * actually bills with, so the number here and the number on an agent's meter can never differ.
+ *
+ * Appearance carries the palette control borrowed from the owner's demo: five presets, the
+ * design source's own colours first, each one working in dark and light. The chosen preset is a
+ * preference, not data, so it is applied here and remembered locally — the same as the theme.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
 import { Panel } from '../components/Panel';
 import { DataState, type DataStateKind } from '../components/DataState';
+import { applyPalette, paletteNameKey, readPalette, type PaletteId } from '../lib/theme';
+import { palettes } from '@company/tokens';
+
+/**
+ * The palette control. A swatch shows the preset's accent, the pressed state is announced rather
+ * than coloured in (aria-pressed), and the choice is applied to the document immediately — the
+ * same instant response the owner's demo gives, minus the inline colour writing.
+ */
+function PaletteSetting({ lang }: { lang: Lang }) {
+  const [chosen, setChosen] = useState<PaletteId>(readPalette);
+  return (
+    <section className="palette-setting">
+      <h3 id="palette-heading">{t('colorPalette', lang)}</h3>
+      <p>{t('paletteNote', lang)}</p>
+      <div className="palette-options" role="group" aria-labelledby="palette-heading">
+        {palettes.map((preset) => (
+          <button
+            type="button"
+            key={preset.id}
+            className="palette-option"
+            aria-pressed={preset.id === chosen}
+            onClick={() => setChosen(applyPalette(preset.id))}
+          >
+            <span className="palette-chip" style={{ '--chip': preset.chip } as CSSProperties} aria-hidden="true" />
+            <span>{t(paletteNameKey(preset.id), lang)}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
   const [models, setModels] = useState<Awaited<ReturnType<typeof api.models>>['models'] | null>(null);
@@ -54,6 +89,9 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
           </tbody>
         </table>
       </DataState>
+      {/* Outside the data states on purpose: the palette is a local preference, so it must be
+          reachable even while the company and the model list are still loading or unreachable. */}
+      <PaletteSetting lang={lang} />
     </Panel>
   );
 }

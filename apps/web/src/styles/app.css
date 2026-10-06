@@ -470,3 +470,57 @@ h3 { font-size: var(--base); }
 @media (max-width: 540px) {
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* ── the palette control (Settings → Appearance) ─────────────────────────────────────────────
+   The owner's demo markup and its rules, with every measure resolved through a token: a swatch
+   per preset, the pressed one tinted with the accent background, and the check mark carried by
+   aria-pressed so a screen reader hears the choice as well as seeing it. */
+.palette-setting { padding-block: var(--s5); border-block-end: var(--app-hair) solid var(--soft); }
+.palette-setting > p { margin-block-start: var(--s1); color: var(--muted); }
+.palette-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); margin-block-start: var(--s4); }
+.palette-option {
+  min-block-size: var(--touch);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s3);
+  background: var(--bg);
+  border: var(--app-hair) solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: var(--sm);
+  text-align: start;
+  cursor: pointer;
+}
+.palette-option > span:last-child { flex: 1; min-inline-size: 0; }
+.palette-option:hover { background: var(--hover); border-color: var(--dim); color: var(--text); }
+.palette-option[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--line);
+}
+.palette-chip {
+  inline-size: var(--chip);
+  block-size: var(--chip);
+  flex-shrink: 0;
+  background: var(--chip);
+  border: var(--app-hair) solid var(--dim);
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
+}
+@media (max-width: 720px) { .palette-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* In forced-colors mode every background is replaced by a system colour, which would make the
+   five swatches identical and the control meaningless. The owner's demo frees the swatch only
+   (as does this), so the choice stays legible; everything else keeps the system colours. */
+.palette-chip { forced-color-adjust: none; }
+
+/* Measured in Chromium with forced colours on: the swatch keeps its colour, but the pressed
+   option loses its border colour and its shadow, so the chosen palette stops looking chosen.
+   The owner's demo draws an outline for exactly this case; so do we, in the OS's own colour. */
+@media (forced-colors: active) {
+  .palette-option[aria-pressed='true'] {
+    outline: var(--app-stroke) solid Highlight;
+    outline-offset: var(--app-hair);
+  }
+}

@@ -258,6 +258,78 @@ try {
     .then(() => check('the edit is saved and the board shows it', true))
     .catch(() => check('the edit is saved and the board shows it', false));
 
+
+  // 5c — the palette, borrowed from the owner's demo: it must change what is drawn, not just
+  // what is recorded. The colour check reads the rendered background, so an attribute no token
+  // block answers (a typo in a selector) fails here rather than looking fine in a DOM test.
+  // Both themes are checked: a preset that answers in only one of them renders half-themed, and
+  // that is the failure this step exists to catch.
+  const bg = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+  const setTheme = async (theme) => {
+    await page.evaluate((value) => localStorage.setItem('company-os.theme', value), theme);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.palette-option');
+  };
+
+  await page.goto(`http://127.0.0.1:${WEB_PORT}/#settings`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.palette-option', { timeout: 10_000 });
+  const paletteNames = await page.$$eval('.palette-option', (nodes) => nodes.map((n) => n.textContent?.trim()));
+  check('Settings offers the owner’s five palettes, in the owner’s order',
+    JSON.stringify(paletteNames) === JSON.stringify(['Original sage', 'Ocean blue', 'Soft violet', 'Warm amber', 'Dusty rose']),
+    paletteNames.join(' · '));
+
+  await setTheme('light');
+  const sageLight = await bg();
+  await page.click('.palette-option:has-text("Ocean blue")');
+  await page.waitForFunction(() => document.documentElement.dataset.palette === 'ocean');
+  const oceanLight = await bg();
+  // Measured against the design source's own palette in the SAME theme: comparing the two
+  // themes with each other would pass even if the palette did nothing in one of them.
+  check('choosing a palette repaints the document, not just its attribute',
+    sageLight !== oceanLight, `light ${sageLight} → ${oceanLight}`);
+  check('the chosen palette is announced as pressed',
+    (await page.getAttribute('.palette-option:has-text("Ocean blue")', 'aria-pressed')) === 'true');
+
+  // the palette has to survive a reload: a preference that lasts only until you navigate is a bug
+  await page.reload({ waitUntil: 'networkidle' });
+  check('the palette survives a reload',
+    (await page.evaluate(() => document.documentElement.dataset.palette)) === 'ocean' && (await bg()) === oceanLight);
+
+  // and it has to answer in the other theme too — measured against sage in that same theme
+  await setTheme('dark');
+  const oceanDark = await bg();
+  await page.click('.palette-option:has-text("Original sage")');
+  await page.waitForFunction(() => !document.documentElement.dataset.palette);
+  const sageDark = await bg();
+  check('the palette repaints the dark theme as well as the light one',
+    oceanDark !== sageDark && oceanLight !== sageLight, `ocean dark ${oceanDark} · sage dark ${sageDark}`);
+  check('returning to the design source’s palette removes the attribute and the pressed mark moves back',
+    (await page.getAttribute('.palette-option:has-text("Original sage")', 'aria-pressed')) === 'true' &&
+      (await page.getAttribute('.palette-option:has-text("Ocean blue")', 'aria-pressed')) === 'false');
+
+  // forced colours: the OS replaces every colour, and the swatch is the only place a palette is
+  // named in colour. Both of these were wrong in the browser before they were right, which is
+  // why they are measured here and not assumed from the stylesheet.
+  await page.emulateMedia({ forcedColors: 'active' });
+  const forcedState = await page.evaluate(() => {
+    const chip = document.querySelector('.palette-chip');
+    const pressed = document.querySelector('.palette-option[aria-pressed=true]');
+    const style = pressed ? getComputedStyle(pressed) : null;
+    return {
+      chip: chip ? getComputedStyle(chip).backgroundColor : '',
+      outline: style?.outlineStyle ?? 'none',
+      outlineWidth: style?.outlineWidth ?? '0px',
+    };
+  });
+  await page.emulateMedia({ forcedColors: 'none' });
+  const outlineWhenNormal = await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.palette-option[aria-pressed=true]')).outlineStyle);
+  check('in forced-colors mode the swatch keeps its colour, so the palette is still readable',
+    forcedState.chip === 'rgb(172, 202, 179)', `${forcedState.chip} (sage’s own accent)`);
+  check('and the chosen palette is still drawn as chosen',
+    forcedState.outline === 'solid' && forcedState.outlineWidth === '2px' && outlineWhenNormal === 'none',
+    `forced ${forcedState.outline} ${forcedState.outlineWidth} · normal ${outlineWhenNormal}`);
+
   // 6 — inbox with a real decision and a working decision commit
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });

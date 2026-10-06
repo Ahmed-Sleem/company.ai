@@ -96,6 +96,17 @@ export const STRINGS = {
   close: { en: 'Close', ar: 'إغلاق' },
   taskDetails: { en: 'Task', ar: 'مهمة' },
   moveFailed: { en: 'That move was refused.', ar: 'رُفض هذا النقل.' },
+  // Settings → Appearance: the palette control, borrowed from the owner's demo (2026-10-06).
+  // The owner's wording is "Color palette" / "Choose a palette. All presets work in dark and
+  // light mode." — kept, in both languages.
+  appearance: { en: 'Appearance', ar: 'المظهر' },
+  colorPalette: { en: 'Color palette', ar: 'لوحة الألوان' },
+  paletteNote: { en: 'Choose a palette. All presets work in dark and light mode.', ar: 'اختر لوحة ألوان. كل اللوحات تعمل في الوضع الداكن والفاتح.' },
+  paletteSage: { en: 'Original sage', ar: 'الأخضر المريمي الأصلي' },
+  paletteOcean: { en: 'Ocean blue', ar: 'الأزرق المحيطي' },
+  paletteViolet: { en: 'Soft violet', ar: 'البنفسجي الهادئ' },
+  paletteAmber: { en: 'Warm amber', ar: 'العنبري الدافئ' },
+  paletteRose: { en: 'Dusty rose', ar: 'الوردي الترابي' },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

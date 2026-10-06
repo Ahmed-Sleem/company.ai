@@ -115,7 +115,8 @@
    "board": "4 columns (min 0), cards with title, meta, progress meter",
    "chat": "240px threads + flexible main; log height 490px scroll; composer pinned",
    "settings": "2fr / 1fr split; setting rows with label, description and a 170px control",
-   "dialog": "one shared overlay: width min(700px, 100% - 32px), max-height calc(100dvh - 48px), body is the only scroll region, footer on --side"
+   "dialog": "one shared overlay: width min(700px, 100% - 32px), max-height calc(100dvh - 48px), body is the only scroll region, footer on --side",
+   "paletteChip": "15px swatch (--chip) shown beside each palette name in Settings; borrowed from the owner demo"
   },
   "atoms": {
    "avatar_sizes": [

@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
 import { t, type Lang } from './lib/i18n';
 import { api } from './lib/api';
-import { applyTheme, nextTheme, readTheme, type Theme } from './lib/theme';
+import { applyPalette, applyTheme, nextTheme, readPalette, readTheme, type Theme } from './lib/theme';
 import { TeamView } from './views/TeamView';
 import { TasksView } from './views/TasksView';
 import { InboxView } from './views/InboxView';
@@ -73,6 +73,13 @@ export function App() {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // The palette is a preference with no UI state of its own here: Settings writes it and the
+  // attribute on the root element is what every screen reads. Applying it once on boot is what
+  // makes a chosen palette survive a reload.
+  useEffect(() => {
+    applyPalette(readPalette());
+  }, []);
 
   useEffect(() => {
     const onHash = () => {
