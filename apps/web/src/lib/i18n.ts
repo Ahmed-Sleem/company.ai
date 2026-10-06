@@ -55,6 +55,31 @@ export const STRINGS = {
   company: { en: 'Company', ar: 'الشركة' },
   members: { en: 'People', ar: 'الأشخاص' },
   blocked: { en: 'Paused by budget', ar: 'متوقف بسبب الميزانية' },
+
+  /* tasks — the words the demo uses on its board */
+  openTasks: { en: 'Open tasks', ar: 'مهام مفتوحة' },
+  yourPeople: { en: 'Your people', ar: 'فريقك' },
+  workingNow: { en: 'Working now', ar: 'يعمل الآن' },
+  waitingForYou: { en: 'Waiting for you', ar: 'بانتظارك' },
+  allCaughtUp: { en: 'All caught up', ar: 'لا شيء متأخر' },
+  noTasksHere: { en: 'No tasks here', ar: 'لا مهام هنا' },
+  noMatchesTitle: { en: 'Nothing matches', ar: 'لا شيء مطابق' },
+  noMatchesBody: { en: 'Try a different word or clear the filters.', ar: 'جرّب كلمة أخرى أو أزل عوامل التصفية.' },
+  searchTasks: { en: 'Search tasks…', ar: 'ابحث في المهام…' },
+  allPriorities: { en: 'All priorities', ar: 'كل الأولويات' },
+  allOwners: { en: 'All owners', ar: 'كل المالكين' },
+  board: { en: 'Board', ar: 'لوحة' },
+  list: { en: 'List', ar: 'قائمة' },
+  task: { en: 'Task', ar: 'المهمة' },
+  stage: { en: 'Stage', ar: 'المرحلة' },
+  priority: { en: 'Priority', ar: 'الأولوية' },
+  dueDate: { en: 'Due date', ar: 'تاريخ الاستحقاق' },
+  progress: { en: 'Progress', ar: 'التقدّم' },
+  description: { en: 'Description', ar: 'الوصف' },
+  moveTo: { en: 'Move to', ar: 'انقل إلى' },
+  close: { en: 'Close', ar: 'إغلاق' },
+  taskDetails: { en: 'Task', ar: 'مهمة' },
+  moveFailed: { en: 'That move was refused.', ar: 'رُفض هذا النقل.' },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

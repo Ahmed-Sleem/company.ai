@@ -147,14 +147,56 @@ try {
     check(`the ${state} state renders`, found);
   }
 
-  // 5 — inbox with a real decision and a working decision commit
+  // 5 — the board: the demo's layout on real state, and the review gate refusing the wrong move
+  await page.goto(`http://127.0.0.1:${WEB_PORT}/#tasks`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('[data-task]', { timeout: 10_000 });
+  const cards = (await page.$$('[data-task]')).length;
+  check('the board shows the designer’s ten tasks', cards === 10, `${cards} cards`);
+
+  // The four statistics are read from the rows: "open" is every unfinished task, the other three
+  // are the stages it covers — so open = progress + review + backlog, and open = cards − done.
+  const statValues = await page.$$eval('.stat-value', (nodes) =>
+    nodes.map((node) => Number(node.textContent)));
+  const [open, progress, review, done] = statValues;
+  const backlog = (await page.textContent('.column[aria-label="Backlog"]'))?.match(/^Backlog(\d+)/)?.[1];
+  check('the four statistics are read from the rows, not written in',
+    statValues.length === 4 && open === progress + review + Number(backlog) && open === cards - done,
+    `open ${open} = ${progress} + ${review} + ${backlog} backlog, and ${open} = ${cards} − ${done} done`);
+  check('the board offers the list view the demo has',
+    (await page.textContent('.toolbar'))?.includes('List') ?? false);
+
+  // the review gate, in the interface: a task in review cannot be finished without a decision
+  await page.click('[data-task]:has-text("Rehearse the migration")');
+  await page.waitForSelector('dialog[open]', { timeout: 5_000 });
+  const finish = page.locator('dialog button:has-text("Move to Completed")');
+  check('the interface disables the move the server refused', await finish.isDisabled());
+  const refused = await page.$$eval('dialog .reason', (nodes) => nodes.map((n) => n.textContent));
+  const finishTitle = await finish.getAttribute('title');
+  check('and prints the rule’s own reason, the same words the server sent',
+    refused.length > 0 && refused[0] === finishTitle && (finishTitle?.length ?? 0) > 10,
+    JSON.stringify(refused));
+  await page.keyboard.press('Escape');
+
+  // and a move the server allows really happens, and lands in the right column
+  await page.click('[data-task]:has-text("Billing integration tests")');
+  await page.waitForSelector('dialog[open]', { timeout: 5_000 });
+  await page.click('dialog button:has-text("Move to In review")');
+  const landed = await page.waitForFunction(() => {
+    const review = [...document.querySelectorAll('.column')]
+      .find((column) => column.querySelector('.column-head')?.textContent?.includes('In review'));
+    return review?.textContent?.includes('Billing integration tests') ?? false;
+  }, null, { timeout: 8_000 }).then(() => true).catch(() => false);
+  check('a move the server allows lands in the right column', landed);
+  await page.keyboard.press('Escape');
+
+  // 6 — inbox with a real decision and a working decision commit
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });
   check('the inbox lists a decision from the database', true, 'Analytics read access');
   const decisionText = await page.textContent('.decision');
   check('the decision shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
-  // 6 — hygiene
+  // 7 — hygiene
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
   check('no failed requests', badRequests.length === 0, badRequests.join(', ').slice(0, 200));
 

@@ -15,10 +15,13 @@ interface Props {
   state: DataStateKind;
   lang: Lang;
   onRetry?: () => void;
+  /** A caller with its own words for empty ("nothing matches your filters" is not "no data"). */
+  title?: string;
+  body?: string;
   children?: ReactNode;
 }
 
-export function DataState({ state, lang, onRetry, children }: Props) {
+export function DataState({ state, lang, onRetry, title, body, children }: Props) {
   if (state === 'default') return <>{children}</>;
   if (state === 'loading') {
     return (
@@ -31,8 +34,8 @@ export function DataState({ state, lang, onRetry, children }: Props) {
   if (state === 'empty') {
     return (
       <div className="state">
-        <h3>{t('emptyTitle', lang)}</h3>
-        <p>{t('emptyBody', lang)}</p>
+        <h3>{title ?? t('emptyTitle', lang)}</h3>
+        <p>{body ?? t('emptyBody', lang)}</p>
       </div>
     );
   }

@@ -9,7 +9,7 @@
  * Preferences (theme, language) persist the same way the demo persists them, and Arabic
  * switches the document to `dir="rtl"` so every logical property in the CSS takes effect.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
 import { t, type Lang } from './lib/i18n';
 import { api } from './lib/api';
@@ -37,6 +37,14 @@ function readView(): ViewId {
   return VIEWS.some((v) => v.id === hash) ? hash : 'team';
 }
 
+/** The state preview from the address bar, or nothing. */
+function readForcedState(): DataStateKind | undefined {
+  const state = new URLSearchParams(location.search).get('state');
+  return state === 'loading' || state === 'empty' || state === 'error' || state === 'restricted'
+    ? state
+    : undefined;
+}
+
 export function App() {
   const [view, setView] = useState<ViewId>(readView);
   const [lang, setLang] = useState<Lang>(readLang);
@@ -44,13 +52,13 @@ export function App() {
   const [health, setHealth] = useState<{ version: string; company: string | null } | null>(null);
   const [openDecisions, setOpenDecisions] = useState<number | null>(null);
 
-  /** `?state=empty` in the address bar forces a data state — the demo's state preview, kept. */
-  const forcedState = useMemo<DataStateKind | undefined>(() => {
-    const state = new URLSearchParams(location.search).get('state');
-    return state === 'loading' || state === 'empty' || state === 'error' || state === 'restricted'
-      ? state
-      : undefined;
-  }, []);
+  /**
+   * `?state=empty` in the address bar forces a data state — the demo's state preview, kept.
+   * Reading the query is deliberately part of the navigation: the demo resets its preview when
+   * someone switches views, and without that a forgotten `?state=error` would follow you around
+   * the product (which is exactly how it behaved until the browser check caught it).
+   */
+  const [forcedState, setForcedState] = useState<DataStateKind | undefined>(readForcedState);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -67,7 +75,10 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    const onHash = () => setView(readView());
+    const onHash = () => {
+      setView(readView());
+      setForcedState(readForcedState());
+    };
     addEventListener('hashchange', onHash);
     return () => removeEventListener('hashchange', onHash);
   }, []);

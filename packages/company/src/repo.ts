@@ -442,3 +442,32 @@ export async function openDecisions(db: Db, companyId: string) {
 }
 
 export const _internals = { isNull };
+
+/**
+ * The humans in the company, oldest first. Members are deliberately separate from agents:
+ * an agent cannot approve its own work (law: the review gate), a member can.
+ */
+export async function listMembers(db: Db, companyId: string) {
+  return db
+    .select({
+      id: t.members.id,
+      companyId: t.members.companyId,
+      name: t.members.name,
+      email: t.members.email,
+      role: t.members.role,
+      createdAt: t.members.createdAt,
+    })
+    .from(t.members)
+    .where(eq(t.members.companyId, companyId))
+    .orderBy(asc(t.members.createdAt));
+}
+
+/**
+ * Who is acting when a person uses the product. One place decides, so the interface never has to
+ * guess a member id (a guess that once made every board move fail with a 422 nobody could read).
+ */
+export async function actingMember(db: Db, companyId: string) {
+  const members = await listMembers(db, companyId);
+  return members.find((member) => member.role === 'owner') ?? members[0] ?? null;
+}
+

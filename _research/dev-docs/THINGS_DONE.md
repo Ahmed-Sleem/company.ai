@@ -5,6 +5,60 @@
 
 ---
 
+## 2026-10-03 16:40 — P1.1b: the board is the demo's board, and every move on it was silently failing
+
+- **Task (user):** continue P1 (Tasks parity + honest moves) and push after the step.
+- **What was built:** `apps/web/src/views/TasksView.tsx` is now the demo's Tasks screen on real
+  state — the four statistics, the search/priority/owner filters, the Board|List switch, the four
+  columns with their dot, count and inline empty line, the demo's list table, and the task dialog.
+  The dialog's move buttons are drawn **from `offers` on the row** (the server's own answer), so the
+  interface still holds no copy of the rule: a refused move renders disabled with the server's reason
+  printed beside it, and the write route re-checks through `transitionTask`.
+- **Vocabulary:** stages and priorities render from `STAGE_LABELS`/`PRIORITY_LABELS` in
+  `@company/contracts`; the new `i18n.ts` strings are product words only, so the design words have
+  one source and cannot drift into two.
+- **Changed elsewhere:** `DataState` gained optional `title`/`body` (used by the no-matches state),
+  `app.css` gained the board/stats/toolbar/badge/table/dialog styles plus a logical
+  `.visually-hidden` (tokens and logical properties only — `raw-values` 46 files clean,
+  `logical-properties` clean), `BudgetMeter` now formats through `lib/format.ts` (`money`) so money
+  is formatted in exactly one place, and `TaskRow` carries `descriptionAr`.
+- **Defect found by the new browser check (a real one, and a bad one):** the board rendered
+  perfectly and *nothing it did could ever work*. `api.moveTask` sent
+  `actor: { kind: 'member', id: 'owner' }` — an invented member id — while `TASK_TRANSITION`
+  requires a uuid, so every move returned
+  `422 {"error":{"code":"invalid_request","fields":["actor.id"]}}`. The board then printed that as a
+  rule refusal, so a broken client looked like a working rule. Fixed at the source:
+  - `GET /api/session` now publishes the acting member from the `members` table (the seeded owner),
+    and `apps/web/src/lib/api.ts` fetches it once and reuses it for every write. The literal
+    `'owner'` is gone, and so is the interface's habit of guessing an identity.
+  - `POST /api/decisions/:id/decide` had the same lie in a different place: it fell back to
+    `'mem_00000000000000000000'` with the label `'You'` — an id that cannot exist in that database
+    (members are uuids). It now falls back to the company's real owner, name included.
+- **Second defect found the same way:** `?state=restricted` in the address bar stuck to the app for
+  the rest of the session — switching views kept the forced state, so the preview followed you
+  around. `App.tsx` now re-reads the state preview on `hashchange`, which is what the demo does.
+- **Tests (each observed failing first):**
+  - `apps/web/test/tasks.test.tsx` (new, 8 tests): statistics from the rows, reference/owner/progress
+    rendered, filters, the no-matches state, the Board↔List switch, the refused move disabled with
+    the server's own reason printed, the allowed move posted **with the session's member id** and the
+    board re-read afterwards, and the server's refusal shown instead of a generic failure. Mutant:
+    removing `disabled={!offer.ok}` dropped exactly the one assertion (observed, then reverted).
+  - `services/api/test/api.test.ts`: `/api/session` returns the seeded owner `Vanil`, an invented
+    actor id is refused `422` naming `actor.id`, and the real member id moves the task. Both failed
+    `404`/`422` before the route existed.
+  - `apps/web/e2e/smoke.mjs`: 22 checks (was 16) — the board shows ten cards, the statistics are
+    read from the rows (`open = progress + review + backlog`, `open = cards − done`), the list view
+    exists, the review gate's disabled button carries the same words the server sent, and a move the
+    server allows **lands in the right column**. That last check is what caught the 422.
+- **Also fixed:** `Dialog` falls back to the `open` attribute where `showModal` is missing (tests),
+  so the dialog content is testable without weakening the real modal in a browser.
+- **Validation:** `npx tsc --noEmit` clean; `bash scripts/verify.sh` → **GREEN 9/9**, browser smoke
+  **22/22**, root vitest **62**, web vitest **17** (was 9).
+- **Limitations:** the board's dialog is the native `<dialog>` (a documented deviation); drag-and-drop
+  between columns is not in the demo and not built — moves are the server's offers, honestly shown.
+
+---
+
 ## 2026-10-03 15:20 — P1 starts: the designer's company is now the company in the database (step P1.1a)
 
 - **Task (user):** "start first phase … make sure everything is suitable to work together and work

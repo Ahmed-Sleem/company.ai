@@ -77,6 +77,42 @@ describe('team and budget', () => {
   });
 });
 
+describe('who is acting', () => {
+  /**
+   * The interface has to be told who the human is. It used to guess (`actor: { kind: 'member',
+   * id: 'owner' }`), and every move on the board failed with a 422 that the board then blamed on
+   * the rule — the server was right, the guess was wrong, and nothing said so. These two tests
+   * keep the guessing fixed: the acting member comes from the database, and only that id moves work.
+   */
+  it('publishes the acting member instead of leaving the interface to invent one', async () => {
+    const res = await get('/api/session');
+    expect(res.status).toBe(200);
+    const { member } = await res.json();
+    expect(member.id).toBe(ownerId);
+    expect(member.name).toBe('Vanil');
+    expect(member.role).toBe('owner');
+  });
+
+  it('accepts that member and refuses an invented one', async () => {
+    const tasks = await db.select().from(schema.tasks);
+    const inProgress = tasks.find((t) => t.stage === 'progress')!;
+    const { member } = await (await get('/api/session')).json();
+
+    const refused = await post(`/api/tasks/${inProgress.id}/transition`, {
+      to: 'review', actor: { kind: 'member', id: 'owner' },
+    });
+    expect(refused.status).toBe(422);
+    expect((await refused.json()).error.fields).toContain('actor.id');
+
+    const accepted = await post(`/api/tasks/${inProgress.id}/transition`, {
+      to: 'review', actor: { kind: 'member', id: member.id },
+    });
+    expect(accepted.status).toBe(200);
+    const rows = await db.select().from(schema.tasks);
+    expect(rows.find((t) => t.id === inProgress.id)!.stage).toBe('review');
+  });
+});
+
 describe('the review gate over HTTP', () => {
   it('refuses an agent approval, then accepts a member approval that carries a decision', async () => {
     const tasks = await db.select().from(schema.tasks);

@@ -5,6 +5,22 @@ export interface ApiError {
   fields?: string[];
 }
 
+/**
+ * Who is acting, fetched once and remembered.
+ *
+ * The interface must never invent this: ids are opaque uuids, and the literal string 'owner' used
+ * to be sent from here — the API rejected it, and the board then reported the rejection as a
+ * refusal by the rule. The server publishes the acting member at /api/session; this caches it.
+ */
+let actingMember: Promise<string> | null = null;
+function actingMemberId(): Promise<string> {
+  actingMember ??= request<{ member: { id: string } | null }>('/api/session').then(({ member }) => {
+    if (!member) throw new Error('This company has no members yet.');
+    return member.id;
+  });
+  return actingMember;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     headers: { 'content-type': 'application/json' },
@@ -37,6 +53,7 @@ export interface TaskRow {
   title: string;
   titleAr?: string | null;
   description?: string | null;
+  descriptionAr?: string | null;
   stage: 'backlog' | 'progress' | 'review' | 'done';
   priority: 'low' | 'medium' | 'high' | 'critical';
   progress: number;
@@ -62,11 +79,12 @@ export const api = {
       }>;
     }>('/api/agents'),
   tasks: () => request<{ tasks: TaskRow[] }>('/api/tasks'),
-  moveTask: (taskId: string, to: TransitionOffer['to']) =>
+  moveTask: async (taskId: string, to: TransitionOffer['to']) =>
     request<{ task: { id: string; stage: string } }>(`/api/tasks/${taskId}/transition`, {
       method: 'POST',
-      body: JSON.stringify({ to, actor: { kind: 'member', id: 'owner' } }),
+      body: JSON.stringify({ to, actor: { kind: 'member', id: await actingMemberId() } }),
     }),
+  session: () => request<{ member: { id: string; name: string; role: string } | null }>('/api/session'),
   decisions: (status?: string) =>
     request<{
       decisions: Array<{

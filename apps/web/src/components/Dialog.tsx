@@ -19,7 +19,20 @@ export function Dialog({
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      // Browsers get the real modal (focus trap, top layer, Escape) from the native element.
+      // Test environments do not implement showModal, so fall back to the open attribute —
+      // the same markup, and the tests exercise the same content either way.
+      if (typeof dialog.showModal === 'function') {
+        try {
+          dialog.showModal();
+          return;
+        } catch {
+          /* fall through to the attribute */
+        }
+      }
+      dialog.setAttribute('open', '');
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
   return (

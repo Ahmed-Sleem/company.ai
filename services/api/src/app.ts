@@ -26,6 +26,7 @@ import {
   firstCompany,
   getAgent,
   getCompany,
+  actingMember,
   listAgents,
   listDecisions,
   listModels,
@@ -96,6 +97,17 @@ export function createApp(deps: AppDeps) {
     const company = await companyOf();
     const withDetail = await getCompany(deps.db, company.id);
     return c.json({ company: withDetail });
+  });
+
+  /**
+   * Who is acting. The interface reads this instead of inventing a member id: it once sent
+   * `{ kind: 'member', id: 'owner' }`, the schema rejected it (ids are opaque uuids), and every
+   * move on the board failed behind a message that blamed the rule rather than the guess.
+   */
+  app.get('/api/session', async (c) => {
+    const company = await companyOf();
+    const member = await actingMember(deps.db, company.id);
+    return c.json({ member });
   });
 
   /** The shell's state-preview hook: returns the same shape whatever the state is. */
@@ -194,11 +206,16 @@ export function createApp(deps: AppDeps) {
     zValidator('json', DECISION_VERDICT.partial({ memberId: true })),
     async (c) => {
       const body = c.req.valid('json');
+      const company = await companyOf();
+      const member = await actingMember(deps.db, company.id);
       const outcome = await commitDecision(deps.db, {
         decisionId: c.req.param('id'),
         verdict: body.verdict,
-        memberId: body.memberId ?? deps.defaultMemberId ?? 'mem_00000000000000000000',
-        memberLabel: deps.defaultMemberLabel ?? 'You',
+        // The named member if the caller sent one, then the configured default, then the company's
+        // own owner — never a fabricated id (the placeholder used to be `mem_000…`, which could
+        // not exist in this database at all).
+        memberId: (body.memberId ?? deps.defaultMemberId ?? member?.id ?? '') as string,
+        memberLabel: deps.defaultMemberLabel ?? member?.name ?? 'You',
         note: body.note,
       });
       if (outcome.kind === 'not_found') {
