@@ -13,6 +13,7 @@ user, and it fulfils the requirement in `DEVELOPMENT_REQUIREMENTS.md` §3 for a
 | `PROJECT_MAP.md` | Human-readable map of the repository, its parts and integration points |
 | `THINGS_DONE.md` | **Append-only** completed-work log (never overwritten) |
 | `OWNER_DEMO_READING.md` | what the owner's second demo adds, the ranked borrow list, and its liabilities |
+| `BORROW_DISCUSSION.md` | the decision list for the owner: what to borrow, what it costs, what is recommended |
 | `SUPPORTING_NOTES.md` | Merged notes: GUI requirements, rule conflicts + resolutions, RTL, tokens, verification, mobile policy |
 | `../rules/` | The four mandatory rule documents (single home; not duplicated anywhere else) |
 

@@ -152,6 +152,13 @@ The parts of Phase 2 upward that this suggests, for the owner to confirm:
 - **A small "skin" step** (§3.5) — forced-colors, the CRT toggle and the collapsed rail, each with a
   check that can fail.
 
+## 5b. The discussion document
+
+`BORROW_DISCUSSION.md` (same folder) is the decision list written for the owner: every borrowable
+item, what it becomes in the current GUI, its cost, and a recommendation — plus the four answers
+needed before the World Map can start. Read them together: this file says what is in the file,
+that one says what we do about it.
+
 ## 6. Borrow log
 
 |Date|Borrowed|Where it landed|Checked by|
