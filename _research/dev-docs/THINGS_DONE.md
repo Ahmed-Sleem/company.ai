@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-10-06 — the try-it path, verified on a clean clone
+
+- **`README.md` now answers "how do I run this?"** — three ways, in order: the one-file demo
+  (`demo/company-os-demo.html`, no install), the product (`git clone` → `npm install` → the API and
+  the web app in two terminals), and the gate. The verified counts and the repository tree were
+  stale by several phases; both are current again.
+- **The clean-clone path was walked end to end, not assumed:** `git clone` → `npm install` (20 s on a
+  warm cache) → API on 8787 (`{"ok":true,…,"company":"Acme Studio"}`, seeded, mock provider, no keys)
+  → web on 5173 → and in a real browser: 7 nav items, the World Map with 6 rooms / 16 desks / 21 props,
+  the HUD reading the API, Arabic flipping to RTL, and the two owner switches on. No page errors.
+- A reminder for whoever works here next: **`node_modules/`, `.data/` and the Playwright browser cache
+  are not part of the workspace snapshot.** After a restore, `npm install` and
+  `npx playwright install chromium && sudo npx playwright install-deps chromium` are needed before
+  anything that runs — and a *git commit* made in a previous turn may not have survived either
+  (the files do, the commit does not): check `git log` before assuming work is committed.
+
 ### follow-up — the demo file, hardened for where it will actually be opened
 
 - The demo now runs as a **classic script at the end of the body** (the bundle has no module-only
