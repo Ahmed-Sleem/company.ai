@@ -11,7 +11,13 @@ import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
 import { Panel } from '../components/Panel';
 import { DataState, type DataStateKind } from '../components/DataState';
-import { applyPalette, paletteNameKey, readPalette, type PaletteId } from '../lib/theme';
+import {
+  applyPalette, paletteNameKey, readCustomAccent, readPalette, resolvedTheme, saveCustomAccent,
+  type PaletteChoice,
+  DEFAULT_CUSTOM_ACCENT,
+} from '../lib/theme';
+import { readFx, readRail, setFx, setRail } from '../lib/prefs';
+import { applyCustomAccent, deriveAccent, validHex } from '../lib/accent';
 import { palettes } from '@company/tokens';
 
 /**
@@ -20,7 +26,29 @@ import { palettes } from '@company/tokens';
  * same instant response the owner's demo gives, minus the inline colour writing.
  */
 function PaletteSetting({ lang }: { lang: Lang }) {
-  const [chosen, setChosen] = useState<PaletteId>(readPalette);
+  const [chosen, setChosen] = useState<PaletteChoice>(readPalette);
+  const [accent, setAccent] = useState(readCustomAccent);
+
+  /**
+   * Deriving here as well as in the shell is deliberate: the person has to see *what they will
+   * get* while they drag the colour picker — including how far the colour had to move to stay
+   * readable. The shell does the same derivation on boot and on a theme change.
+   */
+  const derived = deriveAccent(accent, resolvedTheme(), accentSurfaces());
+
+  const pick = (choice: PaletteChoice) => {
+    const applied = applyPalette(choice);
+    setChosen(applied);
+    if (choice === 'custom') applyAccent(accent);
+    else applyCustomAccent(null);
+  };
+
+  const applyAccent = (hex: string) => {
+    saveCustomAccent(hex);
+    setAccent(hex);
+    applyCustomAccent(deriveAccent(hex, resolvedTheme(), accentSurfaces()));
+  };
+
   return (
     <section className="palette-setting">
       <h3 id="palette-heading">{t('colorPalette', lang)}</h3>
@@ -32,13 +60,91 @@ function PaletteSetting({ lang }: { lang: Lang }) {
             key={preset.id}
             className="palette-option"
             aria-pressed={preset.id === chosen}
-            onClick={() => setChosen(applyPalette(preset.id))}
+            onClick={() => pick(preset.id)}
           >
             <span className="palette-chip" style={{ '--chip': preset.chip } as CSSProperties} aria-hidden="true" />
             <span>{t(paletteNameKey(preset.id), lang)}</span>
           </button>
         ))}
+        <button
+          type="button"
+          className="palette-option"
+          aria-pressed={chosen === 'custom'}
+          data-palette-option="custom"
+          onClick={() => pick('custom')}
+        >
+          <span
+            className="palette-chip"
+            style={{ '--chip': validHex(accent) ? accent : DEFAULT_CUSTOM_ACCENT } as CSSProperties}
+            aria-hidden="true"
+          />
+          <span>{t('customAccent', lang)}</span>
+        </button>
       </div>
+
+      {/* The colour picker is shown whenever the custom accent is the chosen palette, so the
+          control that owns the choice is always in view — not only while it is being dragged. */}
+      {chosen === 'custom' && (
+        <div className="accent-picker">
+          <label className="field">
+            <span>{t('pickAccent', lang)}</span>
+            <input
+              type="color"
+              name="accent"
+              value={validHex(accent) ? accent : DEFAULT_CUSTOM_ACCENT}
+              onChange={(event) => applyAccent(event.target.value)}
+            />
+          </label>
+          <p className="muted" data-accent-note>
+            {derived.walked > 0 ? t('accentAdjusted', lang) : t('accentExact', lang)}
+            {derived.walked > 0 ? ` — ${derived.accent}` : ''}
+          </p>
+          <span className="palette-chip" style={{ '--chip': derived.accent } as CSSProperties} aria-hidden="true" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** The five surfaces an accent is drawn against, read from the document as it is painted. */
+function accentSurfaces() {
+  const styles = getComputedStyle(document.documentElement);
+  return ['--bg', '--side', '--surface', '--raised', '--hover']
+    .map((name) => styles.getPropertyValue(name).trim())
+    .filter(Boolean);
+}
+
+/** The owner's two toggles, both defaulting to on: the screen effect and the collapsed rail. */
+function SkinSetting({ lang }: { lang: Lang }) {
+  const [fx, setFxOn] = useState(readFx);
+  const [rail, setRailOn] = useState(readRail);
+  return (
+    <section className="palette-setting">
+      <h3>{t('appearance', lang)}</h3>
+      <label className="switch">
+        <input
+          type="checkbox"
+          name="fx"
+          checked={fx}
+          onChange={(event) => setFxOn(setFx(event.target.checked))}
+        />
+        <span>
+          {t('screenEffect', lang)}
+          <small>{t('screenEffectNote', lang)}</small>
+        </span>
+      </label>
+      <label className="switch">
+        <input
+          type="checkbox"
+          name="rail"
+          checked={rail}
+          onChange={(event) => setRailOn(setRail(event.target.checked))}
+        />
+        <span>
+          {t('collapsedRail', lang)}
+          <small>{t('collapsedRailNote', lang)}</small>
+        </span>
+      </label>
     </section>
   );
 }
@@ -92,6 +198,7 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
       {/* Outside the data states on purpose: the palette is a local preference, so it must be
           reachable even while the company and the model list are still loading or unreachable. */}
       <PaletteSetting lang={lang} />
+      <SkinSetting lang={lang} />
     </Panel>
   );
 }

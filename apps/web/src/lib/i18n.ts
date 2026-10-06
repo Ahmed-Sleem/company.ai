@@ -107,6 +107,54 @@ export const STRINGS = {
   paletteViolet: { en: 'Soft violet', ar: 'البنفسجي الهادئ' },
   paletteAmber: { en: 'Warm amber', ar: 'العنبري الدافئ' },
   paletteRose: { en: 'Dusty rose', ar: 'الوردي الترابي' },
+  // The World Map, borrowed from the owner's demo (2026-10-06). Room names are the owner's own
+  // words for their own plan; the HUD is the four numbers their demo puts along the bottom.
+  world: { en: 'World Map', ar: 'خريطة المكتب' },
+  worldNote: { en: 'The studio floor. Click a desk to look at one person’s day.', ar: 'مخطط الاستوديو. اضغط على مكتب لترى يوم أحدهم.' },
+  wholePlan: { en: 'Whole plan', ar: 'المخطط كامل' },
+  worldCanvas: { en: 'Studio floor plan', ar: 'مخطط أرضية الاستوديو' },
+  worldHint: { en: 'Drag to move · wheel to zoom · arrows to pan · + and − to zoom · 0 to fit', ar: 'اسحب للتحريك · عجلة الفأرة للتقريب · الأسهم للتحريك · + و − للتقريب · 0 للاحتواء' },
+  zoomIn: { en: 'Zoom in', ar: 'تقريب' },
+  zoomOut: { en: 'Zoom out', ar: 'تبعيد' },
+  deskDetail: { en: 'Desk detail', ar: 'تفاصيل المكتب' },
+  emptyDesk: { en: 'Empty desk', ar: 'مكتب فارغ' },
+  sitsIn: { en: 'Sits in', ar: 'يجلس في' },
+  activeTasks: { en: 'Active tasks', ar: 'مهام جارية' },
+  noTasksFor: { en: 'Nothing on this desk right now.', ar: 'لا شيء على هذا المكتب الآن.' },
+  roomExec: { en: 'Executive Wing', ar: 'الجناح التنفيذي' },
+  roomEng: { en: 'AI Core & Engineering Lab', ar: 'مركز الذكاء ومختبر الهندسة' },
+  roomBoard: { en: 'Boardroom', ar: 'قاعة الاجتماعات' },
+  roomDesign: { en: 'Design & Product Atelier', ar: 'استوديو التصميم والمنتج' },
+  roomOps: { en: 'Operations & Growth', ar: 'العمليات والنمو' },
+  roomLounge: { en: 'Breakroom & Lounge', ar: 'غرفة الراحة' },
+  statusWorking: { en: 'Working', ar: 'يعمل' },
+  statusBlocked: { en: 'Blocked', ar: 'متوقف' },
+  statusIdle: { en: 'Idle', ar: 'متاح' },
+  budgetSpent: { en: 'Budget', ar: 'الميزانية' },
+  // Appearance, the owner's two toggles (both default on) and the custom accent.
+  customAccent: { en: 'Custom accent', ar: 'لون مخصص' },
+  pickAccent: { en: 'Pick a colour', ar: 'اختر لوناً' },
+  accentAdjusted: { en: 'Adjusted for contrast', ar: 'عُدّل لتحقيق التباين' },
+  accentExact: { en: 'Used as chosen', ar: 'مُستخدم كما اخترته' },
+  screenEffect: { en: 'Screen effect', ar: 'تأثير الشاشة' },
+  screenEffectNote: { en: 'The pixel overlay on the whole product.', ar: 'الطبقة النقطية على المنتج كله.' },
+  collapsedRail: { en: 'Collapsed sidebar', ar: 'الشريط الجانبي المطوي' },
+  collapsedRailNote: { en: 'Keep the sidebar as a narrow rail.', ar: 'أبقِ الشريط الجانبي ضيقاً.' },
+  expandRail: { en: 'Expand sidebar', ar: 'توسيع الشريط الجانبي' },
+  collapseRail: { en: 'Collapse sidebar', ar: 'طي الشريط الجانبي' },
+  // ── the owner's additions (2026-10-06) ──────────────────────────────────────────────────────
+  // The World Map: their plan, their words for the rooms, and the build-mode verbs.
+  worldSummary: { en: '{people} people, {rooms} rooms and {furniture} pieces of furniture.', ar: '{people} أشخاص و{rooms} غرف و{furniture} قطعة أثاث.' },
+  staff: { en: 'Staff', ar: 'الفريق' },
+  monthlySpend: { en: 'Monthly spend', ar: 'إنفاق الشهر' },
+  taskCount: { en: '{n} tasks', ar: '{n} مهام' },
+  // Build mode, inside the world.
+  build: { en: 'Build', ar: 'التحرير' },
+  buildHint: { en: 'Build mode: drag furniture or a desk, arrows nudge nothing yet, Delete removes. Snaps to the 16-unit grid.', ar: 'وضع التحرير: اسحب الأثاث أو المكتب، وزر الحذف يزيله. يلتصق بشبكة 16.' },
+  undo: { en: 'Undo', ar: 'تراجع' },
+  resetPlan: { en: 'Start again', ar: 'ابدأ من جديد' },
+  buildMoved: { en: 'Moved.', ar: 'تم النقل.' },
+  // Appearance: the owner's two toggles, both on by default, and the custom accent.
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

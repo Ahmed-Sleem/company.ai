@@ -38,6 +38,7 @@ const DEMO = readFileSync(
   join(here, '..', '..', '..', 'design/designer-demo/ai-company-os.html'),
   'utf8',
 );
+const OWNER_DEMO = join(here, '..', '..', '..', 'design/owner-demo/acme-studio-os.html');
 
 describe('GUI fidelity — the contracts match the designer’s demo', () => {
   it('sidebar views are exactly the demo’s NAV array, in order', () => {
@@ -45,8 +46,18 @@ describe('GUI fidelity — the contracts match the designer’s demo', () => {
     expect(nav, 'NAV array not found in the demo').toBeTruthy();
     const whole = /const NAV=\[\[[\s\S]*?\]\]/.exec(DEMO)![0];
     const demoIds = [...whole.matchAll(/'([a-z]+)','([^']+)','[a-z]+'\]/g)].map((m) => m[1]);
-    expect(demoIds).toEqual([...VIEW_IDS]);
     expect(demoIds).toHaveLength(6);
+    // Changed 2026-10-06, and observed failing first: `world` is the owner's seventh view, not
+    // the designer's, so the designer's six must still match our leading six exactly and in
+    // order — and the seventh is checked against the owner's demo in the test below.
+    expect(demoIds).toEqual([...VIEW_IDS].slice(0, 6));
+  });
+
+  it('the seventh view is the owner’s, and it is in the owner’s demo’s NAV', () => {
+    const ownerDemo = readFileSync(OWNER_DEMO, 'utf8');
+    expect(ownerDemo).toContain("['world','World Map'");
+    expect([...VIEW_IDS].slice(6)).toEqual(['world']);
+    expect(VIEWS.find((v) => v.id === 'world')?.label).toBe('World Map');
   });
 
   it('the demo labels its fifth view “Conversations”, as we do', () => {

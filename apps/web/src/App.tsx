@@ -12,13 +12,19 @@
 import { useEffect, useState } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
 import { t, type Lang } from './lib/i18n';
+import { applyCustomAccent, deriveAccent } from './lib/accent';
 import { api } from './lib/api';
-import { applyPalette, applyTheme, nextTheme, readPalette, readTheme, type Theme } from './lib/theme';
+import {
+  applyPalette, applyTheme, nextTheme, readCustomAccent, readPalette, readTheme, resolvedTheme, type Theme,
+} from './lib/theme';
+import { FX, RAIL, applyAttr, onPrefsChange, readFx, readRail, safeGet, safeSet, saveAttr } from './lib/prefs';
+import { Icon } from './components/Icon';
 import { TeamView } from './views/TeamView';
 import { TasksView } from './views/TasksView';
 import { InboxView } from './views/InboxView';
 import { CommsView } from './views/CommsView';
 import { NetworkView } from './views/NetworkView';
+import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
 import type { DataStateKind } from './components/DataState';
 
@@ -26,7 +32,7 @@ const LANG_KEY = 'company-os.lang';
 
 function readLang(): Lang {
   try {
-    return localStorage.getItem(LANG_KEY) === 'ar' ? 'ar' : 'en';
+    return safeGet(LANG_KEY) === 'ar' ? 'ar' : 'en';
   } catch {
     return 'en';
   }
@@ -35,6 +41,22 @@ function readLang(): Lang {
 function readView(): ViewId {
   const hash = location.hash.replace('#', '') as ViewId;
   return VIEWS.some((v) => v.id === hash) ? hash : 'team';
+}
+
+/**
+ * A custom accent is derived for the theme being painted: the same colour has to be walked a
+ * different distance in the dark and in the light to stay readable, so it cannot be derived once.
+ */
+function applyCustomAccentForTheme() {
+  if (readPalette() !== 'custom') {
+    applyCustomAccent(null);
+    return;
+  }
+  const styles = getComputedStyle(document.documentElement);
+  const surfaces = ['--bg', '--side', '--surface', '--raised', '--hover']
+    .map((name) => styles.getPropertyValue(name).trim())
+    .filter(Boolean);
+  applyCustomAccent(deriveAccent(readCustomAccent(), resolvedTheme(), surfaces));
 }
 
 /** The state preview from the address bar, or nothing. */
@@ -49,6 +71,10 @@ export function App() {
   const [view, setView] = useState<ViewId>(readView);
   const [lang, setLang] = useState<Lang>(readLang);
   const [theme, setTheme] = useState<Theme>(readTheme);
+  // Both of these default to on, per the owner's instruction; Settings writes them, and the
+  // event is how this shell hears about a change it does not own.
+  const [fx, setFx] = useState(readFx);
+  const [rail, setRail] = useState(readRail);
   const [health, setHealth] = useState<{ version: string; company: string | null } | null>(null);
   const [openDecisions, setOpenDecisions] = useState<number | null>(null);
 
@@ -63,11 +89,7 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    try {
-      localStorage.setItem(LANG_KEY, lang);
-    } catch {
-      /* preference does not persist in private mode */
-    }
+    safeSet(LANG_KEY, lang);
   }, [lang]);
 
   useEffect(() => {
@@ -80,6 +102,31 @@ export function App() {
   useEffect(() => {
     applyPalette(readPalette());
   }, []);
+
+  /**
+   * The screen effect and the rail, applied on boot and kept in step with Settings. The accent has
+   * to be derived per theme, so the theme is a dependency: switching to light with a custom accent
+   * chosen re-derives it rather than leaving a colour that only worked in the dark.
+   */
+  useEffect(() => {
+    // Applying on boot is the part that makes a preference *load* as chosen. Reading it into
+    // React state alone left the switches saying "on" while the document had no attribute at
+    // all — the browser check caught exactly that, on the first run of the new rail CSS.
+    applyAttr(FX, readFx());
+    applyAttr(RAIL, readRail());
+    setFx(readFx());
+    setRail(readRail());
+    const reload = () => {
+      setFx(readFx());
+      setRail(readRail());
+      applyCustomAccentForTheme();
+    };
+    return onPrefsChange(reload);
+  }, []);
+
+  useEffect(() => {
+    applyCustomAccentForTheme();
+  }, [theme, view]);
 
   useEffect(() => {
     const onHash = () => {
@@ -113,13 +160,23 @@ export function App() {
     <div className="shell">
       <a className="skip-link" href="#main">{t('skip', lang)}</a>
 
-      <aside className="sidebar" aria-label={t('team', lang)}>
+      <aside className="sidebar" aria-label={t('brand', lang)}>
         <div className="brand">
           <span className="brandmark" aria-hidden="true">[a]</span>
-          <span>
+          <span className="brand-text">
             {t('brand', lang)}
             <small>{t('brandSub', lang)}</small>
           </span>
+          <button
+            type="button"
+            className="rail-toggle icon-btn"
+            data-action="rail"
+            aria-expanded={!rail}
+            aria-label={rail ? t('expandRail', lang) : t('collapseRail', lang)}
+            onClick={() => saveAttr(RAIL, !rail)}
+          >
+            <Icon name="menu" />
+          </button>
         </div>
         <nav>
           <ul className="navlist">
@@ -132,7 +189,8 @@ export function App() {
                   aria-current={view === item.id ? 'page' : undefined}
                   onClick={() => navigate(item.id)}
                 >
-                  <span>{lang === 'ar' ? item.labelAr : item.label}</span>
+                  <Icon name={item.icon} />
+                  <span className="navlabel">{lang === 'ar' ? item.labelAr : item.label}</span>
                   {item.id === 'inbox' && openDecisions !== null && (
                     <span className="count">{openDecisions}</span>
                   )}
@@ -171,8 +229,13 @@ export function App() {
         {view === 'inbox' && <InboxView {...viewProps} />}
         {view === 'comms' && <CommsView {...viewProps} />}
         {view === 'network' && <NetworkView {...viewProps} />}
+        {view === 'world' && <WorldView {...viewProps} />}
         {view === 'settings' && <SettingsView {...viewProps} />}
       </main>
+
+      {/* The screen effect: one element, no content, drawn by tokens. It is only in the DOM when
+          the preference is on, so a test can tell the difference between "off" and "invisible". */}
+      {fx && <div className="fx-overlay" data-fx-overlay aria-hidden="true" />}
 
       <footer className="statusbar">
         <span className="dot" aria-hidden="true">▪</span>

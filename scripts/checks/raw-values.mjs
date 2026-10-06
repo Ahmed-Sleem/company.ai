@@ -23,6 +23,15 @@ const files = execSync(
   .split('\n')
   .filter(Boolean);
 
+/**
+ * The one file allowed to hold colour literals: `lib/accent.ts` is the colour *maths* — it parses
+ * hex, mixes it and measures contrast, so literals are its subject rather than a shortcut around the
+ * tokens. The exception is a list of one, written here, so allowing a second file means editing this
+ * checker — and the file must say so itself, or the exception does not apply.
+ */
+const COLOUR_MATHS = new Set(['apps/web/src/lib/accent.ts']);
+const COLOUR_MATHS_MARKER = 'raw-values: colour-maths exception';
+
 const problems = [];
 
 const COLORS = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/gi;
@@ -40,6 +49,10 @@ for (const file of files) {
     : raw;
   const lines = source.split('\n');
   const isCss = file.endsWith('.css');
+  const coloursAllowed = COLOUR_MATHS.has(file);
+  if (coloursAllowed && !raw.includes(COLOUR_MATHS_MARKER)) {
+    problems.push(`${file} is on the colour-maths list but does not say so (${COLOUR_MATHS_MARKER})`);
+  }
   lines.forEach((line, index) => {
     const where = isCss ? file : `${file}:${index + 1}`;
     const trimmed = line.trim();
@@ -53,7 +66,7 @@ for (const file of files) {
         problems.push(`${where} raw length ${match[0]}`);
       }
     } else {
-      for (const match of line.matchAll(COLORS)) problems.push(`${where} raw colour ${match[0]}`);
+      if (!coloursAllowed) for (const match of line.matchAll(COLORS)) problems.push(`${where} raw colour ${match[0]}`);
       for (const match of line.matchAll(ARBITRARY_TAILWIND)) {
         problems.push(`${where} arbitrary Tailwind value ${match[0]}`);
       }

@@ -7,8 +7,16 @@
  */
 import { z } from 'zod';
 
-/** NAV = [['team','Team','team'],['tasks',…]] in the demo. Order is the sidebar order. */
-export const VIEW_IDS = ['team', 'tasks', 'inbox', 'comms', 'network', 'settings'] as const;
+/**
+ * NAV = [['team','Team','team'],['tasks',…]] in the demo. Order is the sidebar order.
+ *
+ * The first six are the designer's demo's NAV, in its order. **`world` is the seventh view and it
+ * is not in that demo**: it is the owner's own feature (their demo's NAV starts with it), added on
+ * their instruction. `gui-fidelity` keeps the split honest — the six leading ids must still equal
+ * the designer's NAV exactly, and `world` must exist in the owner's NAV — so neither source can
+ * be edited without this file being re-checked.
+ */
+export const VIEW_IDS = ['team', 'tasks', 'inbox', 'comms', 'network', 'settings', 'world'] as const;
 export const viewId = z.enum(VIEW_IDS);
 export type ViewId = z.infer<typeof viewId>;
 
@@ -20,6 +28,9 @@ export const VIEWS: ReadonlyArray<{ id: ViewId; label: string; labelAr: string; 
   { id: 'comms', label: 'Conversations', labelAr: 'المحادثات', icon: 'chat' },
   { id: 'network', label: 'Network', labelAr: 'الشبكة', icon: 'network' },
   { id: 'settings', label: 'Settings', labelAr: 'الإعدادات', icon: 'settings' },
+  // The owner's demo names it "World Map" and puts it first; here it sits last so the designer's
+  // six keep their order and the addition is visibly an addition.
+  { id: 'world', label: 'World Map', labelAr: 'خريطة المكتب', icon: 'grid' },
 ];
 
 /** The demo's `stateViews` map: every view can be forced into one of these states. */

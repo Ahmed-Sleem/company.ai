@@ -110,7 +110,13 @@ try {
 
   // 1 — shell
   const navIds = await page.$$eval('[data-nav]', (nodes) => nodes.map((n) => n.getAttribute('data-nav')));
-  check('the shell renders the six views', navIds.length === 6, navIds.join(', '));
+  check('the shell renders the six designer views plus the owner’s World Map',
+    navIds.length === 7 && navIds[6] === 'world', navIds.join(', '));
+  // the icons the owner borrowed: every nav item draws one, and it is a filled path
+  const navIcons = await page.$$eval('[data-nav]', (nodes) =>
+    nodes.map((n) => n.querySelector('svg.pixel-icon path')?.getAttribute('d')?.length ?? 0));
+  check('every nav item carries a pixel icon', navIcons.length === 7 && navIcons.every((n) => n > 40),
+    navIcons.join(', '));
   check('the status bar names the company', (await page.textContent('.statusbar'))?.includes('Acme Studio') ?? false);
   await page.waitForSelector('text=Aria', { timeout: 10_000 });
   check('the team view shows real agents from the database', true, 'Aria rendered');
@@ -274,8 +280,11 @@ try {
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#settings`, { waitUntil: 'networkidle' });
   await page.waitForSelector('.palette-option', { timeout: 10_000 });
   const paletteNames = await page.$$eval('.palette-option', (nodes) => nodes.map((n) => n.textContent?.trim()));
-  check('Settings offers the owner’s five palettes, in the owner’s order',
-    JSON.stringify(paletteNames) === JSON.stringify(['Original sage', 'Ocean blue', 'Soft violet', 'Warm amber', 'Dusty rose']),
+  // Changed 2026-10-06: the group now ends with the custom accent, which is an app feature rather
+  // than a token preset — so the owner's five are checked in their order, and the sixth is named.
+  check('Settings offers the owner’s five palettes, in the owner’s order, then the custom accent',
+    JSON.stringify(paletteNames) === JSON.stringify(
+      ['Original sage', 'Ocean blue', 'Soft violet', 'Warm amber', 'Dusty rose', 'Custom accent']),
     paletteNames.join(' · '));
 
   await setTheme('light');
@@ -329,6 +338,240 @@ try {
   check('and the chosen palette is still drawn as chosen',
     forcedState.outline === 'solid' && forcedState.outlineWidth === '2px' && outlineWhenNormal === 'none',
     `forced ${forcedState.outline} ${forcedState.outlineWidth} · normal ${outlineWhenNormal}`);
+
+
+  // 5d — the owner's World Map: the plan, the camera and the desk drawer, in a real browser
+  {
+  // The camera eases toward its target, so a check that reads the transform immediately after a
+  // gesture measures the animation, not the destination. This waits for it to settle instead.
+  const settled = async () => {
+    // Two consecutive reads that agree — but only *after* the camera has moved at least once.
+    // Comparing immediately against the previous gesture's value declared "arrived" before the
+    // new move had started, which is how this check first passed-ish and then measured the wrong
+    // frame. The `from` snapshot is what makes the wait honest.
+    const from = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('.world-canvas')).transform);
+    await page.waitForFunction((startedAt) => {
+      const now = getComputedStyle(document.querySelector('.world-canvas')).transform;
+      if (now === startedAt) return false;
+      const previous = window.__lastTransform;
+      window.__lastTransform = now;
+      return previous === now;
+    }, from, { timeout: 8_000, polling: 80 });
+    return page.evaluate(() => {
+      const matrix = new DOMMatrix(getComputedStyle(document.querySelector('.world-canvas')).transform);
+      return { scale: matrix.a, x: matrix.e, y: matrix.f };
+    });
+  };
+
+  await page.goto(`http://127.0.0.1:${WEB_PORT}/#world`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.room', { timeout: 10_000 });
+  const rooms = (await page.$$('[data-room-box]')).length;
+  const desks = (await page.$$('[data-desk]')).length;
+  const props = (await page.$$('[data-prop]')).length;
+  const worldProps = { count: props };
+  const staffed = await page.$$eval('[data-desk][data-agent]', (nodes) => nodes.length);
+  check('the plan draws the owner’s six rooms, sixteen desks and twenty-one props',
+    rooms === 6 && desks === 16 && props === 21, `${rooms} rooms · ${desks} desks · ${props} props`);
+  check('the company is sitting at the desks it has', staffed === 8, `${staffed} desks staffed`);
+
+  // the HUD counts what the API says, not what the demo said
+  const hud = await page.$$eval('.world-stats .stat', (nodes) =>
+    nodes.map((n) => [n.querySelector('.stat-label')?.textContent, n.querySelector('.stat-value')?.textContent]));
+  const worldAgents = await (await fetch(`http://127.0.0.1:${API_PORT}/api/agents`)).json();
+  const worldTasks = await (await fetch(`http://127.0.0.1:${API_PORT}/api/tasks`)).json();
+  const spend = (worldAgents.agents.reduce((sum, a) => sum + a.budget.spentCents, 0) / 100).toFixed(2);
+  check('the HUD counts the roster and the ledger, not the demo’s numbers',
+    hud.length === 4 && hud[0][1] === '8' && hud[3][1] === `$${spend}`,
+    hud.map(([label, value]) => `${label} ${value}`).join(' · '));
+
+  // the plan arrives fitted — it did not, once: the fit effect ran while the world was still a
+  // skeleton, found no viewport, and left the owner looking at a cropped floor at 100%
+  const fitted = await page.evaluate(() => {
+    const matrix = new DOMMatrix(getComputedStyle(document.querySelector('.world-canvas')).transform);
+    const viewport = document.querySelector('[data-world=viewport]').getBoundingClientRect();
+    const label = Number(document.querySelector('[data-world=scale]').textContent.replace('%', ''));
+    return {
+      label,
+      fitsWidth: matrix.a * 1920 <= viewport.width + 1,
+      fitsHeight: matrix.a * 1200 <= viewport.height + 1,
+    };
+  });
+  check('the plan comes up fitted to its viewport, whole', fitted.label < 100 && fitted.fitsWidth && fitted.fitsHeight,
+    `${fitted.label}% whole=${fitted.fitsWidth && fitted.fitsHeight}`);
+
+  // zoom: the wheel changes the scale, and it changes it *about the pointer*
+  const scaleOf = () => page.evaluate(() => {
+    const text = document.querySelector('[data-world=scale]')?.textContent ?? '0%';
+    return Number(text.replace('%', ''));
+  });
+  const before = await scaleOf();
+  const viewportBox = await page.locator('[data-world=viewport]').boundingBox();
+  const planPointBefore = await page.evaluate(() => {
+    const canvas = document.querySelector('.world-canvas');
+    const matrix = new DOMMatrix(getComputedStyle(canvas).transform);
+    return { matrix: [matrix.a, matrix.e, matrix.f] };
+  });
+  await page.mouse.move(viewportBox.x + 120, viewportBox.y + 90);
+  await page.mouse.wheel(0, -400);
+  await settled(); // let the easing arrive
+  const after = await scaleOf();
+  const planPointAfter = await page.evaluate(() => {
+    const canvas = document.querySelector('.world-canvas');
+    const matrix = new DOMMatrix(getComputedStyle(canvas).transform);
+    return { matrix: [matrix.a, matrix.e, matrix.f] };
+  });
+  check('the wheel zooms the plan', after > before, `${before}% → ${after}%`);
+  const anchor = await page.evaluate(({ a, b, px, py }) => {
+    // the same plan point under the pointer before and after: the cursor-anchored guarantee
+    const planBefore = { x: (px - a[1]) / a[0], y: (py - a[2]) / a[0] };
+    const planAfter = { x: (px - b[1]) / b[0], y: (py - b[2]) / b[0] };
+    return Math.max(Math.abs(planBefore.x - planAfter.x), Math.abs(planBefore.y - planAfter.y));
+  }, {
+    a: planPointBefore.matrix, b: planPointAfter.matrix,
+    px: 120, py: 90,
+  });
+  check('the point under the pointer stays put while zooming', anchor < 2, `moved ${anchor.toFixed(2)} plan units`);
+
+  // a desk opens the drawer with that person's own work
+  await page.click('[data-desk][data-agent]:has-text("Aria")');
+  await page.waitForSelector('[data-world=drawer]', { timeout: 5_000 });
+  const drawer = await page.textContent('[data-world=drawer]');
+  const aria = worldAgents.agents.find((agent) => agent.name === 'Aria');
+  const ariaTasks = worldTasks.tasks.filter((task) => task.ownerAgentId === aria.id);
+  check('clicking a desk opens the drawer with that person and their tasks',
+    (drawer?.includes('Aria') ?? false) && ariaTasks.every((task) => drawer?.includes(task.shortRef)),
+    `${ariaTasks.length} tasks on the drawer`);
+  check('and the drawer says which room the desk is in',
+    (drawer?.includes('Executive Wing') ?? false) || (drawer?.includes('Sits in') ?? false));
+  // Two bugs the browser found here, now locked: a captured pointer stopped the click from ever
+  // reaching the desk, and `selected?.id === seat.agent?.id` marked all eight empty desks selected.
+  const deskEvents = await page.evaluate(() => ({
+    selected: document.querySelectorAll('[data-desk].desk-selected').length,
+    art: document.querySelectorAll('.prop-art').length,
+  }));
+  check('exactly the desk that was clicked is drawn as chosen', deskEvents.selected === 1, `${deskEvents.selected} selected`);
+  check('every prop is drawn, and none of them is a blank box', deskEvents.art === worldProps.count, `${deskEvents.art} drawings`);
+  await page.click('[data-desk]:not([data-agent])');
+  check('clicking an empty desk chooses nothing', (await page.$$('[data-desk].desk-selected')).length === 0);
+
+  // build mode: drag a prop, watch it snap to the owner's grid, then undo it
+  await page.click('[data-world=build]');
+  await page.waitForSelector('[data-world=build-bar]', { timeout: 4_000 });
+  await page.click('[data-world=fit]');
+  await settled();
+  // Pick a prop that is genuinely grabbable: fully inside the viewport, and the topmost element at
+  // its own centre (the plan is a stack of overlapping props and desks — the first prop on a
+  // zoomed-in camera was off-screen, and the check below failed against nothing at all).
+  const propBefore = await page.evaluate(() => {
+    const view = document.querySelector('[data-world=viewport]').getBoundingClientRect();
+    const nodes = [...document.querySelectorAll('[data-prop]')];
+    const node = nodes.find((candidate) => {
+      const rect = candidate.getBoundingClientRect();
+      const inside = rect.left > view.left + 8 && rect.top > view.top + 8 && rect.right < view.right - 8 && rect.bottom < view.bottom - 8;
+      const centre = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      const top = document.elementFromPoint(centre.x, centre.y)?.closest('[data-prop]');
+      return inside && top === candidate;
+    }) ?? nodes[0];
+    const rect = node.getBoundingClientRect();
+    return {
+      id: node.getAttribute('data-prop'),
+      inlineStart: getComputedStyle(node).insetInlineStart,
+      x: rect.x + rect.width / 2,
+      y: rect.y + rect.height / 2,
+    };
+  });
+  await page.mouse.move(propBefore.x, propBefore.y);
+  await page.mouse.down();
+  await page.mouse.move(propBefore.x + 40, propBefore.y + 40, { steps: 8 });
+  await page.mouse.up();
+  await page.click('[data-world=undo]');
+  const undone = await page.$eval(`[data-prop=${propBefore.id}]`, (prop) => getComputedStyle(prop).insetInlineStart);
+  check('undo puts it back', Math.abs(parseFloat(undone) - parseFloat(propBefore.inlineStart)) < 0.5, `${undone}`);
+  await page.click('[data-world=build]');
+
+  // the room jumps move the camera to that room
+  await page.click('[data-room=lounge]');
+  await settled();
+  const centred = await page.evaluate(() => {
+    const canvas = document.querySelector('.world-canvas');
+    const matrix = new DOMMatrix(getComputedStyle(canvas).transform);
+    const viewport = document.querySelector('[data-world=viewport]').getBoundingClientRect();
+    // where is the middle of the lounge (1300..1680 x 80..960) on screen now?
+    const x = 1490 * matrix.a + matrix.e;
+    const y = 520 * matrix.a + matrix.f;
+    return { dx: Math.abs(x - viewport.width / 2), dy: Math.abs(y - viewport.height / 2) };
+  });
+  check('a room jump centres that room', centred.dx < 120 && centred.dy < 120, JSON.stringify(centred));
+
+  // RTL: the plan does not mirror, the chrome does
+  await page.click('[data-action=language]');
+  await page.waitForFunction(() => document.documentElement.dir === 'rtl');
+  const rtl = await page.evaluate(() => {
+    const canvas = document.querySelector('.world-canvas');
+    const matrix = new DOMMatrix(getComputedStyle(canvas).transform);
+    const aria = document.querySelector('[data-agent]');
+    return {
+      scale: matrix.a,
+      deskIsRightOfRoom: (() => {
+        const room = document.querySelector('[data-room-box=exec]').getBoundingClientRect();
+        const desk = document.querySelector('[data-desk=d0]').getBoundingClientRect();
+        return desk.left > room.left; // inside the plan, the exec desks still sit to the right
+      })(),
+      navItem: aria?.textContent,
+    };
+  });
+  check('Arabic flips the chrome but never mirrors the plan', rtl.deskIsRightOfRoom, `scale ${rtl.scale.toFixed(2)}`);
+  await page.click('[data-action=language]');
+  await page.waitForFunction(() => document.documentElement.dir === 'ltr');
+
+  // 5e — the two preferences the owner asked for, both defaulting to on
+  await page.goto(`http://127.0.0.1:${WEB_PORT}/#settings`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.switch', { timeout: 8_000 });
+  const defaults = await page.evaluate(() => ({
+    fxAttr: document.documentElement.getAttribute('data-fx'),
+    railAttr: document.documentElement.getAttribute('data-collapsed'),
+    navWidth: getComputedStyle(document.documentElement).getPropertyValue('--nav').trim(),
+    fxBoxes: document.querySelectorAll('[data-fx-overlay]').length,
+    checked: [...document.querySelectorAll('.switch input')].map((input) => input.checked),
+  }));
+  check('the screen effect and the collapsed rail are both on by default',
+    defaults.fxAttr === 'true' && defaults.railAttr === 'true' && defaults.navWidth === '68px' &&
+      defaults.fxBoxes === 1 && defaults.checked.every(Boolean),
+    JSON.stringify(defaults));
+  const navWidthBefore = defaults.navWidth;
+  await page.click('label.switch:has-text("Collapsed sidebar") input');
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-collapsed'));
+  const expanded = await page.evaluate(() => ({
+    nav: getComputedStyle(document.documentElement).getPropertyValue('--nav').trim(),
+    labels: [...document.querySelectorAll('.navlabel')].filter((n) => getComputedStyle(n).display !== 'none').length,
+  }));
+  check('turning the rail off expands the sidebar and shows the labels',
+    expanded.nav !== navWidthBefore && expanded.labels === 7, `${navWidthBefore} → ${expanded.nav}, ${expanded.labels} labels`);
+  await page.click('label.switch:has-text("Screen effect") input');
+  await page.waitForFunction(() => !document.querySelector('[data-fx-overlay]'));
+  check('turning the screen effect off removes it from the page', true);
+
+  // and the custom accent really repaints
+  await page.click('[data-palette-option=custom]');
+  await page.waitForSelector('.accent-picker input[type=color]');
+  // `fill` is what actually drives a colour input in Chromium; dispatching a synthetic `input`
+  // event does not reach React's value tracker, and the first version of this check therefore
+  // "passed" while the accent had never changed at all.
+  await page.fill('.accent-picker input[type=color]', '#4a6fa5');
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.customAccent !== undefined &&
+    document.documentElement.dataset.customAccent !== '#accab3');
+  const accent = await page.evaluate(() => ({
+    applied: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+    note: document.querySelector('[data-accent-note]')?.textContent ?? '',
+    palette: document.documentElement.dataset.palette,
+  }));
+  check('a custom accent is derived, written and reported',
+    accent.palette === 'custom' && /^#[0-9a-f]{6}$/.test(accent.applied) && accent.applied !== '#accab3' &&
+      /(Adjusted for contrast|Used as chosen)/.test(accent.note),
+    JSON.stringify(accent));
+  }
 
   // 6 — inbox with a real decision and a working decision commit
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });

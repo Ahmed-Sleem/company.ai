@@ -5,6 +5,41 @@
 
 ---
 
+### follow-up — the demo file, hardened for where it will actually be opened
+
+- The demo now runs as a **classic script at the end of the body** (the bundle has no module-only
+  syntax) and carries a **storage shim**, so it boots in a sandboxed frame where reading
+  `localStorage` throws. `apps/web/e2e/demo.mjs` grew to **10 checks**, including creating a task and
+  moving it, and a run with storage deliberately blocked.
+- A new task in the demo is handed the **offers the real API would give it** — captured per stage at
+  build time — so the review→done gate shows the rule's own wording, not a copy of the rule.
+- Gate re-run after the change: **10/10 green**, smoke 58/58, demo 10/10. Commit `d6bcc5f`.
+
+## 2026-10-06 — the owner's whole borrow list, and a demo you can open
+
+- **Borrow, all of it.** The 31 pixel icons, the five palettes, the studio plan, the World Map, build
+  mode, FX/CRT, the collapsed rail, forced-colors — every ranked item is now in the product. The two
+  preferences the owner placed himself — **Screen effect** and **Collapsed sidebar** — live in
+  Settings and both start on.
+- **Everything borrowed from the owner's demo is now generated, not copied.** `scripts/gen-owner-data.mjs`
+  reads their file and writes `apps/web/src/lib/icons.data.ts` (31 icons) and
+  `apps/web/src/world/layout.data.ts` (6 rooms · 16 desks · 21 props · 54 sprites · their nav, on the
+  record). `--check` fails on drift, the gate runs it, and a test regenerates in memory and compares —
+  a lock that could not fail until the generator stopped writing when imported.
+- **The demo file.** `scripts/build-demo-html.mjs` freezes the built app, its data and its API into
+  `demo/company-os-demo.html` (0.58 MB, opens from `file://`, zero network requests). `apps/web/e2e/demo.mjs`
+  drives it in a real browser: 7/7.
+- **Four faults the browser found, all fixed, all now locked by a check.** The plan never fitted on
+  first paint (the fit effect ran while the view was still a skeleton); the zoom-out button wore a
+  close icon; a pointer capture on the viewport swallowed clicks on desks (the drawer never opened);
+  and `selected?.id === seat.agent?.id` marked all eight empty desks as chosen (`undefined === undefined`).
+- **Gate now 10 steps**: generated files (tokens + the owner's data) · lint · tests · web tests ·
+  repo checks · build · **the demo file matches the build** · design gate · browser smoke. Smoke grew
+  to **58 checks**.
+- **Minimalism audit written, not built** — `_research/dev-docs/MINIMALISM_AUDIT.md`: A1–A4 (shell),
+  B1–B5 (Tasks), C1–C5 (World), D1–D4 (Settings), E1–E2 (Inbox), F1–F2 (the bigger merges), plus what
+  will not be cut. Measured first: 77 controls across the seven screens.
+
 ## 2026-10-03 16:40 — P1.1b: the board is the demo's board, and every move on it was silently failing
 
 - **Task (user):** continue P1 (Tasks parity + honest moves) and push after the step.

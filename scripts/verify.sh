@@ -8,12 +8,13 @@
 #   1. type-check          — the whole workspace, one TypeScript project
 #   2. tokens              — the generated token files match the design source (drift fails)
 #   3. lint                — oxlint
-#   4. tests               — 48 database/gateway/API/contract/token tests
-#   5. web tests           — the shell, the four data states, RTL, theme (jsdom)
+#   4. tests               — database/gateway/API/contract/token tests
+#   5. web tests           — the shell, states, RTL, theme, the world, icons (jsdom, 86)
 #   6. repo checks         — raw values, logical properties, build context, licences, docs
 #   7. build               — the production web build (this is what gets served)
-#   8. design gate         — the designer's own prototype still passes its 11 checks
-#   9. browser smoke       — real Chromium against the real API (16 checks)
+#   8. demo file           — the standalone demo still matches that build (no browser needed)
+#   9. design gate         — the designer's own prototype still passes its 11 checks
+#  10. browser smoke       — real Chromium against the real API (58 checks)
 #
 # The design gate (8) always runs: it needs no browser. Step 9 needs Chromium and prints the
 # three commands that install it if it is missing; every other step is required.
@@ -64,21 +65,28 @@ socket.on('error', () => process.exit(1));
 fi
 
 run "1/9 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
-run "2/9 tokens in sync with the design source" node packages/tokens/src/generate.mjs --check
-run "3/9 lint" npx oxlint
-run "4/9 database, gateway, API and contract tests" npx vitest run
-run "5/9 web app tests (shell, states, RTL)" npm test -w @company/web --silent
-run "6/9 repository checks" bash -c '
+run "2/10 generated files in sync (tokens · the owner's data)" bash -c '
+  node packages/tokens/src/generate.mjs --check || exit 1
+  node scripts/gen-owner-data.mjs --check'
+run "3/10 lint" npx oxlint
+run "4/10 database, gateway, API and contract tests" npx vitest run
+run "5/10 web app tests (shell, states, RTL, world, icons)" npm test -w @company/web --silent
+run "6/10 repository checks" bash -c '
   for check in raw-values logical-properties namespace-lock build-context licence-gate docs; do
     node "scripts/checks/$check.mjs" || exit 1
   done'
-run "7/9 production web build" npm run build -w @company/web --silent
+run "7/10 production web build" npm run build -w @company/web --silent
+
+# The demo file is the app, its data and its API frozen into one HTML file. It is generated from the
+# build above, so "did someone edit the demo by hand?" and "is the build still the thing we shipped?"
+# are the same question — and this step answers it without a browser.
+run "8/10 the standalone demo file matches the built app" node scripts/build-demo-html.mjs --check
 
 # The design gate needs no browser — it must run on every machine, every time.
-run "8/9 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
+run "9/10 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
 
 if has_browser; then
-  run "9/9 browser smoke test (real API + real Chromium)" node apps/web/e2e/smoke.mjs
+  run "10/10 browser smoke test (real API + real Chromium)" node apps/web/e2e/smoke.mjs
 else
   explain_no_browser
   SKIPPED=$((SKIPPED+1))

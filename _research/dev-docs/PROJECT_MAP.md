@@ -17,11 +17,18 @@ company.ai/
 ├── services/                        the runnable servers
 │   ├── api/                         the HTTP surface the GUI talks to (Hono)
 │   └── orchestrator/                P1+ — agent runs against the gateway
-├── apps/web/                        the GUI (Vite + React): shell, six views, components
-│                                    e2e/smoke.mjs = the browser check used by the gate
+├── apps/web/                        the GUI (Vite + React): shell, seven views, components
+│   │   src/world/                   the studio plan: generated layout data, pure camera maths, art
+│   │   src/lib/                     prefs (the owner's two switches), accent maths, the 31 icons
+│   │   e2e/smoke.mjs                the browser check the gate runs (58 checks, real API)
+│   └── e2e/demo.mjs                 drives the standalone demo file off disk (7 checks)
+├── demo/
+│   └── company-os-demo.html         GENERATED: the real GUI + its data + its API in one file
 ├── scripts/
-│   ├── verify.sh                    THE GATE — nine steps, run before every commit
-│   └── checks/                      the five repository checks + _observe-failure.sh
+│   ├── verify.sh                    THE GATE — ten steps, run before every commit
+│   ├── gen-owner-data.mjs           reads the owner's demo → the icons and the plan (-—check = drift)
+│   ├── build-demo-html.mjs          freezes the built app into demo/company-os-demo.html
+│   └── checks/                      the repository checks + _observe-failure.sh
 ├── docker/                          compose + env template (deploy-ready, not deployed)
 │
 ├── design/                          the product-facing visual layer (NOT removable)

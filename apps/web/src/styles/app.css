@@ -21,6 +21,10 @@
   --app-stripe:6px;
   --app-roster-min:260px;
   --app-tree-h:260px;
+  /* the plan: how tall it may grow, how small it may get, and the rail's own width */
+  --app-world-h:640px;
+  --app-world-h-min:320px;
+  --app-rail:68px;
 }
 
 * { box-sizing: border-box; }
@@ -524,3 +528,213 @@ h3 { font-size: var(--base); }
     outline-offset: var(--app-hair);
   }
 }
+
+/* ── the rail, the screen effect, and the switches (owner: both default on) ──────────────────
+   The collapsed sidebar is the owner's demo, ported: their `[data-collapsed=true]` rules, with
+   the same 68px rail, icon-only items and the count badge moved into the corner. */
+.rail-toggle { margin-inline-start: auto; }
+[data-collapsed='true'] { --nav: var(--app-rail); }
+[data-collapsed='true'] .sidebar { padding-inline: var(--s3); }
+[data-collapsed='true'] .brand { padding-inline: 0; justify-content: center; }
+[data-collapsed='true'] .brand-text,
+[data-collapsed='true'] .navlabel { display: none; }
+[data-collapsed='true'] .navitem { position: relative; min-block-size: var(--control); justify-content: center; padding-inline: 0; gap: 0; }
+[data-collapsed='true'] .navitem .count {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  min-inline-size: var(--s3);
+  padding-inline: var(--s1);
+  line-height: var(--lg);
+  font-size: var(--xs);
+  background: var(--side);
+  border: var(--app-hair) solid var(--line);
+}
+
+/* The screen effect: one empty element over everything the tokens colour. It is decoration, so it
+   never takes a pointer event, and it is defined here rather than in a component. */
+.fx-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, var(--soft) 0 var(--app-hair), transparent var(--app-hair) var(--app-stripe)),
+    radial-gradient(120% 100% at 50% 0%, transparent 55%, var(--bg) 100%);
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) { .fx-overlay { opacity: 0.45; } }
+
+/* Settings switches: a real checkbox (so it works without a mouse and reads out its state),
+   styled as the demo's pixel control. */
+.switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding-block: var(--s3);
+  cursor: pointer;
+}
+.switch input { inline-size: var(--s4); block-size: var(--s4); margin: 0; accent-color: var(--accent); flex-shrink: 0; }
+.switch span { display: flex; flex-direction: column; gap: var(--s1); }
+.switch small { color: var(--muted); }
+.accent-picker { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-block-start: var(--s4); }
+.accent-picker input[type='color'] { inline-size: var(--s8); block-size: var(--control); padding: 0; border: var(--app-hair) solid var(--line); background: var(--bg); }
+.accent-picker .palette-chip { inline-size: var(--s5); block-size: var(--s5); }
+
+/* ── the World Map — the owner's floor plan, drawn in tokens ─────────────────────────────────
+   One transform layer holds the plan; everything inside is positioned in plan units, so panning
+   is a transform and nothing re-lays-out. Room tints come from the theme names the owner gave
+   their rooms; the tints are ours, mixed from the accent and the surfaces. */
+.world { display: flex; flex-direction: column; gap: var(--s3); }
+.world-hud { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.world-hud .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.world-scale { min-inline-size: var(--s8); text-align: center; color: var(--muted); font-size: var(--sm); }
+.world-viewport {
+  position: relative;
+  overflow: hidden;
+  block-size: min(70dvh, var(--app-world-h));
+  min-block-size: var(--app-world-h-min);
+  background: var(--bg);
+  border: var(--app-hair) solid var(--line);
+  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--line);
+  cursor: grab;
+  touch-action: none;
+}
+.world-viewport:active { cursor: grabbing; }
+.world-viewport:focus-visible { outline: var(--ring); outline-offset: var(--app-notch); }
+.world-canvas {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  background-image:
+    linear-gradient(to right, var(--soft) var(--app-hair), transparent var(--app-hair)),
+    linear-gradient(to bottom, var(--soft) var(--app-hair), transparent var(--app-hair));
+  background-size: var(--s8) var(--s8);
+}
+.room {
+  position: absolute;
+  border: var(--app-stroke) solid var(--line);
+  background: var(--surface);
+  padding: var(--s2);
+}
+.room-head { display: flex; flex-direction: column; gap: var(--s1); }
+.room-head strong { font-size: var(--base); color: var(--text); }
+.room-head small { color: var(--muted); font-size: var(--xs); }
+.room-executive-suite { background: var(--raised); }
+.room-engineering-lab { background: var(--surface); border-color: var(--accent); }
+.room-boardroom-hub { background: var(--raised); }
+.room-design-studio { background: var(--surface); }
+.room-operations-hub { background: var(--raised); }
+.room-lounge-area { background: var(--side); }
+
+.prop { position: absolute; border: var(--app-hair) solid var(--line); background: var(--hover); }
+.prop-table { background: var(--raised); border-color: var(--dim); }
+.prop-seat { background: var(--soft); }
+.prop-board { background: var(--raised); border-color: var(--accent); }
+.prop-plant { background: var(--accent-bg); border-color: var(--accent); }
+.prop-storage { background: var(--side); }
+.prop-machine { background: var(--hover); border-color: var(--dim); }
+
+.desk {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  padding: var(--s1);
+  background: var(--raised);
+  border: var(--app-hair) solid var(--line);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--xs);
+  cursor: pointer;
+}
+.desk:hover { border-color: var(--dim); background: var(--hover); }
+.desk-selected { border-color: var(--accent); background: var(--accent-bg); }
+.desk-empty { color: var(--dim); border-style: dashed; }
+.desk-name { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-status { inline-size: var(--s1); block-size: var(--s1); background: var(--dim); }
+.desk-status-working { background: var(--accent); }
+.desk-status-blocked { background: var(--danger); }
+.desk-count {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  min-inline-size: var(--s3);
+  padding-inline: var(--s1);
+  background: var(--bg);
+  border: var(--app-hair) solid var(--line);
+  color: var(--muted);
+}
+.world-drawer {
+  position: absolute;
+  inset-block-start: var(--s3);
+  inset-inline-end: var(--s3);
+  inline-size: min(var(--app-world-h-min), 90%);
+  max-block-size: calc(100% - var(--s6));
+  overflow: auto;
+  z-index: 2;
+}
+.drawer-head { display: flex; align-items: flex-start; gap: var(--s3); }
+.drawer-head h3 { margin: 0; font-size: var(--base); }
+.drawer-head p { margin: 0; font-size: var(--sm); }
+.drawer-head .icon-btn { margin-inline-start: auto; }
+.drawer-facts { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
+.drawer-facts div { display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--sm); }
+.drawer-facts dt { color: var(--muted); }
+.drawer-facts dd { margin: 0; }
+.drawer-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.drawer-tasks li { display: grid; grid-template-columns: auto 1fr; gap: var(--s2); align-items: center; font-size: var(--sm); }
+.drawer-tasks .progress { inline-size: 100%; block-size: var(--s2); grid-column: 1 / -1; }
+.world-stats {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  display: flex;
+  gap: var(--s5);
+  padding: var(--s2) var(--s3);
+  background: var(--side);
+  border-block-start: var(--app-hair) solid var(--line);
+  font-size: var(--sm);
+}
+.world-stats .stat { display: flex; gap: var(--s2); align-items: baseline; }
+.world-stats .stat-label { color: var(--muted); }
+.world-stats .stat-value { color: var(--accent); }
+.world-hint { font-size: var(--sm); }
+
+/* ── the prop art ─────────────────────────────────────────────────────────────────────────────
+   Every piece of furniture is an SVG on the owner's 28-unit grid, filled from tokens so the plan
+   re-tints with the palette. The real sprite pack replaces `PropArt` alone when its licence is
+   cleared; these rules are keyed by shape, not by sprite id, so they survive that swap. */
+.prop-art { display: block; inline-size: 100%; block-size: 100%; }
+.prop-art path { fill: var(--line); }
+.prop-art-desk path, .prop-art-table path { fill: var(--dim); }
+.prop-art-chair path { fill: var(--soft); }
+.prop-art-plant path { fill: var(--accent); }
+.prop-art-cabinet path, .prop-art-fridge path { fill: var(--side); stroke: var(--line); stroke-width: var(--app-hair); }
+.prop-art-screen path, .prop-art-arcade path { fill: var(--accent-bg); stroke: var(--accent); stroke-width: var(--app-hair); }
+.prop-art-sofa path { fill: var(--hover); }
+.prop-art-board path { fill: var(--raised); stroke: var(--line); stroke-width: var(--app-hair); }
+.prop-art-box path { fill: var(--dim); }
+
+/* ── build mode ───────────────────────────────────────────────────────────────────────────────
+   The only mode that changes what a drag means, so it says so in words above the plan and in the
+   cursor over it. Nothing here is discoverable-only: the bar names each verb and its key. */
+.world-build {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  background: var(--accent-bg);
+  border: var(--app-hair) solid var(--accent);
+  font-size: var(--sm);
+}
+.world-build span:first-child { flex: 1; }
+.world-building .room { border-style: dashed; }
+.world-building .prop, .world-building .desk { cursor: move; }
+.prop-selected { outline: var(--app-stroke) solid var(--accent); outline-offset: 0; }
+.world-hint { font-size: var(--xs); }

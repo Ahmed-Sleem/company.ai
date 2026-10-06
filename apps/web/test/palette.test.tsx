@@ -40,7 +40,9 @@ describe('Settings → Appearance', () => {
   it('offers every preset the token source declares, by name, in English', async () => {
     render(<SettingsView lang="en" />);
     const group = await screen.findByRole('group', { name: 'Color palette' });
-    expect(within(group).getAllByRole('button')).toHaveLength(palettes.length);
+    // Changed 2026-10-06: the group now carries the five presets *and* the custom accent entry,
+    // which is an app feature rather than a token preset (see lib/accent.ts).
+    expect(within(group).getAllByRole('button')).toHaveLength(palettes.length + 1);
     expect(palettes.length).toBe(5);
     expect(screen.getByRole('button', { name: 'Original sage' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Ocean blue' })).toBeTruthy();
@@ -99,7 +101,7 @@ describe('the palette control and the data states', () => {
     // scoped to the group: the error state carries its own Retry button, so counting buttons
     // across the whole panel would count that one too
     const group = await screen.findByRole('group', { name: 'Color palette' });
-    expect(within(group).getAllByRole('button')).toHaveLength(palettes.length);
+    expect(within(group).getAllByRole('button')).toHaveLength(palettes.length + 1);
   });
 });
 
