@@ -47,7 +47,7 @@ export function TaskForm({
   lang: Lang;
   /** The task being edited, or nothing for a new one. */
   task: TaskRow | null;
-  agents: Array<{ id: string; name: string }>;
+  agents: Array<{ id: string; name: string; nameAr?: string | null }>;
   onSubmit: (values: TaskFormValues) => Promise<void>;
   onClose: () => void;
 }) {
@@ -136,7 +136,7 @@ export function TaskForm({
             onChange={(event) => edit({ ownerAgentId: event.target.value })}
           >
             {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>{agent.name}</option>
+              <option key={agent.id} value={agent.id}>{localized(agent.name, agent.nameAr, lang)}</option>
             ))}
           </select>
         </label>

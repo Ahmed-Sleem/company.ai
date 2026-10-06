@@ -18,7 +18,7 @@ export function TaskCard({ task, lang, onOpen }: { task: TaskRow; lang: Lang; on
       <span className="task-title">{localized(task.title, task.titleAr, lang)}</span>
       <span className="task-meta">
         <Avatar index={task.owner?.avatar} size="sm" />
-        <span>{task.owner?.name ?? ''}</span>
+        <span>{localized(task.owner?.name, task.owner?.nameAr, lang)}</span>
         <span className="grow" />
         <bdi>{date(task.dueDate, lang)}</bdi>
       </span>

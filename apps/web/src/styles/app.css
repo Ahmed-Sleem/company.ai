@@ -326,20 +326,53 @@ th { color: var(--muted); font-weight: 400; font-size: var(--sm); }
 .textbtn { background: none; border: 0; color: var(--text); font: inherit; cursor: pointer; padding: 0; text-align: start; }
 .textbtn:hover { color: var(--accent); }
 
+/* The shared overlay, to the demo's geometry: centred, at most 700px wide with a 32px inset from
+   the viewport edge, never taller than the viewport minus 48px, and only its body scrolls. The
+   centring has to be stated because Tailwind's preflight zeroes every margin, including the
+   `margin: auto` a dialog's user-agent style relies on to sit in the middle. */
 dialog.dialog {
+  margin: auto;
+  inline-size: min(var(--dialog-w), calc(100% - var(--dialog-gap)));
+  max-block-size: calc(100dvh - var(--dialog-vgap));
   background: var(--surface);
   color: var(--text);
   border: var(--app-hair) solid var(--line);
   box-shadow: 0 var(--s5) var(--s10) var(--shadow);
-  max-inline-size: calc(var(--max) / 3);
-  inline-size: 100%;
   padding: 0;
+  overflow: hidden;
 }
+dialog.dialog[open] { display: flex; flex-direction: column; }
 dialog.dialog::backdrop { background: var(--shadow); }
-.dialog-head { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-block-end: var(--app-hair) solid var(--soft); }
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s4) var(--s5);
+  border-block-end: var(--app-hair) solid var(--soft);
+  flex-shrink: 0;
+}
+.dialog-head .eyebrow { margin-block-end: var(--s1); }
 .dialog-head h2 { margin: 0; font-size: var(--lg); }
-.dialog-body { padding: var(--s4); }
-.dialog-actions { display: flex; gap: var(--s3); align-items: flex-start; flex-wrap: wrap; padding: var(--s3) var(--s4); border-block-start: var(--app-hair) solid var(--soft); }
+.dialog-body { padding: var(--s5); overflow-y: auto; min-block-size: 0; }
+.dialog-actions {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: var(--s4) var(--s5);
+  border-block-start: var(--app-hair) solid var(--soft);
+  flex-shrink: 0;
+  background: var(--side);
+}
+
+/* Smaller screens: the demo narrows the inset to eight pixels and lets the dialog fill it. */
+@media (max-width: 540px) {
+  dialog.dialog { inline-size: calc(100% - var(--s4)); max-block-size: calc(100dvh - var(--s4)); }
+  .dialog-head, .dialog-body { padding: var(--s4); }
+  .dialog-actions { padding: var(--s3) var(--s4); }
+}
 .movegroup { display: flex; flex-direction: column; gap: var(--s1); }
 .reason { color: var(--warning); font-size: var(--sm); }
 .details { display: grid; grid-template-columns: auto 1fr; gap: var(--s2) var(--s3); margin: 0; }

@@ -59,6 +59,28 @@
 
 ---
 
+## 2026-10-06 02:05 — P1.2 follow-up: the dialog's geometry, and people's names in Arabic
+
+- **Found by looking at the running form (not by a test):** the dialog was pinned to the left edge and
+  overflowed the viewport. Tailwind's preflight zeroes every margin — including the `margin: auto`
+  a dialog's user-agent style uses to centre itself — and the product's dialog rules had no margin of
+  their own. The demo's geometry is now stated, with its values as tokens
+  (`--dialog-w: 700px`, `--dialog-gap: 32px`, `--dialog-vgap: 48px`, recorded in
+  `company-os-pixel.json` → `components.surfaces.dialog`): centred, `min(700px, 100% - 32px)` wide,
+  at most the viewport minus 48px tall, only the body scrolling, the footer on `--side`, and at
+  540px and below the inset narrows to eight pixels — all four facts are the demo's own.
+- **Second find from the same look:** an Arabic screen showed people's names in English. The demo
+  names a person through `name()` → `tr(agent.name)` *everywhere* — cards, dialogs, selects, the
+  owners filter. `GET /api/tasks` now carries `nameAr` beside `name` on each task's owner (the roster
+  route already did), and the card, the form's Owner select and the All owners filter all read it.
+- **Tests:** an Arabic board shows `آريا` and no `Aria` anywhere on the page; the form's Owner select
+  lists `['آريا', 'ليو']`. The first of those two was observed failing on the *filter's* `<option>`
+  (the last English name left on the page) — which is exactly the kind of leak it was written for.
+- **Validation:** `bash scripts/verify.sh` → **GREEN 9/9** · root vitest 70 · web vitest **37** ·
+  design gate 11/11 · browser smoke 31/31 · raw-values 50 files clean.
+
+---
+
 ## 2026-10-06 01:30 — P1.2: the task form (create and edit), and three defects it surfaced
 
 - **Task (user):** continue P1 — parity with the prototype on real state, next step the task form.

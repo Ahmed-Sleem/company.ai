@@ -60,6 +60,10 @@ color-scheme: dark;
   /* people — the portrait sizes stated in company-os-pixel.json → avatars.sizes */
   --avatar:48px; --avatar-sm:28px; --avatar-lg:84px; --avatar-xl:110px;
 
+  /* the shared overlay (components.surfaces.dialog): its width, its inset from the viewport edge,
+     and how much viewport height it may use */
+  --dialog-w:700px; --dialog-gap:32px; --dialog-vgap:48px;
+
   /* layout & motion */
   --nav:210px;
   --speed:130ms;

@@ -26,6 +26,7 @@ export async function listAgents(db: Db, companyId: string) {
     .select({
       id: t.agents.id,
       name: t.agents.name,
+      nameAr: t.agents.nameAr,
       role: t.agents.role,
       title: t.agents.title,
       avatar: t.agents.avatar,

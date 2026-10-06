@@ -159,7 +159,11 @@ export function createApp(deps: AppDeps) {
         const owner = agents.find((agent) => agent.id === task.ownerAgentId);
         return {
           ...task,
-          owner: owner ? { id: owner.id, name: owner.name, role: owner.role, avatar: owner.avatar } : null,
+          // Both readings, like the roster route: the board shows a person's name in the language
+          // being read (the demo's `name()` → `tr(agent.name)`).
+          owner: owner
+            ? { id: owner.id, name: owner.name, nameAr: owner.nameAr, role: owner.role, avatar: owner.avatar }
+            : null,
           // The stored stage is parsed through the contract, so a value the database should
           // never hold fails here — loudly, at the boundary — instead of reaching the board.
           offers: offeredTransitions(taskStage.parse(task.stage), { hasApprovedDecision: approvedTaskIds.has(task.id) }),

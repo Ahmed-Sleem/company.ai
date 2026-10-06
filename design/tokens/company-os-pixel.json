@@ -1,229 +1,230 @@
 {
-  "$meta": {
-    "name": "Company OS — Pixel Edition",
-    "source_file": "ai-company-os-ready (1).html",
-    "source_repo": "github.com/Ahmed-Sleem/company.ai",
-    "source_commit": "aa65c9a (\"Add files via upload\", short sha as shown by GitHub)",
-    "source_blob_sha": "7dd2e203d713d0d7d13cf3371e27e28b834f79f0",
-    "source_size_bytes": 383911,
-    "source_lines": 801,
-    "extracted_at": "2026-10-02",
-    "status": "STYLE SOURCE OF TRUTH — do not restyle without the designer",
-    "extracted_by": "verbatim read of the demo's CSS token blocks",
-    "verified": "blob sha-1 recomputed locally and matches the uploaded blob 7dd2e203d713d0d7d13cf3371e27e28b834f79f0"
+ "$meta": {
+  "name": "Company OS — Pixel Edition",
+  "source_file": "ai-company-os-ready (1).html",
+  "source_repo": "github.com/Ahmed-Sleem/company.ai",
+  "source_commit": "aa65c9a (\"Add files via upload\", short sha as shown by GitHub)",
+  "source_blob_sha": "7dd2e203d713d0d7d13cf3371e27e28b834f79f0",
+  "source_size_bytes": 383911,
+  "source_lines": 801,
+  "extracted_at": "2026-10-02",
+  "status": "STYLE SOURCE OF TRUTH — do not restyle without the designer",
+  "extracted_by": "verbatim read of the demo's CSS token blocks",
+  "verified": "blob sha-1 recomputed locally and matches the uploaded blob 7dd2e203d713d0d7d13cf3371e27e28b834f79f0"
+ },
+ "themes": [
+  "dark",
+  "light",
+  "system"
+ ],
+ "default_theme": "dark",
+ "tokens": {
+  "dark": {
+   "colorScheme": "dark",
+   "bg": "#111514",
+   "side": "#141817",
+   "surface": "#181d1b",
+   "raised": "#1d2320",
+   "hover": "#232c27",
+   "line": "#303b34",
+   "soft": "#252e29",
+   "text": "#e1e7e1",
+   "muted": "#a0aea4",
+   "dim": "#819388",
+   "accent": "#accab3",
+   "accentBg": "#253c2d",
+   "onAccent": "#14271b",
+   "danger": "#efaaa3",
+   "warning": "#dfc18b",
+   "blue": "#a8c4d6",
+   "shadow": "0 24px 80px #0007"
   },
-  "themes": [
-    "dark",
-    "light",
-    "system"
-  ],
-  "default_theme": "dark",
-  "tokens": {
-    "dark": {
-      "colorScheme": "dark",
-      "bg": "#111514",
-      "side": "#141817",
-      "surface": "#181d1b",
-      "raised": "#1d2320",
-      "hover": "#232c27",
-      "line": "#303b34",
-      "soft": "#252e29",
-      "text": "#e1e7e1",
-      "muted": "#a0aea4",
-      "dim": "#819388",
-      "accent": "#accab3",
-      "accentBg": "#253c2d",
-      "onAccent": "#14271b",
-      "danger": "#efaaa3",
-      "warning": "#dfc18b",
-      "blue": "#a8c4d6",
-      "shadow": "0 24px 80px #0007"
-    },
-    "light": {
-      "colorScheme": "light",
-      "bg": "#f5f6f1",
-      "side": "#ecefe8",
-      "surface": "#fcfcf8",
-      "raised": "#f0f3eb",
-      "hover": "#e9eee4",
-      "line": "#c5cec1",
-      "soft": "#dfe4da",
-      "text": "#26372c",
-      "muted": "#5a6b5d",
-      "dim": "#526455",
-      "accent": "#416f4e",
-      "accentBg": "#e2ecdd",
-      "onAccent": "#ffffff",
-      "danger": "#a6473d",
-      "warning": "#84612c",
-      "blue": "#3c6a88",
-      "shadow": "0 24px 80px #243b252b"
-    }
-  },
-  "typography": {
-    "pixel_family": "'Pixelify Sans', ui-monospace, monospace",
-    "pixel_font_license": "SIL Open Font License 1.1 (embedded in demo)",
-    "pixel_font_source": "https://github.com/eifetx/Pixelify-Sans",
-    "ui_mono": "ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace",
-    "body_sans": "Arial, Tahoma, sans-serif",
-    "sizes_px": {
-      "xs": 11,
-      "sm": 12,
-      "base": 13,
-      "body": 14,
-      "lg": 16,
-      "title": 28
-    },
-    "rules": [
-      "Pixel face is used for hierarchy only: h1, h2, brand, stat-value, navitem, btn, tabs, employee-name, thread-name, column-head, theme-option",
-      "Pixel face is NEVER used for long-form content",
-      "Arabic (lang=ar) keeps the readable sans face — pixel face is suppressed",
-      "Headings in EN pixel face: weight 500, letter-spacing 0",
-      "Overrides: brand 17px, employee-name 16px, thread-name 15px, h2 18px, dialog h2 23px, sectionhead h2 16px, btn/tabs/navitem 13px, btn.small 12px"
-    ]
-  },
-  "shape": {
-    "base_radius": "6px",
-    "pixel_skin_radius": "0px",
-    "stepped_corner_frame": "3px steps via clip-path polygon on .panel:after",
-    "hard_shadow": "2px 2px 0 var(--line)",
-    "hard_shadow_active": "1px 1px 0 var(--line) (or inset 1px 1px 0)",
-    "hard_shadow_hover_primary": "3px 3px 0 var(--line)",
-    "dialog_chrome": "2px border + 4px/6px double offset shadow"
-  },
-  "motion": {
-    "speed": "130ms base token",
-    "component_transition": "background-color 100ms, border-color 100ms, color 100ms",
-    "rules": [
-      "No movement, glow or brightness jumps in the pixel skin",
-      "Active states use inset shadow, not transform (pixel skin)",
-      "prefers-reduced-motion disables all transitions and animations"
-    ]
-  },
-  "components": {
-    "shell": {
-      "sidebar_width": "210px",
-      "sidebar_collapsed_width": "68px (desktop only, [data-collapsed=true])",
-      "topbar_height": "66px",
-      "main_max_width": "1440px",
-      "statusbar": "bottom strip, 10px dim text",
-      "mobile": "<=800px: sidebar becomes a drawer with .nav-scrim; rail toggle hidden"
-    },
-    "surfaces": {
-      "panel": "border 1px soft, background surface, radius per theme, plus stepped frame in pixel skin",
-      "roster": "3-column grid; .list mode = 1 column with 230px / 1fr / 170px rows",
-      "board": "4 columns (min 0), cards with title, meta, progress meter",
-      "chat": "240px threads + flexible main; log height 490px scroll; composer pinned",
-      "settings": "2fr / 1fr split; setting rows with label, description and a 170px control"
-    },
-    "atoms": {
-      "avatar_sizes": [
-        "28px sm",
-        "48px default",
-        "84px lg",
-        "110px xl"
-      ],
-      "avatar_art": "65 pixel portraits, 48x48 grid SVG paths traced from Characters.jpeg (rows x columns)",
-      "badges": "working/sent/done -> accent; error/failed/critical -> danger; paused/high/approval -> warning",
-      "dot": "5px square in pixel skin",
-      "kbd": "10px, 1px border, 3px radius (squared in pixel skin)",
-      "meter": "2-4px bar; discrete accent blocks (6px on, 2px off) in pixel skin",
-      "waveform": "voice note, 3px bars, accent colour"
-    },
-    "states": [
-      "empty",
-      "loading (skeleton)",
-      "error",
-      "success",
-      "reserved"
-    ]
-  },
-  "i18n": {
-    "languages": [
-      "en",
-      "ar"
-    ],
-    "direction": "dir switches to rtl for ar; all layout uses logical properties",
-    "arabic_typeface": "readable sans (Arial/Tahoma) — pixel face suppressed for ar",
-    "bilingual_artifacts": [
-      "skip link 'Skip to content / تجاوز إلى المحتوى'",
-      "data strings stored as [en, ar] pairs",
-      "bdi and dir=auto for mixed content"
-    ],
-    "number_and_currency": "num() and money() helpers localise digits/currency"
-  },
-  "persistence": {
-    "storage_key": "ai-company-calm-v2",
-    "stored_prefs": [
-      "theme",
-      "lang",
-      "palette",
-      "collapsed (rail)"
-    ]
-  },
-  "accessibility_contract": [
-    "Skip-to-content link (bilingual)",
-    "Native <dialog> showModal for focus containment + inert background",
-    "aria-labelledby on dialogs, role=status/live regions for announcements",
-    "Visible 2px accent focus ring with 3px offset on all interactive elements",
-    "48px minimum touch targets on coarse pointers",
-    "prefers-reduced-motion fully honoured",
-    "forced-colors: panels get CanvasText borders, pixel icons use CanvasText",
-    "aria-current / aria-selected / aria-pressed used for state, not colour alone"
-  ],
-  "avatars": {
-    "count": 65,
-    "sets": [
-      {
-        "source": "Characters.jpeg",
-        "grid": "48x48",
-        "count": 49
-      },
-      {
-        "source": "1-bit characters 32x32 px.jpeg",
-        "grid": "32x32",
-        "count": 16
-      }
-    ],
-    "format": "inline SVG paths, one path per row-run (e.g. M12 15h1v1h-1z)",
-    "render": "image-rendering:pixelated; 2px 2px 0 var(--soft) offset shadow in the skin",
-    "sizes": {
-      "sm": "28px",
-      "default": "48px",
-      "lg": "84px",
-      "xl": "110px"
-    },
-    "note": "two grids: pixel density differs at equal render size - normalise or render the 32-grid at half size"
-  },
-  "palette_system": {
-    "mechanism": "PALETTES object -> applyPalette() sets data-palette + inline custom properties per theme; no CSS nth-child tricks",
-    "presets": [
-      "sage (Original sage)",
-      "ocean (Ocean blue)",
-      "violet (Soft violet)",
-      "amber (Warm amber)",
-      "rose (Dusty rose)",
-      "custom"
-    ],
-    "custom_accent": "hex input + colour picker, pattern #[0-9a-fA-F]{6}, automatically contrast-adjusted, reports 'Adjusted for contrast: #...'",
-    "restore": "Restore original colors action resets to sage + #accab3"
-  },
-  "states": {
-    "per_screen": [
-      "default",
-      "loading",
-      "empty",
-      "error",
-      "restricted"
-    ],
-    "preview": "Settings -> Demo states: choose workspace + state, then Preview",
-    "implementation": "stateViews map keyed by view"
-  },
-  "breakpoints": {
-    "1650": "roster 4-up",
-    "1190": "--nav 188px; roster+board 2-up; chat 200px; settings 1 column",
-    "800": "sidebar becomes a drawer with scrim; mobile nav button visible",
-    "540": "roster+board 1-up; stats 2-up; h1 24px",
-    "801_min": "desktop rail collapse available"
+  "light": {
+   "colorScheme": "light",
+   "bg": "#f5f6f1",
+   "side": "#ecefe8",
+   "surface": "#fcfcf8",
+   "raised": "#f0f3eb",
+   "hover": "#e9eee4",
+   "line": "#c5cec1",
+   "soft": "#dfe4da",
+   "text": "#26372c",
+   "muted": "#5a6b5d",
+   "dim": "#526455",
+   "accent": "#416f4e",
+   "accentBg": "#e2ecdd",
+   "onAccent": "#ffffff",
+   "danger": "#a6473d",
+   "warning": "#84612c",
+   "blue": "#3c6a88",
+   "shadow": "0 24px 80px #243b252b"
   }
+ },
+ "typography": {
+  "pixel_family": "'Pixelify Sans', ui-monospace, monospace",
+  "pixel_font_license": "SIL Open Font License 1.1 (embedded in demo)",
+  "pixel_font_source": "https://github.com/eifetx/Pixelify-Sans",
+  "ui_mono": "ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace",
+  "body_sans": "Arial, Tahoma, sans-serif",
+  "sizes_px": {
+   "xs": 11,
+   "sm": 12,
+   "base": 13,
+   "body": 14,
+   "lg": 16,
+   "title": 28
+  },
+  "rules": [
+   "Pixel face is used for hierarchy only: h1, h2, brand, stat-value, navitem, btn, tabs, employee-name, thread-name, column-head, theme-option",
+   "Pixel face is NEVER used for long-form content",
+   "Arabic (lang=ar) keeps the readable sans face — pixel face is suppressed",
+   "Headings in EN pixel face: weight 500, letter-spacing 0",
+   "Overrides: brand 17px, employee-name 16px, thread-name 15px, h2 18px, dialog h2 23px, sectionhead h2 16px, btn/tabs/navitem 13px, btn.small 12px"
+  ]
+ },
+ "shape": {
+  "base_radius": "6px",
+  "pixel_skin_radius": "0px",
+  "stepped_corner_frame": "3px steps via clip-path polygon on .panel:after",
+  "hard_shadow": "2px 2px 0 var(--line)",
+  "hard_shadow_active": "1px 1px 0 var(--line) (or inset 1px 1px 0)",
+  "hard_shadow_hover_primary": "3px 3px 0 var(--line)",
+  "dialog_chrome": "2px border + 4px/6px double offset shadow"
+ },
+ "motion": {
+  "speed": "130ms base token",
+  "component_transition": "background-color 100ms, border-color 100ms, color 100ms",
+  "rules": [
+   "No movement, glow or brightness jumps in the pixel skin",
+   "Active states use inset shadow, not transform (pixel skin)",
+   "prefers-reduced-motion disables all transitions and animations"
+  ]
+ },
+ "components": {
+  "shell": {
+   "sidebar_width": "210px",
+   "sidebar_collapsed_width": "68px (desktop only, [data-collapsed=true])",
+   "topbar_height": "66px",
+   "main_max_width": "1440px",
+   "statusbar": "bottom strip, 10px dim text",
+   "mobile": "<=800px: sidebar becomes a drawer with .nav-scrim; rail toggle hidden"
+  },
+  "surfaces": {
+   "panel": "border 1px soft, background surface, radius per theme, plus stepped frame in pixel skin",
+   "roster": "3-column grid; .list mode = 1 column with 230px / 1fr / 170px rows",
+   "board": "4 columns (min 0), cards with title, meta, progress meter",
+   "chat": "240px threads + flexible main; log height 490px scroll; composer pinned",
+   "settings": "2fr / 1fr split; setting rows with label, description and a 170px control",
+   "dialog": "one shared overlay: width min(700px, 100% - 32px), max-height calc(100dvh - 48px), body is the only scroll region, footer on --side"
+  },
+  "atoms": {
+   "avatar_sizes": [
+    "28px sm",
+    "48px default",
+    "84px lg",
+    "110px xl"
+   ],
+   "avatar_art": "65 pixel portraits, 48x48 grid SVG paths traced from Characters.jpeg (rows x columns)",
+   "badges": "working/sent/done -> accent; error/failed/critical -> danger; paused/high/approval -> warning",
+   "dot": "5px square in pixel skin",
+   "kbd": "10px, 1px border, 3px radius (squared in pixel skin)",
+   "meter": "2-4px bar; discrete accent blocks (6px on, 2px off) in pixel skin",
+   "waveform": "voice note, 3px bars, accent colour"
+  },
+  "states": [
+   "empty",
+   "loading (skeleton)",
+   "error",
+   "success",
+   "reserved"
+  ]
+ },
+ "i18n": {
+  "languages": [
+   "en",
+   "ar"
+  ],
+  "direction": "dir switches to rtl for ar; all layout uses logical properties",
+  "arabic_typeface": "readable sans (Arial/Tahoma) — pixel face suppressed for ar",
+  "bilingual_artifacts": [
+   "skip link 'Skip to content / تجاوز إلى المحتوى'",
+   "data strings stored as [en, ar] pairs",
+   "bdi and dir=auto for mixed content"
+  ],
+  "number_and_currency": "num() and money() helpers localise digits/currency"
+ },
+ "persistence": {
+  "storage_key": "ai-company-calm-v2",
+  "stored_prefs": [
+   "theme",
+   "lang",
+   "palette",
+   "collapsed (rail)"
+  ]
+ },
+ "accessibility_contract": [
+  "Skip-to-content link (bilingual)",
+  "Native <dialog> showModal for focus containment + inert background",
+  "aria-labelledby on dialogs, role=status/live regions for announcements",
+  "Visible 2px accent focus ring with 3px offset on all interactive elements",
+  "48px minimum touch targets on coarse pointers",
+  "prefers-reduced-motion fully honoured",
+  "forced-colors: panels get CanvasText borders, pixel icons use CanvasText",
+  "aria-current / aria-selected / aria-pressed used for state, not colour alone"
+ ],
+ "avatars": {
+  "count": 65,
+  "sets": [
+   {
+    "source": "Characters.jpeg",
+    "grid": "48x48",
+    "count": 49
+   },
+   {
+    "source": "1-bit characters 32x32 px.jpeg",
+    "grid": "32x32",
+    "count": 16
+   }
+  ],
+  "format": "inline SVG paths, one path per row-run (e.g. M12 15h1v1h-1z)",
+  "render": "image-rendering:pixelated; 2px 2px 0 var(--soft) offset shadow in the skin",
+  "sizes": {
+   "sm": "28px",
+   "default": "48px",
+   "lg": "84px",
+   "xl": "110px"
+  },
+  "note": "two grids: pixel density differs at equal render size - normalise or render the 32-grid at half size"
+ },
+ "palette_system": {
+  "mechanism": "PALETTES object -> applyPalette() sets data-palette + inline custom properties per theme; no CSS nth-child tricks",
+  "presets": [
+   "sage (Original sage)",
+   "ocean (Ocean blue)",
+   "violet (Soft violet)",
+   "amber (Warm amber)",
+   "rose (Dusty rose)",
+   "custom"
+  ],
+  "custom_accent": "hex input + colour picker, pattern #[0-9a-fA-F]{6}, automatically contrast-adjusted, reports 'Adjusted for contrast: #...'",
+  "restore": "Restore original colors action resets to sage + #accab3"
+ },
+ "states": {
+  "per_screen": [
+   "default",
+   "loading",
+   "empty",
+   "error",
+   "restricted"
+  ],
+  "preview": "Settings -> Demo states: choose workspace + state, then Preview",
+  "implementation": "stateViews map keyed by view"
+ },
+ "breakpoints": {
+  "1650": "roster 4-up",
+  "1190": "--nav 188px; roster+board 2-up; chat 200px; settings 1 column",
+  "800": "sidebar becomes a drawer with scrim; mobile nav button visible",
+  "540": "roster+board 1-up; stats 2-up; h1 24px",
+  "801_min": "desktop rail collapse available"
+ }
 }

@@ -46,7 +46,7 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [open, setOpen] = useState<TaskRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState<string | null>(null);
-  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string; nameAr: string | null }>>([]);
   /** `undefined` = closed, `null` = a new task, a row = editing that task. */
   const [form, setForm] = useState<TaskRow | null | undefined>(undefined);
   const [note, setNote] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     return Promise.all([api.tasks(), api.agents()])
       .then(([result, roster]) => {
         setTasks(result.tasks);
-        setAgents(roster.agents.map((agent) => ({ id: agent.id, name: agent.name })));
+        setAgents(roster.agents.map((agent) => ({ id: agent.id, name: agent.name, nameAr: agent.nameAr })));
       })
       .catch(() => setError(true));
   };
@@ -75,10 +75,13 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const owners = useMemo(() => {
     const seen = new Map<string, string>();
     for (const task of tasks ?? []) {
-      if (task.owner && !seen.has(task.owner.id)) seen.set(task.owner.id, task.owner.name);
+      // The demo's All owners filter lists people by `name()`, which is language-aware.
+      if (task.owner && !seen.has(task.owner.id)) {
+        seen.set(task.owner.id, localized(task.owner.name, task.owner.nameAr, lang));
+      }
     }
     return [...seen.entries()].map(([id, name]) => ({ value: id, label: name }));
-  }, [tasks]);
+  }, [tasks, lang]);
 
   const state: DataStateKind = forcedState && forcedState !== 'default'
     ? forcedState

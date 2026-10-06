@@ -24,7 +24,7 @@ const task = (over: Record<string, unknown>) => ({
   stage: 'backlog', priority: 'medium', progress: 0,
   dueDate: '2026-10-05T00:00:00.000Z',
   ownerAgentId: ANA,
-  owner: { id: ANA, name: 'Aria', role: 'Lead engineer', avatar: 3 },
+  owner: { id: ANA, name: 'Aria', nameAr: 'آريا', role: 'Lead engineer', avatar: 3 },
   offers: [{ to: 'progress', ok: true, reason: null }],
   createdAt: '2026-10-01T00:00:00.000Z',
   updatedAt: '2026-10-01T00:00:00.000Z',
@@ -36,7 +36,7 @@ let tasks = [
   task({ n: 1, shortRef: 'TSK-142', title: 'Refine the streaming pipeline', stage: 'progress', priority: 'high', progress: 65,
     offers: [{ to: 'review', ok: true, reason: null }, { to: 'backlog', ok: true, reason: null }] }),
   task({ n: 2, shortRef: 'TSK-155', title: 'Rehearse the migration', stage: 'review', priority: 'medium', progress: 85,
-    ownerAgentId: LEO, owner: { id: LEO, name: 'Leo', role: 'Software engineer' },
+    ownerAgentId: LEO, owner: { id: LEO, name: 'Leo', nameAr: 'ليو', role: 'Software engineer' },
     offers: [
       { to: 'done', ok: false, reason: { en: 'A person has to approve this first.', ar: 'يجب أن يوافق شخص أولًا.' } },
       { to: 'progress', ok: true, reason: null },
@@ -61,8 +61,8 @@ beforeEach(() => {
     // The board loads the roster beside the tasks: the form's Owner select needs real agents.
     if (url.endsWith('/api/agents')) {
       return new Response(JSON.stringify({ agents: [
-        { id: ANA, name: 'Aria', role: 'Lead engineer', avatar: 3, status: 'working', budget: { limitCents: 4000, spentCents: 1250, remainingCents: 2750, exceeded: false } },
-        { id: LEO, name: 'Leo', role: 'Software engineer', avatar: 2, status: 'working', budget: { limitCents: 3000, spentCents: 820, remainingCents: 2180, exceeded: false } },
+        { id: ANA, name: 'Aria', nameAr: 'آريا', role: 'Lead engineer', avatar: 3, status: 'working', budget: { limitCents: 4000, spentCents: 1250, remainingCents: 2750, exceeded: false } },
+        { id: LEO, name: 'Leo', nameAr: 'ليو', role: 'Software engineer', avatar: 2, status: 'working', budget: { limitCents: 3000, spentCents: 820, remainingCents: 2180, exceeded: false } },
       ] }), { status: 200, headers: { 'content-type': 'application/json' } });
     }
     if (url.includes('/transition')) return new Response(JSON.stringify({ task: { id: 'x', stage: 'review' } }), { status: 200 });
@@ -85,6 +85,31 @@ describe('the board shows what the demo shows', () => {
     expect(stats.getByText('In review').nextSibling?.textContent).toBe('1');
     expect(stats.getByText('Completed').nextSibling?.textContent).toBe('0');
     expect(stats.getByText('In progress').nextSibling?.textContent).toBe('1');
+  });
+
+  it('shows a person’s name in the language being read, as the demo does', async () => {
+    render(<TasksView lang="ar" />);
+    await screen.findByText('TSK-142'); // the fixture gives both rows the same Arabic title
+    // the demo prints `tr(agent.name)` everywhere a person is named — the card, the dialog, the form
+    expect(screen.getAllByText('آريا').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Aria')).toBeNull();
+  });
+
+  it('lists the roster in Arabic in the form’s Owner select', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/api/agents')) {
+        return new Response(JSON.stringify({ agents: [
+          { id: ANA, name: 'Aria', nameAr: 'آريا', role: 'Lead engineer', avatar: 3, status: 'working', budget: { limitCents: 1, spentCents: 0, remainingCents: 1, exceeded: false } },
+          { id: LEO, name: 'Leo', nameAr: 'ليو', role: 'Software engineer', avatar: 2, status: 'working', budget: { limitCents: 1, spentCents: 0, remainingCents: 1, exceeded: false } },
+        ] }), { headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ tasks }), { headers: { 'content-type': 'application/json' } });
+    }));
+    render(<TasksView lang="ar" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'مهمة جديدة' }));
+    const owner = field(document.querySelector('#task-form') as HTMLFormElement, 'owner') as HTMLSelectElement;
+    expect([...owner.options].map((option) => option.text)).toEqual(['آريا', 'ليو']);
   });
 
   it('shows each task’s reference, owner, portrait and progress', async () => {
