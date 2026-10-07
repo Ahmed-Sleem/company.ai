@@ -27,6 +27,10 @@
 - **Verified locally in the deployed shape:** API on one port serving the app + `/api`, world map
   drawing 6 rooms / 16 desks / 21 props with the HUD reading the live API, and a task created through
   the same origin.
+- **Live, and verified live:** the demo is published at <https://ahmed-sleem.github.io/company.ai/>
+  (Pages enabled, workflow run `37652119168` succeeded on `ddde2b8`). Driven in a real browser from
+  the public URL: 7 nav items, the world map drawing 6 rooms / 16 desks / 21 props with the HUD
+  reading the frozen rows, no page errors, no requests to anywhere but Pages.
 - **README** now has "Put it online (free)" — both paths click by click, what the free plan does
   (15-minute sleep, ~30–60 s wake, re-seeded database), the `docker run` one-liner, and what
   **nip.io** is and is not (DNS only; it cannot host anything; useful only for a machine with its own

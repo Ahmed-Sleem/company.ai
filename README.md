@@ -78,6 +78,9 @@ Every push to `main` then republishes it by itself, to:
 https://<your-username>.github.io/<repository>/
 ```
 
+**In this repository that switch is already on** — the demo is live at
+<https://ahmed-sleem.github.io/company.ai/> and republishes on every push to `main`.
+
 ### The full product on Render — four clicks, once
 
 1. Go to **render.com** and **sign in with GitHub** (no card required for the free plan).
