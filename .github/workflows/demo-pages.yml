@@ -20,9 +20,11 @@ permissions:
   pages: write
   id-token: write
 
+# Two pushes seconds apart cancelled the newer run once, and the site kept serving the older
+# content. Runs queue instead: every deploy finishes and the newest content wins.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
