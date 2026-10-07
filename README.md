@@ -57,6 +57,66 @@ npx playwright install chromium
 sudo npx playwright install-deps chromium   # Linux only — the system libraries Chromium needs
 ```
 
+## Put it online (free)
+
+Two things can be online, and they answer different questions. Both are already configured in this
+repository — neither needs a credit card, and neither needs you to touch a terminal.
+
+| What goes online | Where | What it costs | What it is for |
+|---|---|---|---|
+| **The demo file** — the whole product in one HTML file | **GitHub Pages** (`·/.github/workflows/demo-pages.yml`) | Free forever, never sleeps, no cold start | The link you can send anyone, or open on a phone |
+| **The full product** — API, database and app | **Render**, free plan (`render.yaml` + `Dockerfile`) | Free; sleeps after 15 minutes idle, wakes in ~30–60 s | Using the real thing, against a live API |
+
+### The demo file on GitHub Pages — two clicks, once
+
+1. Repository → **Settings** → **Pages** (left sidebar).
+2. Under *Build and deployment* → *Source*, choose **GitHub Actions**. That is the whole switch.
+
+Every push to `main` then republishes it by itself, to:
+
+```
+https://<your-username>.github.io/<repository>/
+```
+
+### The full product on Render — four clicks, once
+
+1. Go to **render.com** and **sign in with GitHub** (no card required for the free plan).
+2. **New** → **Blueprint**.
+3. Pick this repository. Render reads `render.yaml` by itself and shows what it will create.
+4. **Apply** — the first build takes a few minutes; then the service is at
+   `https://company-os.onrender.com` (Render adds a suffix if the name is taken).
+
+`render.yaml` describes one service. It is the API, and it serves the built app from the same origin
+(`services/api/src/static.ts`), so there is one URL, one dashboard and nothing to configure — and
+every push to `main` redeploys it.
+
+**What to expect from the free plan:** the instance sleeps after 15 minutes without visitors, so the
+first visit after a quiet spell takes ~30–60 seconds to wake; after that it is quick. Free instances
+have no persistent disk, so the database is re-seeded on each deploy — right for a demo. To keep real
+data, set `DATABASE_URL` to a hosted Postgres and nothing else changes.
+
+### Anywhere else
+
+The `Dockerfile` builds the whole product, so any Docker host works:
+
+```bash
+docker build -t company-os .
+docker run --rm -p 8787:8787 company-os     # → http://localhost:8787
+```
+
+### While developing
+
+- Every push to `main` updates both of the above by itself — that is the point of wiring them now.
+- For a live view of your own machine before pushing anything, a tunnel gives a public HTTPS URL in
+  one command without deploying: `cloudflared tunnel --url http://localhost:5173` (the dev server
+  already accepts any hostname).
+- **`nip.io` is not a hosting service** — it is DNS only: it maps any name to an IP address
+  (`company.203.0.113.9.nip.io` → `203.0.113.9`). It does not run anything, so it cannot host this,
+  and neither Pages nor Render needs it. It is useful in exactly one case: running the product on a
+  machine that has a public IP of its own (a free Oracle Cloud VM, a home server) and wanting a name
+  for it without buying a domain. If you ever want that setup, say so and it can be done — the
+  `Dockerfile` above is all that machine would need.
+
 ## Check it
 
 ```bash

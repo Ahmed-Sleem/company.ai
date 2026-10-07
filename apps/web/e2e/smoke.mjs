@@ -75,7 +75,14 @@ try {
 
   console.log(`· starting the API on ${API_PORT} (PGlite, mock provider — no keys, no spend)`);
   const api = run('npx', ['tsx', 'services/api/src/server.ts'], {
-    env: { ...process.env, PORT: String(API_PORT), PGLITE_DIR: '.data/e2e-pglite' },
+    // STATIC_DIR makes this the *deployed* shape: the API also serves the built app, one origin,
+    // no CORS. The checks further down open this port directly and prove it.
+    env: {
+      ...process.env,
+      PORT: String(API_PORT),
+      PGLITE_DIR: '.data/e2e-pglite',
+      STATIC_DIR: 'apps/web/dist',
+    },
   });
   let apiLog = '';
   api.stdout.on('data', (chunk) => { apiLog += chunk; });
@@ -581,6 +588,28 @@ try {
   check('the decision shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
   // 7 — hygiene
+  // 5g — the deployed shape: ONE port that is both the API and the app
+  {
+    const root = await fetch(`http://127.0.0.1:${API_PORT}/`);
+    const html = await root.text();
+    const health = await fetch(`http://127.0.0.1:${API_PORT}/api/health`);
+    check('the API also serves the built app, so one host is the whole product',
+      root.status === 200 && (root.headers.get('content-type') ?? '').includes('text/html') && html.includes('id="root"'),
+      `GET / → ${root.status}`);
+    check('and the page it serves is the current build, never a cached one',
+      root.headers.get('cache-control') === 'no-cache' && health.status === 200,
+      `cache-control: ${root.headers.get('cache-control')}`);
+    const assetPath = /src="([^"]+\.js)"/.exec(html)?.[1];
+    const asset = assetPath ? await fetch(`http://127.0.0.1:${API_PORT}${assetPath}`) : null;
+    check('hashed assets are served and cached for a year',
+      asset?.status === 200 && (asset.headers.get('cache-control') ?? '').includes('immutable'),
+      `${assetPath} → ${asset?.status}`);
+    const deep = await fetch(`http://127.0.0.1:${API_PORT}/some/address/the/app/owns`);
+    check('an address only the app knows returns the app, not a 404', deep.status === 200);
+    const climb = await fetch(`http://127.0.0.1:${API_PORT}/..%2Fpackage.json`);
+    check('and a path climbing out of the site is not served', !(await climb.text()).includes('"name"'));
+  }
+
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
   check('no failed requests', badRequests.length === 0, badRequests.join(', ').slice(0, 200));
 

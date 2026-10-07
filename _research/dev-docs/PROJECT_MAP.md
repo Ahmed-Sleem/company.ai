@@ -15,7 +15,8 @@ company.ai/
 │   ├── company/                     schema, database client, the rules (repo), the demo seed
 │   └── gateway/                     the model-gateway client: adapters, registry, budget guard
 ├── services/                        the runnable servers
-│   ├── api/                         the HTTP surface the GUI talks to (Hono)
+│   ├── api/                         the HTTP surface the GUI talks to (Hono), and the built app
+│   │   src/static.ts                serving the app from the API — one service, one origin
 │   └── orchestrator/                P1+ — agent runs against the gateway
 ├── apps/web/                        the GUI (Vite + React): shell, seven views, components
 │   │   src/world/                   the studio plan: generated layout data, pure camera maths, art
@@ -24,6 +25,9 @@ company.ai/
 │   └── e2e/demo.mjs                 drives the standalone demo file off disk (7 checks)
 ├── demo/
 │   └── company-os-demo.html         GENERATED: the real GUI + its data + its API in one file
+├── Dockerfile                       the whole product in one container (any Docker host)
+├── render.yaml                      Render blueprint: one free web service, auto-deploy on push
+├── .github/workflows/demo-pages.yml publishes the demo file to GitHub Pages on every push
 ├── scripts/
 │   ├── verify.sh                    THE GATE — ten steps, run before every commit
 │   ├── gen-owner-data.mjs           reads the owner's demo → the icons and the plan (-—check = drift)

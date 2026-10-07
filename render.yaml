@@ -1,0 +1,24 @@
+# Deploy the whole product to Render, free, from this file.
+#
+#   Render dashboard → New → Blueprint → pick this repository → Apply
+#
+# One web service. It is the API, and it serves the built app from the same origin (see
+# services/api/src/static.ts), so there is exactly one URL to open and nothing to configure by hand.
+services:
+  - type: web
+    name: company-os
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: frankfurt        # nearest to Cairo of Render's free regions
+    branch: main
+    autoDeploy: true         # every push to main → a new deploy, automatically
+    healthCheckPath: /api/health
+    envVars:
+      - key: STATIC_DIR
+        value: /app/apps/web/dist
+      # Free instances have no persistent disk: the database lives in the container and is seeded
+      # again on each deploy. Demo data, so that is fine — set DATABASE_URL to keep real data.
+      - key: PGLITE_DIR
+        value: /app/.data/pglite

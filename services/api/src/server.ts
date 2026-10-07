@@ -2,8 +2,16 @@
  * The server: dev uses PGlite (no install), production uses DATABASE_URL.
  * Model calls go to the mock adapter unless provider keys are configured — so the product
  * always runs, and never spends money by accident.
+ *
+ * It also serves the built app when there is one (`STATIC_DIR`, or `apps/web/dist` if that exists),
+ * so the product is **one service**: one URL, one origin, no CORS, no second dashboard. See
+ * `static.ts` for why. An API-only run is the same command with no build present.
  */
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
+import { staticSite } from './static.js';
 import { createPgliteDb, createPgDb, seed } from '@company/company';
 import { createGateway, dbRegistry, mockAdapter, openAiCompatAdapter } from '@company/gateway';
 import { createApp } from './app.js';
@@ -44,8 +52,19 @@ if (baseUrl) {
 const gateway = createGateway({ db, registry: dbRegistry(db), adapters });
 const app = createApp({ db, gateway });
 
-serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
+// The API owns `/api/*`; everything else is the app, when a build is present.
+const staticDir = process.env.STATIC_DIR ?? (existsSync('apps/web/dist/index.html') ? 'apps/web/dist' : null);
+const root = new Hono();
+root.route('/', app);
+if (staticDir) root.use('*', staticSite(resolve(staticDir)));
+
+serve({ fetch: root.fetch, port, hostname: '0.0.0.0' }, (info) => {
   console.log(`[api] listening on http://0.0.0.0:${info.port}`);
+  if (staticDir) {
+    console.log(`[api] serving the built app from ${resolve(staticDir)} — open this port, not the dev server`);
+  } else {
+    console.log('[api] no build found (apps/web/dist) — API only; the app runs on the dev server');
+  }
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

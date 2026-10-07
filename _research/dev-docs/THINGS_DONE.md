@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-10-07 — deployable as one service, and the two free ways to see it live
+
+- **The product is now one service.** `services/api/src/static.ts` serves the built app from the API
+  (dependency-free: SPA fallback for addresses only the app knows, `/assets/*` immutable for a year,
+  `index.html` never cached, `/api/*` untouched, and a containment check so `..` cannot climb out).
+  `server.ts` mounts it when `STATIC_DIR` is set, or when `apps/web/dist` exists — so the same
+  command is API-only in development and the whole product when a build is present. No CORS: one
+  origin.
+- **Deployment wiring, in the repository:** `Dockerfile` (builds the app, runs the API, one port),
+  `.dockerignore`, `render.yaml` (Render blueprint: one free web service, Frankfurt, health check on
+  `/api/health`, auto-deploy from `main`), and `.github/workflows/demo-pages.yml` (publishes
+  `demo/company-os-demo.html` to GitHub Pages on every push; the owner flips Pages to "GitHub
+  Actions" once).
+- **Tested, observed failing first:** 7 new tests in `services/api/test/static.test.ts` (root is the
+  app, unknown address is the app, the API keeps its paths, cache policy, file types, traversal,
+  HEAD/POST). Drills: caching `index.html` like an asset → 1 failure as designed; the naive
+  `join(base, pathname)` → the traversal test fails as designed (with `normalize` alone it does NOT
+  fail — that is why the code keeps both locks and says so). Browser smoke grew to **63 checks**,
+  including five that open the API's own port and prove the deployed shape.
+- **Verified locally in the deployed shape:** API on one port serving the app + `/api`, world map
+  drawing 6 rooms / 16 desks / 21 props with the HUD reading the live API, and a task created through
+  the same origin.
+- **README** now has "Put it online (free)" — both paths click by click, what the free plan does
+  (15-minute sleep, ~30–60 s wake, re-seeded database), the `docker run` one-liner, and what
+  **nip.io** is and is not (DNS only; it cannot host anything; useful only for a machine with its own
+  public IP).
+- Searched and recorded: Render free (no card, sleeps), Northflank (always-on, card to verify),
+  Railway ($1/month credit), Koyeb free tier closed to new users (Feb 2026), Fly.io free allowances
+  ended Oct 2024, Hugging Face Docker Spaces now need a paid plan (Static Spaces still free).
+
 ## 2026-10-06 — the try-it path, verified on a clean clone
 
 - **`README.md` now answers "how do I run this?"** — three ways, in order: the one-file demo

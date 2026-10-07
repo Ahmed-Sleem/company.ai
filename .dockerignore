@@ -1,0 +1,12 @@
+# Nothing here is needed inside the image, and the build context should stay small.
+node_modules
+**/node_modules
+.git
+.gitignore
+.data
+**/dist
+**/.vite
+**/coverage
+**/__pycache__
+.cache
+.arena
