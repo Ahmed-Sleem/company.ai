@@ -738,3 +738,56 @@ h3 { font-size: var(--base); }
 .world-building .prop, .world-building .desk { cursor: move; }
 .prop-selected { outline: var(--app-stroke) solid var(--accent); outline-offset: 0; }
 .world-hint { font-size: var(--xs); }
+
+/* ── phones: the sidebar is a strip of icons, not a column ──────────────────────────────────────
+   What the owner saw on his phone: the shell kept the sidebar in its own grid row and only
+   flipped its direction, so the icon list — which had always been a column — stayed a column
+   inside a now-full-width box. Seven icons stacked into a ~370px wall, the page title sat under
+   it, and every screen looked broken.
+
+   The designer's demo solved this properly with a drawer under 800px. Until that drawer is built
+   (MINIMALISM_AUDIT A4), the rail here becomes a horizontal strip: one row of icons across the
+   top, scrollable sideways if it ever needs to be, labels put away, and the desktop-only rail
+   toggle hidden rather than left as a control that does nothing. */
+@media (max-width: 800px) {
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    overflow-x: auto;
+    border-inline-end: 0;
+    border-block-end: var(--app-hair) solid var(--line);
+  }
+  .sidebar .brand,
+  .sidebar .rail-toggle { display: none; }
+  .sidebar .navlist { flex-direction: row; gap: var(--s2); }
+  /* `.sidebar .navitem` matches the specificity of the collapsed-rail rule and comes later, so the
+     icon boxes keep a tap-sized target instead of collapsing to the rail's zero padding. */
+  .sidebar .navitem { min-block-size: var(--control); padding-inline: var(--s3); }
+  .sidebar .navlabel { display: none; }
+  .main { padding: var(--s3); }
+}
+
+/* The world's toolbar on a phone: six room names wrap into five rows and push the plan below the
+   fold, which is the opposite of a map you are supposed to look at. One swipeable row instead —
+   the same controls with the same words, just not stacked (the audit's C1 would go further and
+   replace them with a select; that is the owner's call). */
+@media (max-width: 800px) {
+  .world-hud { flex-wrap: nowrap; overflow-x: auto; padding-block-end: var(--s1); }
+  .world-hud .btn { flex-shrink: 0; }
+  .world-viewport { block-size: min(60dvh, var(--app-world-h)); }
+}
+
+@media (max-width: 800px) {
+  /* one line per control in the world toolbar, and four numbers that fit a phone */
+  .world-hud .btn { white-space: nowrap; }
+  .world-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s2);
+    padding: var(--s2);
+  }
+  .world-stats .stat { flex-direction: column; gap: 0; }
+  .world-stats .stat-label { font-size: var(--xs); }
+}

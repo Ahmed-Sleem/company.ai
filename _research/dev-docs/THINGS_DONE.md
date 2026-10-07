@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-10-07 — the phone was broken, and "the obsidian" was never in the app
+
+The owner opened the live link on his phone and called it corrupted. It was, and this is what it was:
+
+- **The sidebar was a 372px column of icons on a 390px screen.** The shell's small-screen rule
+  (`@media (max-width: 800px)`, step 4) moved the sidebar into its own grid row and flipped its
+  direction — but the icon list inside it had always been a column and stayed one, in a box that now
+  spanned the full width. Seven icons stacked down the screen and pushed every page's content below
+  the fold. **Proof it predates the world view:** that CSS block is byte-identical at `010d6d7`, the
+  commit before the world view — `git show 010d6d7:…app.css` vs today. It was never caused by the
+  world view; it was simply never opened at phone width, by anybody, until then.
+- Fixed in `app.css`: under 800px the sidebar is one horizontal strip (scrollable), labels put away,
+  the desktop-only rail toggle hidden, smaller page padding. Plus the world toolbar on one swipeable
+  row, a four-across stats strip, and `white-space: nowrap` on its buttons.
+- **Second real defect, found while fixing:** nav items had **no accessible name** when their label
+  was hidden — collapsed rail and the new phone strip both. `aria-label` + `title` now carry it.
+- **Checks, observed failing first** (three of five failed against the old build): the rail is one
+  strip (`row spread 300px · rail 372px` → `0px · 51px`), the screen's own heading is on the first
+  screenful (479px → 150px), and every icon-only nav item has a name (`["","","",…]` →
+  `["Team","Tasks",…]`). Two more checks passed from the start and were **tightened** once they were
+  seen passing for the wrong reason: the heading measured the top bar's `h1`, and the names fell back
+  to hidden `textContent`. Smoke now **68/68**.
+- **"The version that has the obsidian":** the app never had it. The force-directed, Obsidian-style
+  company graph is `design/prototype/graph.js` (1312 lines + `graph.css`, guarded by the prototype's
+  own 11-check gate) — the **design prototype**, not the product. The app's Network screen ships a
+  plain org tree with a note that says so. The engine is adaptable as-is: `buildGraph({agents, tasks,
+  threads, operator})` takes exactly what our API serves.
+- The prototype is now published beside the demo file, so it can be opened from anywhere:
+  `<pages>/prototype/`.
+
 ## 2026-10-07 — deployable as one service, and the two free ways to see it live
 
 - **The product is now one service.** `services/api/src/static.ts` serves the built app from the API

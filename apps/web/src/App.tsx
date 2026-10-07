@@ -186,6 +186,11 @@ export function App() {
                   type="button"
                   className="navitem"
                   data-nav={item.id}
+                  // The label is hidden on the collapsed rail and on a phone, and a hidden element
+                  // leaves the accessibility tree — so the name is carried by the attribute, which
+                  // is what a screen reader and a hover tooltip both read.
+                  aria-label={lang === 'ar' ? item.labelAr : item.label}
+                  title={lang === 'ar' ? item.labelAr : item.label}
                   aria-current={view === item.id ? 'page' : undefined}
                   onClick={() => navigate(item.id)}
                 >

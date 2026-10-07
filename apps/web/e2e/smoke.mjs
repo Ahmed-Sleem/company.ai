@@ -16,7 +16,7 @@
 import { spawn } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { chromium } from 'playwright';
+import { chromium, devices } from 'playwright';
 
 // Deliberately NOT the development ports (8787/5173): a smoke test must talk to the servers
 // it started itself. Sharing a port with a running dev server silently tested the wrong app.
@@ -588,6 +588,48 @@ try {
   check('the decision shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
   // 7 — hygiene
+  // 5h — a phone. The owner opened the live link on his and it was unusable: the sidebar kept its
+  // column of icons but lost its width, so every icon stacked into a ~1000px strip and pushed the
+  // screen off the bottom. These checks hold the fix in place.
+  {
+    const phone = await browser.newPage({ ...devices['iPhone 13'] });
+    await phone.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
+    await phone.waitForSelector('[data-nav]', { timeout: 15_000 });
+    const layout = await phone.evaluate(() => {
+      const items = [...document.querySelectorAll('[data-nav]')].map((n) => n.getBoundingClientRect());
+      const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
+      // the *screen's* heading, not the top bar's — the top bar's h1 is always at the top, which
+      // made an earlier version of this check pass while the content sat below the fold
+      const heading = document.querySelector('.main h1, .main h2, .pagehead')?.getBoundingClientRect() ?? null;
+      return {
+        navRow: Math.max(...items.map((r) => r.top)) - Math.min(...items.map((r) => r.top)),
+        sidebarHeight: Math.round(sidebar.height),
+        headingTop: heading ? Math.round(heading.top) : null,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        // the attribute, not `textContent`: the label is `display:none` when it is hidden, so its
+        // text is in the DOM but gone from the accessibility tree — textContent was a false pass
+        names: [...document.querySelectorAll('[data-nav]')].map((n) => n.getAttribute('aria-label') ?? ''),
+      };
+    });
+    check('the sidebar is one strip across a phone, not a column of icons',
+      layout.navRow < 8 && layout.sidebarHeight < 160, `row spread ${Math.round(layout.navRow)}px · rail ${layout.sidebarHeight}px`);
+    check('so the screen itself starts on the first screenful',
+      layout.headingTop !== null && layout.headingTop < 400, `heading at ${layout.headingTop}px`);
+    check('and nothing runs off the side of a phone', layout.overflow <= 2, `overflow ${layout.overflow}px`);
+    check('an icon-only item can still say what it is',
+      layout.names.every((name) => name.length > 1), JSON.stringify(layout.names));
+
+    await phone.goto(`http://127.0.0.1:${WEB_PORT}/#world`, { waitUntil: 'networkidle' });
+    await phone.waitForSelector('[data-desk]', { timeout: 15_000 });
+    const map = await phone.evaluate(() => {
+      const viewport = document.querySelector('[data-world=viewport]').getBoundingClientRect();
+      return { height: Math.round(viewport.height), desks: document.querySelectorAll('[data-desk]').length };
+    });
+    check('the floor plan fits a phone screen', map.desks === 16 && map.height <= 700, `${map.desks} desks in ${map.height}px`);
+    await phone.screenshot({ path: '/home/user/work/.data/shots/phone-world.png' });
+    await phone.close();
+  }
+
   // 5g — the deployed shape: ONE port that is both the API and the app
   {
     const root = await fetch(`http://127.0.0.1:${API_PORT}/`);
