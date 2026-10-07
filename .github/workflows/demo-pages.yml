@@ -30,10 +30,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/configure-pages@v6
-      - name: Put the demo at the root of the site
+      - name: Put the demo at the root, and the designer's prototype beside it
         run: |
           mkdir -p site
           cp demo/company-os-demo.html site/index.html
+          # The design prototype — the designer's demo plus the force-directed company graph
+          # (design/prototype/graph.js, the "Obsidian-style" view), which the app's Network screen
+          # does not have yet. Published read-only so it can be opened from anywhere while that
+          # port is done. Never edited: design/prototype/verify.mjs guards it.
+          mkdir -p site/prototype
+          cp design/prototype/company-os.html site/prototype/index.html
+          cp design/prototype/company-os.html site/prototype/company-os.html
+          cp design/prototype/graph.css design/prototype/graph.js design/prototype/prototype-changes.css site/prototype/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
