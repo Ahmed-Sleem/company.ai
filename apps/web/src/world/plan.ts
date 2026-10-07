@@ -6,9 +6,10 @@
  * where is this point, which desks belong to a department, what does this sprite look like.
  */
 import { DESKS, SPRITES, WORLD, defaultPlan, sprite, type Desk, type Plan, type Prop, type Room } from './layout.data';
-import { shapeFor, type ShapeName } from './art';
+import { shapeFor, type ShapeName } from './prop-paths';
 
 export { WORLD, SPRITES, sprite, shapeFor };
+export { defaultPlan } from './layout.data';
 export type { Desk, Plan, Prop, Room, ShapeName };
 
 /**

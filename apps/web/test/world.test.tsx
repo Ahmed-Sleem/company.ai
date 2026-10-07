@@ -7,7 +7,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  EASE, SCALE_LADDER, SCALE_MAX, SCALE_MIN, cameraTransform, centreOn, clampCamera, clampScale, ease,
+  EASE, FIT_MIN_SCALE, SCALE_LADDER, SCALE_MAX, SCALE_MIN, cameraTransform, centreOn, clampCamera, clampCameraForZoom,
+  clampScale, ease,
   fitCamera, nextRung, panBy, toPlan, toScreen, wheelFactor, zoomBy,
 } from '../src/world/camera';
 import { DEFAULT_LAYOUT, SPRITES, desksOf, propShape, roomAt, snap, sprite } from '../src/world/plan';
@@ -56,9 +57,33 @@ describe('the camera', () => {
     expect(EASE).toBeGreaterThan(0.05);
   });
 
+  /**
+   * The plan is 1920×1200. On a 390px phone the only fit that shows all of it is ≈0.17 — below the
+   * ladder's own floor of 0.5, which exists for what a *hand* does, not for "show me everything".
+   * Found by design/prototype/probe-browser.mjs, which measured 4 of 22 rooms and desks inside the
+   * stage at 320px: the fit was clamped, so "Whole plan" showed a corner of the studio.
+   */
+  it('a phone can see the whole plan — the fit is allowed below the ladder', () => {
+    for (const [w, h] of [[320, 341], [390, 506], [428, 600], [1440, 640]] as const) {
+      const camera = fitCamera(w, h);
+      const right = toScreen(camera, 1920, 1200);
+      expect(right.x).toBeLessThanOrEqual(w + 0.5);
+      expect(right.y).toBeLessThanOrEqual(h + 0.5);
+      expect(camera.scale).toBeGreaterThanOrEqual(FIT_MIN_SCALE);
+    }
+    /* And the owner's ladder itself has not moved. The hard floor is separate from it so that a
+       hand can zoom around a fitted scale of 0.17 without being yanked up to 0.5: the *steps*
+       still walk 0.5 · 1 · 2 · 3. */
+    expect([...SCALE_LADDER]).toEqual([0.5, 1, 2, 3]);
+    expect(clampScale(0.2)).toBe(0.2);
+    expect(clampScale(0.01)).toBe(SCALE_MIN);
+    expect(nextRung(0.17, 1)).toBe(0.5);
+    expect(FIT_MIN_SCALE).toBeLessThan(0.5);
+  });
+
   it('the whole plan fits the viewport, and the fit is centred', () => {
     const camera = fitCamera(1000, 700);
-    expect(camera.scale).toBeGreaterThanOrEqual(SCALE_MIN); // the ladder's floor is 0.5
+    expect(camera.scale).toBeGreaterThanOrEqual(FIT_MIN_SCALE)
     expect(camera.scale).toBeLessThanOrEqual(SCALE_MAX);
     const left = toScreen(camera, 0, 0);
     const right = toScreen(camera, 1920, 1200);
@@ -76,6 +101,43 @@ describe('the camera', () => {
     const other = clampCamera({ scale: 2, x: 99999, y: 99999 }, 1000, 700);
     expect(other.x).toBeLessThanOrEqual(80);
     expect(other.y).toBeLessThanOrEqual(80);
+  });
+
+  /**
+   * Two defects the browser smoke found in the camera, both about *where* the plan is allowed to
+   * sit. Neither was visible while the fit happened to land on a round number.
+   *
+   *   1. when the plan is smaller than the viewport, the corner rule inverted itself and pinned the
+   *      plan to `slack` px from the left instead of letting it rest centred — zooming out far
+   *      slammed the studio into the top-left corner;
+   *   2. an anchored zoom near the plan's left edge asks for a position the strict pan bound
+   *      refuses, so the point under the pointer slid (13.7 plan units on the smoke's own wheel
+   *      gesture). A pan can lose the plan and is bounded tightly; a zoom is anchored and may
+   *      overshoot while the user is looking at a place.
+   */
+  it('a plan smaller than the view rests centred, and a zoom near an edge is not fought', () => {
+    // 1 — smaller than the view: centred, whatever it is asked for
+    const tiny = { scale: 0.25, x: 99999, y: -99999 };
+    const settled = clampCamera(tiny, 1000, 700);
+    expect(settled.x).toBeCloseTo((1000 - 1920 * 0.25) / 2, 5);
+    expect(settled.y).toBeCloseTo((700 - 1200 * 0.25) / 2, 5);
+
+    // and it is still bounded when the plan is larger than the view (the pan rule is unchanged)
+    const far = clampCamera({ scale: 2, x: -99999, y: -99999 }, 1000, 700);
+    expect(far.x).toBeGreaterThanOrEqual(1000 - 1920 * 2 - 80);
+    expect(clampCamera({ scale: 2, x: 99999, y: 99999 }, 1000, 700).x).toBeLessThanOrEqual(80);
+
+    // 2 — the zoom bound is looser than the pan bound, and the anchor survives
+    const view = { width: 1130, height: 630 };
+    const start = fitCamera(view.width, view.height);
+    const pointer = { x: 120, y: 90 };
+    const anchor = toPlan(start, pointer.x, pointer.y);
+    const zoomed = zoomBy(start, 1.468, pointer.x, pointer.y);
+    const land = clampCameraForZoom(zoomed, view.width, view.height);
+    const anchorAfter = toPlan(land, pointer.x, pointer.y);
+    expect(Math.abs(anchorAfter.x - anchor.x)).toBeLessThan(2);
+    // ...while a pan in the same situation is still held to the tight bound
+    expect(clampCamera({ scale: zoomed.scale, x: 5000, y: 0 }, view.width, view.height).x).toBeLessThanOrEqual(80);
   });
 
   it('a wheel on any device moves the zoom by a comparable amount', () => {

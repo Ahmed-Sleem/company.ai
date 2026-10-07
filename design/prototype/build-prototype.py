@@ -10,6 +10,10 @@ set of patches so the prototype is reproducible instead of hand-edited:
   P3  graph.js is loaded before the demo's own script (it defines window.graphView and
       installs the enhancement observer before the first render)
   P4  an HTML comment records the provenance of the build
+  P5  the world becomes the seventh tab: a NAV entry, a sidebar button, a dispatch entry and
+      its Arabic name in the demo's dictionary
+  P6  world.css is linked beside graph.css, and world-lib.js + world.js are loaded before the
+      app script (world-lib.js is the app's own world code, bundled by build-world-lib.mjs)
 
 Every patch is exact-match and counted: if the demo changes, the build fails loudly rather
 than producing a half-patched file.
@@ -89,6 +93,64 @@ def patch_marker(src: str) -> str:
     return src[:m.end()] + "\n" + MARKER + src[m.end():]
 
 
+def patch_world_tab(src: str) -> str:
+    """P5 — the world tab: dictionary, NAV entry, sidebar button, view dispatch.
+
+    Four exact-match edits, each counted, so a demo change fails the build instead of quietly
+    producing a prototype with a tab that navigates nowhere.
+
+      a) the demo's own words gain the tab's Arabic name — English passes through `t()` as-is;
+      b) NAV gains the entry, appended (the shell renders NAV[4] and NAV[5] by index, so
+         inserting in the middle would move Settings out of the sidebar);
+      c) the sidebar renders it next to Settings, which is where the app puts it too;
+      d) `render()` dispatches it to `window.worldView` — a bare `worldView` would work, but the
+         `typeof` guard is the same shape P1 uses for graphView: if world.js ever fails to load,
+         the tab degrades to the network view instead of throwing on navigation.
+    """
+    edits = [
+        ("dictionary",
+         "Network|الشبكة\nSettings|",
+         "Network|الشبكة\nWorld Map|خريطة المكتب\nSettings|"),
+        ("NAV entry",
+         "['network','Network','network'],",
+         "['network','Network','network'],['world','World Map','grid'],"),
+        ("sidebar button",
+         "${navButton(NAV[5])}",
+         "${navButton(NAV[5])}${navButton(NAV[6])}"),
+        ("view dispatch",
+         "network:networkView,settings:settingsView}",
+         "network:networkView,world:(typeof window.worldView==='function'?window.worldView:networkView),settings:settingsView}"),
+    ]
+    for label, old, new in edits:
+        if src.count(old) != 1:
+            raise SystemExit(f"P5 failed ({label}): expected exactly one '{old[:40]}', found {src.count(old)}.")
+        src = src.replace(old, new, 1)
+    return src
+
+
+def patch_world_assets(src: str) -> str:
+    """P6 — world.css beside the other two stylesheets, and the two world scripts before the app.
+
+    world-lib.js first: it is the shared world code from the app (`scripts/build-world-lib.mjs`),
+    and world.js reads it at use time. The order is a courtesy, not a requirement — but reading it
+    in the file the way it runs is what keeps this readable.
+    """
+    css_old = 'href="prototype-changes.css"></head>'
+    css_new = 'href="prototype-changes.css"><link rel="stylesheet" href="world.css"></head>'
+    if src.count(css_old) != 1:
+        raise SystemExit("P6 failed (stylesheet): prototype-changes.css link not found exactly once.")
+    src = src.replace(css_old, css_new, 1)
+
+    js_old = '<script src="graph.js"></script>'
+    js_new = ('<script src="world-lib.js"></script>\n'
+              '<script src="graph.js"></script>\n'
+              '<script src="world.js"></script>')
+    if src.count(js_old) != 1:
+        raise SystemExit("P6 failed (scripts): the graph.js script tag is missing (run P3 first).")
+    return src.replace(js_old, js_new, 1)
+
+
+
 def main() -> int:
     argv = sys.argv[1:]
     check = "--check" in argv
@@ -102,6 +164,8 @@ def main() -> int:
     src = patch_head(src)
     src = patch_script(src)
     src = patch_marker(src)
+    src = patch_world_tab(src)
+    src = patch_world_assets(src)
 
     checks = {
         "networkView patched": "PATCHED (build-prototype.py)" in src and "function networkView(){" in src,
@@ -112,6 +176,13 @@ def main() -> int:
         "provenance marker": MARKER.splitlines()[0] in src,
         "settings view intact": "function settingsView(" in src,
         "no duplicate networkView": src.count("function networkView(){") == 1,
+        "world tab in NAV": "['world','World Map','grid']," in src,
+        "world tab in the sidebar": "${navButton(NAV[6])}" in src,
+        "world tab dispatched": "window.worldView" in src,
+        "world tab translated": "World Map|خريطة المكتب" in src,
+        "world.css linked": 'href="world.css"' in src,
+        "world-lib.js loaded": '<script src="world-lib.js"></script>' in src,
+        "world.js loaded": '<script src="world.js"></script>' in src,
     }
     bad = [k for k, v in checks.items() if not v]
     print(f"demo   : {DEMO.name}  ({len(original):,} bytes)")

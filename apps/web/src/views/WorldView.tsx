@@ -26,63 +26,15 @@ import { Icon } from '../components/Icon';
 import { Panel } from '../components/Panel';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
+import { seatAgents, type Seat } from '../world/seat';
 import { defaultPlan, sprite, type Desk, type Plan, type Room } from '../world/layout.data';
 import { WORLD, roomAt, shapeFor, snap } from '../world/plan';
 import {
-  LADDER, cameraTransform, centreOn, clampCamera, ease, fitCamera, nextRung, panBy, toPlan,
-  wheelFactor, zoomAbout, zoomBy, zoomByCentre, type Camera,
+  LADDER, cameraTransform, centreOn, clampCamera, clampCameraForZoom, ease, fitCamera, nextRung, panBy,
+  toPlan, wheelFactor, zoomAbout, zoomBy, zoomByCentre, type Camera,
 } from '../world/camera';
 
 type AgentRow = Awaited<ReturnType<typeof api.agents>>['agents'][number];
-
-export interface Seat {
-  desk: Desk;
-  agent: AgentRow | null;
-  tasks: TaskRow[];
-  working: boolean;
-}
-
-/**
- * Seat people at desks — in three passes over the whole floor rather than one pass per desk.
- *
- *   1. everyone to a desk of **their own department**;
- *   2. whoever is left to a desk whose **room theme** matches what they do;
- *   3. whoever is still left to **any** free desk.
- *
- * The order is the point. A single pass that falls back early seats an engineer at the first free
- * desk — the executive wing — while their own lab stands empty; the browser showed exactly that
- * before this was rewritten.
- */
-export function seatAgents(plan: Plan, agents: AgentRow[], tasks: TaskRow[]): Seat[] {
-  const byDesk = new Map<string, AgentRow | null>(plan.desks.map((desk) => [desk.id, null]));
-  const free = [...agents];
-  const take = (desk: Desk, match: (agent: AgentRow, desk: Desk) => boolean) => {
-    if (byDesk.get(desk.id)) return;
-    const found = free.find((agent) => match(agent, desk));
-    if (!found) return;
-    byDesk.set(desk.id, found);
-    free.splice(free.indexOf(found), 1);
-  };
-  const themed = (agent: AgentRow, desk: Desk) => {
-    const dept = (agent.department ?? '').toLowerCase();
-    const room = desk.dept.toLowerCase();
-    if (dept.includes('lead') || dept.includes('exec')) return room === 'executive';
-    if (dept.includes('engineer') || dept.includes('model')) return room === 'engineering';
-    if (dept.includes('design') || dept.includes('product')) return room === 'design';
-    if (dept.includes('operat') || dept.includes('growth')) return room === 'operations';
-    return false;
-  };
-
-  for (const desk of plan.desks) take(desk, (agent, at) => (agent.department ?? '') === at.dept);
-  for (const desk of plan.desks) take(desk, themed);
-  for (const desk of plan.desks) take(desk, () => true);
-
-  return plan.desks.map((desk) => {
-    const agent = byDesk.get(desk.id) ?? null;
-    const mine = agent ? tasks.filter((task) => task.ownerAgentId === agent.id) : [];
-    return { desk, agent, tasks: mine, working: mine.some((task) => task.stage === 'progress') };
-  });
-}
 
 const money = (cents: number) => (cents / 100).toFixed(2);
 
@@ -172,11 +124,17 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     target.current = clampCamera(next, box.width, box.height);
     run();
   }, [run]);
+  /** A zoom keeps the point under the pointer: the looser bound is what lets it. */
+  const aimZoom = useCallback((next: Camera) => {
+    const box = boxOf();
+    target.current = clampCameraForZoom(next, box.width, box.height);
+    run();
+  }, [run]);
 
   const onWheel = (event: React.WheelEvent) => {
     const box = boxOf();
     const factor = wheelFactor(event.deltaY, event.deltaMode, event.ctrlKey);
-    aim(zoomBy(target.current, factor, event.clientX - box.left, event.clientY - box.top));
+    aimZoom(zoomBy(target.current, factor, event.clientX - box.left, event.clientY - box.top));
   };
 
   /**
@@ -243,7 +201,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   const zoom = (factor: number) => {
     const box = boxOf();
-    aim(zoomByCentre(target.current, factor, box.width, box.height));
+    aimZoom(zoomByCentre(target.current, factor, box.width, box.height));
   };
 
   const onKeyDown = (event: React.KeyboardEvent) => {
@@ -254,9 +212,9 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       ArrowRight: () => aim(panBy(target.current, -step, 0)),
       ArrowUp: () => aim(panBy(target.current, 0, step)),
       ArrowDown: () => aim(panBy(target.current, 0, -step)),
-      '+': () => aim(zoomAbout(target.current, nextRung(target.current.scale, 1), box.width / 2, box.height / 2)),
-      '=': () => aim(zoomAbout(target.current, nextRung(target.current.scale, 1), box.width / 2, box.height / 2)),
-      '-': () => aim(zoomAbout(target.current, nextRung(target.current.scale, -1), box.width / 2, box.height / 2)),
+      '+': () => aimZoom(zoomAbout(target.current, nextRung(target.current.scale, 1), box.width / 2, box.height / 2)),
+      '=': () => aimZoom(zoomAbout(target.current, nextRung(target.current.scale, 1), box.width / 2, box.height / 2)),
+      '-': () => aimZoom(zoomAbout(target.current, nextRung(target.current.scale, -1), box.width / 2, box.height / 2)),
       '0': () => jumpTo(null),
       Delete: () => deleteSelected(),
       Backspace: () => deleteSelected(),
@@ -521,3 +479,5 @@ function roomNameAt(plan: Plan, desk: Desk, lang: Lang) {
 }
 
 export { LADDER };
+export { seatAgents };
+export type { Seat };

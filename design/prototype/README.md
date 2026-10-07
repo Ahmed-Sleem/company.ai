@@ -1,8 +1,12 @@
-# `design/prototype/` — the app prototype (the demo + the small changes + the network view)
+# `design/prototype/` — the app prototype (the demo + the small changes + the network and world views)
 
 Open **`company-os.html`** in a browser. It is the designer's demo, unchanged in look and structure,
-with the change request from `../../_research/17-demo-review.md` applied and the reserved Network
-page replaced by a working company graph in the same pixel style.
+with the change request from `../../_research/17-demo-review.md` applied, the reserved Network page
+replaced by a working company graph in the same pixel style, and a **World Map** tab that draws the
+owner's studio floor plan — the same plan, people and camera the app's own world view uses (the app
+is the source of that code, not this folder; see `world-lib.js` below).
+
+Two views, both reachable by address: `company-os.html#network` and `company-os.html#world`.
 
 Live preview: `http://<sandbox>:8080/prototype/company-os.html` (the folder is served as-is).
 
@@ -11,12 +15,15 @@ Live preview: `http://<sandbox>:8080/prototype/company-os.html` (the folder is s
 | File | What it is |
 |---|---|
 | `company-os.html` | **The prototype.** Generated — do not hand-edit (the gate checks it against a fresh build) |
-| `build-prototype.py` | Regenerates it from the demo with four counted, exact-match patches (`--check`, `--out PATH`) |
+| `build-prototype.py` | Regenerates it from the demo with six counted, exact-match patch groups (`--check`, `--out PATH`) |
 | `graph.js` | Network view: model, force/rings layout, SVG render, interaction, persistence, keyboard, list mode + the enhancement layer |
 | `graph.css` | Its styling — tokens only, logical properties, no data animation |
 | `prototype-changes.css` | The change-request items that are pure CSS (one block per item) |
-| `verify.mjs` | The gate: `node design/prototype/verify.mjs` (11 checks, no dependencies) |
-| `probe-browser.mjs` | The **browser** half: `node design/prototype/probe-browser.mjs` (7 checks — viewport matrix, graph framing/clipping, page overflow, touch targets, contrast, focus). Needs `playwright` |
+| `world.js` | World Map tab: the view, its toolbar, the desk drawer and the gestures. Draws with `world-lib.js` |
+| `world.css` | Its styling — tokens only, logical properties, geometry in `--w-*` tokens |
+| `world-lib.js` | **Generated.** The app's own world code (`apps/web/src/world/*.ts` — camera, plan, furniture, seating) bundled for a plain script. Rebuild: `node scripts/build-world-lib.mjs` |
+| `verify.mjs` | The gate: `node design/prototype/verify.mjs` (15 checks, no dependencies) |
+| `probe-browser.mjs` | The **browser** half: `node design/prototype/probe-browser.mjs` (11 checks — viewport matrix, graph framing/clipping, world framing, page overflow, touch targets, contrast, focus, eased camera, reduced motion). Needs `playwright` |
 | `index.html` | The earlier dependency-free scaffold (kept for reference; superseded by `company-os.html`) |
 
 ## What the prototype changes (and why)
@@ -36,6 +43,29 @@ Live preview: `http://<sandbox>:8080/prototype/company-os.html` (the folder is s
 | A4 | The network view | Done — see below | `graph.js`, `graph.css` |
 | A5 | The state seam is preserved | Done — the Network page honours the demo's `default / loading / empty / error / restricted` preview | `graph.js` `graphView` |
 | A6 | One global create action | Done — topbar “+ New” (task / employee / conversation) | `graph.js` `addTopbarNew` |
+
+## The world tab
+
+The seventh tab — `#world` — is the owner's studio floor plan: six rooms, sixteen desks,
+twenty-one pieces of furniture, everyone seated by department, and a desk drawer with one person's
+day in it.
+
+- **It is not a copy of the app's world.** The shared half — the camera maths, the plan and its
+  sprites, the seating rule — lives once, in `apps/web/src/world/*.ts`, and is bundled to
+  `world-lib.js` by `scripts/build-world-lib.mjs` (checked by the main gate, so the two can never
+  drift). `world.js` is only the drawing and the gestures. When the app adopts this design, that
+  file is already the same code.
+- **The camera is gentle by construction:** the wheel, the buttons, the room jumps and the keyboard
+  move a *target*, and the frame loop walks the camera toward it — one continuous movement instead
+  of a jump per event, corrected for the frame rate so a 120 Hz phone and a 30 fps laptop take the
+  same third of a second. A drag and a pinch are 1:1 (they are the hand, not an animation), a
+  released drag glides and decays, and `prefers-reduced-motion` turns every glide into an arrival.
+- **The fit may go below the ladder.** The plan is 1920×1200; a 390px phone can only show all of it
+  at ≈0.17, so a fit clamped to the ladder's 0.5 showed a corner of the studio and called it "Whole
+  plan". A *fit* may go to 0.1; what a hand zooms with still stops at the ladder's 0.5.
+- **Two bounds, not one.** A pan is bounded tightly (80px past either edge) because a pan can lose
+  the plan; a zoom is anchored on the pointer and gets a looser bound, because the strict one moved
+  the very point the user was pointing at.
 
 ## The network view
 

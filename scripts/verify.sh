@@ -13,8 +13,9 @@
 #   6. repo checks         — raw values, logical properties, build context, licences, docs
 #   7. build               — the production web build (this is what gets served)
 #   8. demo file           — the standalone demo still matches that build (no browser needed)
-#   9. design gate         — the designer's own prototype still passes its 11 checks
-#  10. browser smoke       — real Chromium against the real API (58 checks)
+#   9. design gate         — the designer's own prototype still passes its 15 checks (the world tab
+#                            and the camera's movement included)
+#  10. browser smoke       — real Chromium against the real API (68 checks)
 #
 # The design gate (8) always runs: it needs no browser. Step 9 needs Chromium and prints the
 # three commands that install it if it is missing; every other step is required.
@@ -65,9 +66,10 @@ socket.on('error', () => process.exit(1));
 fi
 
 run "1/9 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
-run "2/10 generated files in sync (tokens · the owner's data)" bash -c '
+run "2/10 generated files in sync (tokens · the owner's data · the prototype's world code)" bash -c '
   node packages/tokens/src/generate.mjs --check || exit 1
-  node scripts/gen-owner-data.mjs --check'
+  node scripts/gen-owner-data.mjs --check || exit 1
+  node scripts/build-world-lib.mjs --check'
 run "3/10 lint" npx oxlint
 run "4/10 database, gateway, API and contract tests" npx vitest run
 run "5/10 web app tests (shell, states, RTL, world, icons)" npm test -w @company/web --silent

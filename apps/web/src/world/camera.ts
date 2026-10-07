@@ -11,7 +11,9 @@
  *   · **zoom that stays where you are looking** — `zoomAbout()` keeps the plan point under the
  *     pointer fixed, so the thing you point at does not slide away.
  *
- * The ladder is the owner's: 0.5 · 1 · 2 · 3.
+ * The ladder is the owner's: 0.5 · 1 · 2 · 3 — that is what the stepped controls walk, and what a
+ * hand lands on. The only scale that may go below it is a *fit* (FIT_MIN_SCALE): "show me the whole
+ * plan" has to be able to, even on a phone.
  */
 import { WORLD } from './layout.data';
 
@@ -23,8 +25,18 @@ export interface Camera {
   y: number;
 }
 
-export const MIN_SCALE = 0.5;
+/**
+ * The floor a *fit* is allowed to reach.
+ *
+ * The plan is 1920×1200. A 390px phone can only show all of it at ≈0.17, so a fit clamped to the
+ * ladder's own floor of 0.5 showed a corner of the studio and called it "Whole plan" — measured on
+ * the prototype at 320px: 4 of 22 rooms and desks were inside the stage. Showing everything is what
+ * that control promises, so a fit may go below the ladder; a hand may not (see MIN_SCALE).
+ */
+export const FIT_MIN_SCALE = 0.1;
+export const MIN_SCALE = 0.1;
 export const MAX_SCALE = 3;
+/** What the *steps* are: the owner's ladder. `nextRung` walks these, and the floor here is 0.5. */
 export const LADDER = [0.5, 1, 2, 3] as const;
 export const SCALE_MIN = MIN_SCALE;
 export const SCALE_MAX = MAX_SCALE;
@@ -36,6 +48,10 @@ export const EASE = 0.18;
 export const clampScale = (scale: number) =>
   Number.isFinite(scale) ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale)) : 1;
 
+/** The floor a fit may reach — below the ladder, never below what is legible. */
+export const clampFitScale = (scale: number) =>
+  Number.isFinite(scale) ? Math.min(MAX_SCALE, Math.max(FIT_MIN_SCALE, scale)) : 1;
+
 /**
  * The camera that shows the whole plan inside `width × height`, centred, with a margin.
  * The plan is never cropped by a fit: the scale is chosen from the smaller of the two ratios.
@@ -43,7 +59,7 @@ export const clampScale = (scale: number) =>
 export function fitCamera(width: number, height: number, margin = 24): Camera {
   const usable = Math.max(1, width - margin * 2);
   const usableH = Math.max(1, height - margin * 2);
-  const scale = clampScale(Math.min(usable / WORLD.w, usableH / WORLD.h));
+  const scale = clampFitScale(Math.min(usable / WORLD.w, usableH / WORLD.h));
   return {
     scale,
     x: (width - WORLD.w * scale) / 2,
@@ -80,6 +96,21 @@ export const zoomByCentre = (camera: Camera, factor: number, width: number, heig
   zoomAbout(camera, camera.scale * factor, width / 2, height / 2);
 
 /**
+ * One axis of the floor rule, in three cases rather than one.
+ *
+ *   1. **The plan is smaller than the view** — there is nothing to explore, so it rests centred.
+ *      This case used to fall through to the rule below, whose two bounds *invert* when the content
+ *      is smaller than the view: `Math.min(slack, …)` then always won and pinned the studio to the
+ *      top-left corner. Measured: zooming out past the fit slammed the plan into the corner.
+ *   2. **The plan is larger than the view** (a pan) — it may go `slack` px past either edge, no more,
+ *      so the floor can never be dragged out of reach.
+ */
+function clampAxis(view: number, content: number, position: number, slack: number): number {
+  if (content + slack * 2 <= view) return (view - content) / 2;
+  return Math.min(slack, Math.max(view - content - slack, position));
+}
+
+/**
  * Keep the plan within reach: after a pan or a zoom-out, the floor is never dragged off-screen.
  * Allowed to go 80 px past either edge, which is enough to park a wall against the side of the view.
  */
@@ -88,9 +119,23 @@ export function clampCamera(camera: Camera, width: number, height: number, slack
   const h = WORLD.h * camera.scale;
   return {
     scale: camera.scale,
-    x: Math.min(slack, Math.max(width - w - slack, camera.x)),
-    y: Math.min(slack, Math.max(height - h - slack, camera.y)),
+    x: clampAxis(width, w, camera.x, slack),
+    y: clampAxis(height, h, camera.y, slack),
   };
+}
+
+/**
+ * The looser bound a **zoom** gets, because a zoom is anchored and a pan is not.
+ *
+ * When the pointer is near an edge of the plan, holding the point under it still means the plan's
+ * edge comes *further in* than the pan rule allows — so the strict bound quietly moves the very
+ * thing the user was pointing at (the smoke gesture slid 13.7 plan units). The allowance is a third
+ * of the view, capped: enough for an anchored zoom, too small to lose the studio. Any pan afterwards
+ * pulls the plan back inside the strict bound.
+ */
+export function clampCameraForZoom(camera: Camera, width: number, height: number): Camera {
+  const slack = Math.min(240, Math.max(80, width / 3));
+  return clampCamera(camera, width, height, slack);
 }
 
 export const panBy = (camera: Camera, dx: number, dy: number): Camera => ({

@@ -30,7 +30,7 @@ const PROTOTYPE = pathToFileURL(resolve(HERE, 'company-os.html')).href;
 const results = [];
 const notChecked = [
   'screen-reader announcement order (needs a screen reader, not a headless engine)',
-  'gesture feel (drag inertia, pinch zoom) on a real device',
+  'touch gestures on real glass (a synthesised two-finger pinch is checked here, a thumb is not)',
   'forced-colors / high-contrast mode rendering',
   'long-session behaviour: storage growth, repeated layout resets',
 ];
@@ -48,14 +48,22 @@ const VIEWPORTS = [
   { w: 1920, h: 1080, label: '1920x1080' },
 ];
 
-/** Wait until the layout engine has stopped moving the nodes. */
+/**
+ * Wait until nothing on screen is moving: the nodes *and* the camera.
+ *
+ * The node positions alone are not enough — a camera glide moves every node on screen without
+ * changing a single node coordinate, so this used to report "settled" in the middle of a fit and
+ * the geometry checks below then measured a half-travelled view and called it clipping.
+ */
 async function settled(page, timeout = 8000) {
   await page.waitForFunction(() => {
     const svg = document.querySelector('#g-canvas');
-    if (!svg || !svg.__lastPos) return false;
-    const now = [...document.querySelectorAll('.g-node')].map(n => n.getAttribute('transform')).join('|');
-    const still = now === svg.__lastPos;
-    svg.__lastPos = now;
+    const vp = svg && svg.querySelector('#g-viewport');
+    if (!svg || !vp) return false;
+    const state = [...document.querySelectorAll('.g-node')].map(n => n.getAttribute('transform')).join('|') +
+      '::' + vp.getAttribute('transform');
+    const still = state === svg.__lastState;
+    svg.__lastState = state;
     return still;
   }, null, { timeout, polling: 250 }).catch(() => {});
 }
@@ -294,6 +302,124 @@ check('focus: the first tab stops draw a visible focus ring',
   noRing.length === 0 && focusTrail.filter(Boolean).length >= 4,
   noRing.length ? `${noRing.length} stop(s) without a ring: ` + noRing.map(f => f.tag + ' ' + f.text).join(', ')
                 : focusTrail.filter(Boolean).map(f => f.tag + (f.text ? ' ' + f.text : '')).join(' → '));
+
+/* 7 — the world tab: the same viewport matrix, on the new surface --------------------------- */
+/**
+ * The world tab is opened by address, not by clicking the sidebar: under 800px the demo keeps its
+ * navigation behind a drawer button, so a click is a different gesture at every width. The demo
+ * reads `location.hash` at boot (the same route a bookmark uses), which is one gesture everywhere.
+ */
+async function openWorld(page) {
+  /* about:blank first: navigating to the same document with a different fragment is a
+     same-document navigation, and the demo (correctly) does not listen for hash changes — the
+     fragment is read once, at boot. Leaving the document forces that boot to happen. */
+  await page.goto('about:blank');
+  await page.goto(PROTOTYPE + '#world', { waitUntil: 'load' });
+  await page.waitForSelector('#world-viewport', { timeout: 5000 });
+  await page.waitForTimeout(400);
+}
+
+const worldMatrix = [];
+for (const vp of VIEWPORTS) {
+  await page.setViewportSize({ width: vp.w, height: vp.h });
+  await openWorld(page);
+  const geo = await page.evaluate(() => {
+    const v = document.querySelector('#world-viewport');
+    const c = document.querySelector('#world-canvas');
+    const rooms = [...document.querySelectorAll('.room')];
+    const desks = [...document.querySelectorAll('.desk')];
+    const box = v.getBoundingClientRect();
+    const cb = c.getBoundingClientRect();
+    const inside = [...rooms, ...desks].filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+    }).length;
+    return {
+      stage: { w: Math.round(box.width), h: Math.round(box.height) },
+      canvas: { w: Math.round(cb.width), h: Math.round(cb.height) },
+      rooms: rooms.length, desks: desks.length, inside,
+      scale: document.querySelector('[data-w="scale"]')?.textContent,
+      overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  worldMatrix.push({ vp: vp.label, geo });
+}
+const worldClipped = worldMatrix.filter(m => m.geo.inside < m.geo.rooms + m.geo.desks);
+check('world: the whole floor plan is on screen at every tested width',
+  worldClipped.length === 0,
+  worldClipped.length
+    ? worldClipped.map(m => `${m.vp}: ${m.geo.inside}/${m.geo.rooms + m.geo.desks} inside the stage`).join(' · ')
+    : worldMatrix.map(m => `${m.vp}: ${m.geo.scale} of ${m.geo.rooms} rooms + ${m.geo.desks} desks`).join(' · '));
+
+const worldOverflow = worldMatrix.filter(m => m.geo.overflowX > 1);
+check('world: the tab does not push the page sideways on a phone',
+  worldOverflow.length === 0,
+  worldOverflow.length ? worldOverflow.map(m => `${m.vp}: +${m.geo.overflowX}px`).join(' · ')
+                       : `${worldMatrix.length} viewports, no horizontal scrollbar`);
+
+/* 8 — the movement: a wheel flick must travel over several frames, not teleport ------------------
+   This is the check behind "make the zoom smooth". The camera is sampled every animation frame
+   while a flick is delivered; a jump would show up as one big delta and no tail. */
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(PROTOTYPE, { waitUntil: 'load' });
+await openNetwork(page);
+await settled(page);
+const motion = await page.evaluate(async () => {
+  const viewport = document.querySelector('#g-canvas');
+  const read = () => {
+    const t = document.querySelector('#g-viewport').getAttribute('transform');
+    const m = /translate\(([-0-9.]+) ([-0-9.]+)\) scale\(([-0-9.]+)\)/.exec(t);
+    return m ? { k: +m[3], tx: +m[1], ty: +m[2] } : null;
+  };
+  const samples = [];
+  let stop = false;
+  const tick = () => { const v = read(); if (v) samples.push(v); if (!stop) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  const box = viewport.getBoundingClientRect();
+  for (let i = 0; i < 6; i++) {
+    viewport.dispatchEvent(new WheelEvent('wheel', {
+      deltaY: -120, deltaMode: 0, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2,
+      bubbles: true, cancelable: true,
+    }));
+    await new Promise(r => setTimeout(r, 30));
+  }
+  await new Promise(r => setTimeout(r, 900));
+  stop = true;
+  const first = samples[0], last = samples[samples.length - 1];
+  let biggest = 0;
+  for (let i = 1; i < samples.length; i++) biggest = Math.max(biggest, Math.abs(samples[i].k - samples[i - 1].k));
+  const moved = samples.filter((v, i) => i > 0 && Math.abs(v.k - samples[i - 1].k) > 1e-4).length;
+  return { frames: samples.length, movingFrames: moved, biggestStep: biggest, from: first, to: last };
+});
+check('graph: a wheel flick eases over many frames instead of jumping',
+  motion.movingFrames >= 10 && motion.biggestStep < Math.abs(motion.to.k - motion.from.k) * 0.5,
+  `k ${motion.from.k.toFixed(3)} → ${motion.to.k.toFixed(3)} across ${motion.movingFrames} moving frames ` +
+  `(largest single-frame step ${motion.biggestStep.toFixed(4)})`);
+
+/* 9 — reduced motion: the same flick arrives at once, and nothing glides ------------------------ */
+const rmCtx = await browser.newContext({ reducedMotion: 'reduce' });
+const rmPage = await rmCtx.newPage();
+await rmPage.setViewportSize({ width: 1440, height: 900 });
+await rmPage.goto(PROTOTYPE, { waitUntil: 'load' });
+await openNetwork(rmPage);
+await settled(rmPage);
+const reduced = await rmPage.evaluate(async () => {
+  const canvas = document.querySelector('#g-canvas');
+  const read = () => {
+    const m = /scale\(([-0-9.]+)\)/.exec(document.querySelector('#g-viewport').getAttribute('transform'));
+    return m ? +m[1] : null;
+  };
+  const before = read();
+  const box = canvas.getBoundingClientRect();
+  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2, bubbles: true, cancelable: true }));
+  const immediate = read();
+  await new Promise(r => setTimeout(r, 400));
+  return { before, immediate, after: read() };
+});
+await rmCtx.close();
+check('graph: with reduced motion asked for, the camera arrives immediately and stays put',
+  Math.abs(reduced.immediate - reduced.before) > 1e-4 && reduced.immediate === reduced.after,
+  `k ${reduced.before.toFixed(3)} → ${reduced.immediate.toFixed(3)} on the same tick, unchanged after 400ms`);
 
 await browser.close();
 

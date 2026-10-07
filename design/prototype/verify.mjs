@@ -2,7 +2,7 @@
 /* =====================================================================================
    Prototype verification gate — run:  node design/prototype/verify.mjs
    -------------------------------------------------------------------------------------
-   Checks what can honestly be checked without a browser (11 checks):
+   Checks what can honestly be checked without a browser (15 checks):
      1. the prototype builds from the demo and every patch applies
      2. JavaScript syntax of the graph module and of the demo's own script
      3. the layout engine converges, produces finite coordinates and is deterministic
@@ -13,6 +13,10 @@
      8. nothing overlaps: node/label footprints and department hulls (force and rings)
      8b. no node is drawn over a department hull label band
      9. every CSS geometry token matches its JavaScript fallback
+    10. the world tab renders in both languages and all five data states
+    11. people are seated by department, one desk each
+    12. the camera eases, settles exactly, holds its limits and does not change speed with frame rate
+    13. the wheel is gentle, normalised across devices, and anchored on the pointer
    The browser half lives in `probe-browser.mjs` (Playwright): viewport matrix, graph framing and
    clipping, page overflow, touch targets, contrast measured from the live tokens, and focus rings.
    Anything neither tool measured is still listed as NOT CHECKED, so unverified never reads as done.
@@ -120,8 +124,11 @@ check('engine: converges, stays finite, is deterministic', () => {
 
 /* 4 — token rule ------------------------------------------------------------------------ */
 check('tokens: no raw colours or stray lengths in the new stylesheets', () => {
-  const files = ['graph.css', 'prototype-changes.css', 'graph.js'];
-  const allowLength = file => file === 'graph.js' ? /rgba?\(|hsla?\(/ : null;
+  const files = ['graph.css', 'prototype-changes.css', 'world.css', 'graph.js', 'world.js'];
+  /* world.js draws numbers into markup (plan coordinates, a percentage), so it is scanned for raw
+     *colours* only, exactly like graph.js — and world-lib.js, which is generated from the app, is
+     checked by its own generator (scripts/build-world-lib.mjs) rather than scanned here. */
+  const allowLength = file => file.endsWith('.js') ? /rgba?\(|hsla?\(/ : null;
   const problems = [];
   for (const f of files) {
     const src = readFileSync(join(HERE, f), 'utf8');
@@ -144,17 +151,17 @@ check('tokens: no raw colours or stray lengths in the new stylesheets', () => {
     if (allowLength(f)) { /* no-op: keeps the intent explicit */ }
   }
   assert(problems.length === 0, problems.slice(0, 6).join(' | '));
-  const breakpoints = [...(readFileSync(join(HERE, 'graph.css'), 'utf8') + readFileSync(join(HERE, 'prototype-changes.css'), 'utf8'))
+  const breakpoints = [...(readFileSync(join(HERE, 'graph.css'), 'utf8') + readFileSync(join(HERE, 'prototype-changes.css'), 'utf8') + readFileSync(join(HERE, 'world.css'), 'utf8'))
     .matchAll(/@media\(([^)]*)\)/g)].map(m => m[1]).filter(c => /px/.test(c));
   return `${files.length} files clean · breakpoints literal (platform constraint): ${[...new Set(breakpoints)].join(', ')}`;
 });
 
 /* 5 — RTL rule -------------------------------------------------------------------------- */
 check('rtl: no physical left/right in the new CSS or their markup', () => {
-  const src = readFileSync(join(HERE, 'graph.css'), 'utf8') + readFileSync(join(HERE, 'prototype-changes.css'), 'utf8');
+  const src = readFileSync(join(HERE, 'graph.css'), 'utf8') + readFileSync(join(HERE, 'prototype-changes.css'), 'utf8') + readFileSync(join(HERE, 'world.css'), 'utf8');
   const bad = src.match(/(margin|padding|border|inset)-(left|right)\b|text-align:\s*(left|right)\b/g) || [];
   assert(bad.length === 0, `physical properties found: ${bad.join(', ')}`);
-  const js = readFileSync(join(HERE, 'graph.js'), 'utf8');
+  const js = readFileSync(join(HERE, 'graph.js'), 'utf8') + readFileSync(join(HERE, 'world.js'), 'utf8');
   const badJs = js.match(/style="[^"]*(left|right)\s*:/g) || [];
   assert(badJs.length === 0, 'physical inline styles found in markup strings');
   return 'logical properties only';
@@ -170,6 +177,11 @@ check('demo integrity: six views, i18n, a11y seams intact', () => {
   assert(proto.includes('Reserved space'), 'the reserved-area copy was lost');
   assert(proto.includes('dir=rtl') || proto.includes('[dir=rtl]'), 'RTL rules missing');
   assert(proto.includes('ai-company-calm-v2'), 'the demo storage key missing');
+  /* the world tab: an entry in NAV, a button in the sidebar, a dispatch line, and its Arabic name */
+  assert(proto.includes("['world','World Map','grid'],"), 'the world tab is not in NAV');
+  assert(proto.includes('${navButton(NAV[6])}'), 'the world tab has no sidebar button');
+  assert(proto.includes("world:(typeof window.worldView==='function'?window.worldView:networkView)"), 'the world tab is not dispatched');
+  assert(proto.includes('World Map|خريطة المكتب'), 'the world tab has no Arabic name');
   assert(proto.includes('[data-palette=custom] .thread'), 'palette hooks perturbed');
   return 'nav, views, theme, RTL, dialogs, storage all present';
 });
@@ -367,6 +379,181 @@ check('tokens: every CSS geometry token matches its JS fallback', () => {
   }
   assert(bad.length === 0, bad.slice(0, 4).join(' | '));
   return `${Object.keys(pairs).length} token/fallback pairs in step`;
+});
+
+/* 10 — the world tab -------------------------------------------------------------------- */
+/* The view is rendered in a bare VM: no DOM, no browser. The shared half (the plan, the camera
+   maths, the seating rule, the furniture paths) is the app's own code, bundled to world-lib.js by
+   scripts/build-world-lib.mjs; world.js draws it. Rendering headlessly is what makes "both
+   languages and all five data states" a check instead of a promise. */
+function worldSandbox(lang) {
+  const sandbox = { console };
+  sandbox.window = sandbox;
+  sandbox.global = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync(join(HERE, 'world-lib.js'), 'utf8'), sandbox);
+  vm.runInContext(readFileSync(join(HERE, 'world.js'), 'utf8'), sandbox);
+  Object.assign(sandbox, {
+    pref: { lang },
+    ui: { state: 'default' },
+    data: {
+      company: 'Acme Studio', operator: 'Vanil',
+      agents: [
+        { id: 'aria', name: ['Aria', 'آريا'], role: ['Lead engineer', 'رئيسة الهندسة'], dept: 'Engineering', status: 'working', avatar: 0, spent: 12.5, budget: 40 },
+        { id: 'leo', name: ['Leo', 'ليو'], role: ['Software engineer', 'مهندس برمجيات'], dept: 'Engineering', status: 'working', avatar: 2, spent: 8.2, budget: 30 },
+        { id: 'maya', name: ['Maya', 'مايا'], role: ['Growth lead', 'قائدة النمو'], dept: 'Go to market', status: 'idle', avatar: 4, spent: 3, budget: 20 },
+      ],
+      tasks: [
+        { id: 'TSK-142', title: ['Refine the streaming pipeline', 'تحسين المسار'], owner: 'aria', stage: 'progress', priority: 'high', progress: 65, due: '2026-10-05' },
+        { id: 'TSK-147', title: ['Billing integration tests', 'اختبارات الفوترة'], owner: 'leo', stage: 'review', priority: 'medium', progress: 40, due: '2026-10-06' },
+      ],
+      threads: [], decisions: [], departments: [], events: [],
+    },
+    head: (t, d) => `<header>${t}|${d}</header>`,
+    stateBlock: k => `[state:${k}]`,
+    esc: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'),
+    t: s => s,
+    tr: v => Array.isArray(v) ? v[lang === 'ar' ? 1 : 0] || v[0] : String(v ?? ''),
+    num: n => String(n),
+    money: n => '$' + Number(n).toFixed(2),
+    totalSpent: () => sandbox.data.agents.reduce((sum, a) => sum + a.spent, 0),
+    avatar: () => '<i class="avatar"></i>',
+    icon: () => '<svg class="icon"></svg>',
+    stat: (label, value) => `<div class="stat">${label}:${value}</div>`,
+    notify: () => {},
+  });
+  return sandbox;
+}
+
+check('view: the world tab renders in both languages and all five data states', () => {
+  const en = worldSandbox('en').window.worldView();
+  assert(en.includes('world-hud') && en.includes('world-viewport'), 'the world shell is missing');
+  assert(!en.includes('undefined'), 'undefined leaked into the world markup');
+  /* room names contain '&', which the markup escapes — assert on the plain part */
+  ['Whole plan', 'Executive Wing', 'Engineering Lab', 'Breakroom', 'Empty desk', 'Monthly spend'].forEach(x =>
+    assert(en.includes(x), `missing: ${x}`));
+  assert((en.match(/class="room room-/g) || []).length === 6, 'not every room is drawn');
+  assert((en.match(/class="prop prop-/g) || []).length === 21, 'not every piece of furniture is drawn');
+  assert((en.match(/data-desk=/g) || []).length === 16, 'not every desk is drawn');
+  assert((en.match(/data-agent=/g) || []).length === 3, 'not every person is seated');
+
+  const ar = worldSandbox('ar').window.worldView();
+  assert(/[\u0600-\u06FF]/.test(ar), 'Arabic strings missing from the world');
+  assert(ar.includes('المخطط كامل'), 'the Arabic toolbar is missing');
+  assert(!ar.includes('undefined'), 'undefined leaked into the Arabic world markup');
+
+  [['en', 'default'], ['ar', 'default']].forEach(([lang]) => {
+    const box = worldSandbox(lang);
+    for (const state of ['loading', 'empty', 'error', 'restricted']) {
+      box.ui.state = state;
+      assert(box.window.worldView().includes(`[state:${state}]`), `state ${state} not honoured (${lang})`);
+    }
+    box.ui.state = 'default';
+    const backup = box.data;
+    box.data = {};
+    assert(box.window.worldView().includes('[state:empty]'), `the no-data guard is missing (${lang})`);
+    box.data = backup;
+  });
+  return 'en + ar · 6 rooms, 21 props, 16 desks, 3 seated · loading/empty/error/restricted honoured';
+});
+
+check('seats: the demo company is seated by department, not wherever there is room', () => {
+  const box = worldSandbox('en');
+  const html = box.window.worldView();
+  const deptOf = id => ({ aria: 'Engineering', leo: 'Engineering', maya: 'Operations' })[id];
+  const roomOf = deskId => {
+    const lib = box.window.WORLD_LIB;
+    const desk = lib.DEFAULT_LAYOUT.desks.filter(d => d.id === deskId)[0];
+    const room = lib.roomAt(lib.DEFAULT_LAYOUT, desk.x + desk.w / 2, desk.y + desk.h / 2);
+    return room ? room.id : '';
+  };
+  const seated = [...html.matchAll(/data-desk="(d\d+)"[^>]*data-agent="([a-z]+)"/g)];
+  const multi = [...html.matchAll(/data-agent="([a-z]+)"[^>]*/g)];
+  assert(seated.length === 3, `expected the three people to be seated, found ${seated.length}`);
+  assert(new Set(multi.map(m => m[1])).size === 3, 'somebody is seated at two desks');
+  /* Engineering sits in the engineering lab and Design in the studio — the demo says "Engineering"
+     and "Go to market"; the plan calls the second one "Operations". */
+  seated.forEach(([, desk, agent]) => {
+    const wanted = deptOf(agent);
+    const room = roomOf(desk);
+    const ok = wanted === 'Engineering' ? room === 'eng' : room === 'ops';
+    assert(ok, `${agent} (${wanted}) is in room "${room}"`);
+  });
+  return 'Engineering → the lab, Go-to-market → operations, one desk each';
+});
+
+/* 11 — the camera --------------------------------------------------------------------------- */
+/* "Smooth" is a claim until something measures it. These five walk a wheel flick, a fit and a
+   pan release through the pure camera maths — no browser, no rendering — and assert what
+   "smooth" actually means: the camera moves a bit at a time, it never overshoots, it always
+   arrives exactly, it is the same speed on a 30 fps screen as on a 120 Hz one, and it stops
+   dead when the user has asked for less motion. */
+check('camera: eases toward its target, arrives exactly, never overshoots', () => {
+  const sandbox = { console };
+  sandbox.window = sandbox; sandbox.global = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync(join(HERE, 'graph.js'), 'utf8'), sandbox);
+  const cam = sandbox.window.__graph.camera;
+  assert(cam && typeof cam.easeViewOver === 'function', 'the camera maths is not on __graph');
+
+  const from = { k: 1, tx: 0, ty: 0 };
+  const target = { k: 1.8, tx: -220, ty: -140 };
+
+  /* it never jumps: one frame covers at most a quarter of the distance */
+  const one = cam.easeViewOver(from, target, 1000 / 60);
+  assert(one.k > from.k && one.k < target.k, 'the first step overshot or went backwards');
+  assert(Math.abs(one.k - from.k) <= Math.abs(target.k - from.k) * 0.3, 'the first frame covers too much distance to read as movement');
+
+  /* it arrives, and it arrives exactly — the loop can stop on identity */
+  let cur = from, frames = 0;
+  while (frames < 240 && cur !== target) { cur = cam.easeViewOver(cur, target, 1000 / 60); frames++; }
+  assert(cur === target, `the camera never arrived (after ${frames} frames)`);
+  assert(frames > 6 && frames < 60, `settling took ${frames} frames — too fast to read or too slow to use`);
+
+  /* a stuttering 30 fps screen takes the same time as a smooth 120 Hz one */
+  const walk = (dt) => { let c = from, n = 0; while (n < 2000 && c !== target) { c = cam.easeViewOver(c, target, dt); n++; } return (n * dt) / 1000; };
+  const slow = walk(1000 / 30), fast = walk(1000 / 120);
+  assert(Math.abs(slow - fast) < 0.12, `frame rate changes the speed: ${slow.toFixed(2)}s at 30 fps vs ${fast.toFixed(2)}s at 120 Hz`);
+
+  /* and it never drifts: the limits hold at every step */
+  const zoombox = cam.zoomedAt({ k: 1, tx: 0, ty: 0 }, 99, 100, 100);
+  assert(zoombox.k <= 2.2, `zoom ran past its maximum: ${zoombox.k}`);
+  const small = cam.zoomedAt({ k: 1, tx: 0, ty: 0 }, 0.001, 100, 100);
+  assert(small.k >= 0.25, `zoom ran past its minimum: ${small.k}`);
+  return `${frames} frames to settle · 30 fps and 120 Hz within ${Math.abs(slow - fast).toFixed(3)}s · limits held`;
+});
+
+check('camera: the wheel is gentle, anchored on the pointer, and never compounding on the live camera', () => {
+  const sandbox = { console };
+  sandbox.window = sandbox; sandbox.global = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync(join(HERE, 'graph.js'), 'utf8'), sandbox);
+  const cam = sandbox.window.__graph.camera;
+
+  /* scrolling away from you zooms out, toward you zooms in — and one notch is a small, readable
+     step (about 15%), not a jump */
+  const out = cam.wheelStep(100, 0, false);
+  const into = cam.wheelStep(-100, 0, false);
+  assert(out < 1 && out > 0.8, `one notch away is ${out.toFixed(3)}× — should zoom out gently`);
+  assert(into > 1 && into < 1.25, `one notch toward is ${into.toFixed(3)}× — should zoom in gently`);
+  assert(Math.abs(out * into - 1) < 1e-9, 'a notch up and a notch down do not cancel');
+  /* a trackpad flick arrives as many small events; twenty of them must be one modest movement,
+     because they compound on the *target* — that is what stops a flick from flying */
+  let total = 1;
+  for (let i = 0; i < 20; i++) total *= cam.wheelStep(10, 0, false);
+  assert(total > 0.6 && total < 0.85, `twenty small scroll events multiply to ${total.toFixed(2)}× — wrong strength`);
+  /* three delta units, one feel */
+  const scaled = [cam.wheelStep(100, 0, false), cam.wheelStep(6, 1, false), cam.wheelStep(0.25, 2, false)];
+  const spread = Math.max(...scaled) - Math.min(...scaled);
+  assert(spread < 0.06, `deltaMode changes the strength of a notch by ${spread.toFixed(3)}`);
+  /* the point under the pointer stays put — that is what "anchored" means */
+  const before = { k: 1, tx: 30, ty: -10 };
+  const mx = 400, my = 260;
+  const planX = (mx - before.tx) / before.k, planY = (my - before.ty) / before.k;
+  const after = cam.zoomedAt(before, 1.6, mx, my);
+  assert(Math.abs(planX - (mx - after.tx) / after.k) < 0.01 && Math.abs(planY - (my - after.ty) / after.k) < 0.01,
+    'the graph point under the pointer moved while zooming');
+  return `a notch is ±15% (${out.toFixed(3)}× / ${into.toFixed(3)}×) · twenty events ${total.toFixed(2)}× · deltaMode spread ${spread.toFixed(3)} · pointer-anchored`;
 });
 
 /* report -------------------------------------------------------------------------------- */

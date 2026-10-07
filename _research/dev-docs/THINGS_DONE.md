@@ -5,6 +5,71 @@
 
 ---
 
+## 2026-10-07 — the world becomes a tab in the prototype, and the obsidian learns to move
+
+The owner's direction: *"this is the suitable GUI: /prototype/#team … put the world view as a tab or
+option into this one instead of this corrupted one … fix the obsidian also make zoom smooth and so
+on, make it refined, search online to make it gentle and elegant in moving."*
+
+**The world is now the prototype's seventh tab** (`#world`), reachable from the sidebar and by
+address, beside Network and Settings. Six rooms, sixteen desks, twenty-one props, everyone seated by
+department, a desk drawer with one person's day, the four-number stats strip — in the demo's own
+tokens, so it re-tints with the palette and reads in dark and light.
+
+- **One implementation, two hosts** (the standing rule: "unified one, multiple to use them freely").
+  The shared half — camera maths, the owner's plan, the furniture paths, the seating rule — was
+  lifted out of React into `apps/web/src/world/{camera,plan,prop-paths,seat}.ts`, the React view now
+  imports it (`WorldView.tsx` lost 49 lines and gained a re-export so its tests keep their import),
+  and `scripts/build-world-lib.mjs` bundles it to `design/prototype/world-lib.js` for the plain
+  script. The main gate checks the bundle is in sync, so the two cannot drift.
+- **The build is patch-based, so the world tab is patches too** (`build-prototype.py` P5/P6): a
+  dictionary entry, a NAV entry (appended — the shell indexes NAV[4] and NAV[5], so inserting would
+  move Settings), a sidebar button, a `render()` dispatch, plus `world.css` and the two scripts.
+  Every patch is exact-match and counted: a demo change fails the build instead of half-applying.
+
+**The obsidian, refined** — researched first (d3-zoom / van Wijk's smooth zoom-and-pan, and what a
+map library calls the camera API), then built:
+
+- **One movement model.** Wheel, buttons, room jump, keyboard and fit all move a *target*; the frame
+  loop eases the camera toward it, with the easing corrected for the frame that actually elapsed, so
+  30 fps and 120 Hz settle in the same time. Gestures (drag, pinch) stay 1:1, and a released drag
+  glides and decays instead of stopping dead.
+- **The wheel is normalised across devices** (pixel/line/page deltas, trackpad pinch firmer) and
+  anchored on the pointer, exactly like the app's world.
+- **`prefers-reduced-motion` is honoured**: controls work, nothing glides, gestures stay 1:1.
+- **The camera maths is pure and exported** on `__graph.camera`, so "the zoom is smooth" is measured
+  rather than asserted: the verifier walks a flick through it (46 frames to settle, limits held,
+  30 fps vs 120 Hz within 0.008 s), and the browser probe counts *moving frames* on a real wheel.
+- **Three real defects, all found by measurement, not by reading:**
+  1. the frame loop only rescheduled while the *layout* was moving, so a zoom stopped a third of the
+     way there — six wheel events produced six frames and a halt;
+  2. "Freeze layout" froze the camera with it (it pins the nodes, not the view);
+  3. `clampCamera` inverted its own bounds when the plan is smaller than the viewport, pinning the
+     studio to the top-left corner, and the strict pan bound fought an anchored zoom near an edge
+     (the smoke's own wheel gesture slid 13.7 plan units). Both fixed in the shared camera; the pan
+     bound stays tight, the zoom gets a looser one, and a small plan rests centred.
+- **The fit may now go below the ladder** (`FIT_MIN_SCALE` = 0.1, hard floor; the ladder is still
+  0.5 · 1 · 2 · 3): a 390px phone can only show the 1920×1200 plan at ≈0.17, so "Whole plan" had been
+  showing a corner of the studio. The app had the same defect — the world probe measured 4 of 22
+  rooms and desks inside the stage at 320px.
+
+**Checks, and what caught what.** The design gate went 11 → **15** (world in both languages and all
+five states; seating; the camera's easing/arrival/limits/frame-rate; the wheel's strength, delta
+normalisation and anchoring) and the browser probe 7 → **11** (the world across the viewport matrix;
+no sideways scroll; moving frames on a real wheel flick; reduced motion). The two new browser checks
+failed honestly first — the world at 4/22 inside its stage, and 6 moving frames — and the probe's
+own `settled()` helper was wrong in the same way the loop was: it watched the nodes but not the
+camera, so it declared "settled" mid-glide and then measured the half-travelled view as clipping.
+`scripts/build-world-lib.mjs` also gained the export check that would have caught the first real
+bug of this turn (`lib.defaultPlan is not a function` — esbuild drops a missing export with a
+warning nobody was reading).
+
+**Validation:** `bash scripts/verify.sh` → **10/10 green** (90 api · 88 web · 15/15 design · 68/68
+browser smoke · demo file in sync) · `node design/prototype/probe-browser.mjs` → **11/11**.
+
+**Limitations:** a synthesised pinch is exercised, a real thumb is not; the world tab has no build
+mode (the app's has); the plan at phone scale is a *map* (13% — legible as a floor, not as names).
+
 ## 2026-10-07 — the live link was serving yesterday's build
 
 - The phone fix was committed, pushed, deployed — and the live link still measured the old layout on

@@ -434,7 +434,15 @@ function pack(g, opts){
 
 /* ------------------------------------------------------------------ state ------------- */
 var G = null;            /* live graph instance */
-var VIEW = { k: 1, tx: 0, ty: 0 };
+var VIEW = { k: 1, tx: 0, ty: 0 };          /* what is on screen right now */
+/* Every *control* (wheel, buttons, fit, a layout change) moves VIEW_TARGET, and the frame loop
+   walks VIEW toward it. That single change is what makes zoom and pan read as one continuous
+   movement instead of a jump per event — and it is why a fast wheel flick cannot overshoot: the
+   events compound on the target, not on a camera that is still catching up. */
+var VIEW_TARGET = null;                     /* null = nothing to travel towards */
+var VIEW_VEL = { x: 0, y: 0 };              /* pan inertia, screen px per 60fps frame */
+var EASE_PER_FRAME = 0.18;                  /* fraction of the remaining distance per 60fps frame */
+var MOTION = { reduced: false };            /* prefers-reduced-motion: set up at boot */
 var CTRL = { mode: 'company', layout: 'force', filter: 'all', frozen: false, list: false };
 /* First-paint framing (see startLoop): fit once the layout settles, unless we restored the
    user's own saved view, and keep refitting on resize until the user frames it themselves. */
@@ -585,12 +593,93 @@ function depthText(n){
   if (n.kind === 'thread') return (n.members || []).map(function(m){ return nameOf(m); }).join(', ');
   return '';
 }
+/* ---------------------------------------------------------------- camera maths ---------
+   Four pure functions. They are pure — and exported on __graph — because "the zoom is smooth"
+   is otherwise a matter of opinion: verify.mjs walks a fake wheel flick through them without a
+   browser and asserts the camera eases, settles exactly on its target, never overshoots the
+   zoom limits and never drifts. */
+
+/** Keep a view inside the zoom limits. */
+function clampView(v){
+  return { k: Math.min(T.zoomMax, Math.max(T.zoomMin, v.k)), tx: v.tx, ty: v.ty };
+}
+
+/** Are these the same view, to the pixel? (used to stop the loop exactly on arrival) */
+function viewEquals(a, b){
+  return !!a && !!b && Math.abs(a.k - b.k) < 1e-4 && Math.abs(a.tx - b.tx) < 0.2 && Math.abs(a.ty - b.ty) < 0.2;
+}
+
+/**
+ * One step from `cur` toward `target`, covering `factor` of the remaining distance.
+ *
+ * The factor is corrected for the frame that actually elapsed (`easeViewOver`), so a 120 Hz phone
+ * and a 30 fps laptop both take the same third of a second. Without that correction the same
+ * animation is twice as fast on a good screen — the usual reason a "smooth" zoom feels different
+ * on every device.
+ */
+function easeView(cur, target, factor){
+  var k = cur.k + (target.k - cur.k) * factor;
+  var tx = cur.tx + (target.tx - cur.tx) * factor;
+  var ty = cur.ty + (target.ty - cur.ty) * factor;
+  /* On arrival: the target **itself**, not a copy of its numbers. The caller can then stop the
+     frame loop by identity (`VIEW === VIEW_TARGET`) and never leave the camera a fraction of a
+     pixel away from where it was asked to be — the same contract as the app's camera.ease(). */
+  return viewEquals({ k: k, tx: tx, ty: ty }, target) ? target : { k: k, tx: tx, ty: ty };
+}
+
+/** The same step, for a frame that took `dt` milliseconds. */
+function easeViewOver(cur, target, dt){
+  var frames = Math.max(0.25, Math.min(6, dt / (1000 / 60)));
+  return easeView(cur, target, 1 - Math.pow(1 - EASE_PER_FRAME, frames));
+}
+
+/** Zoom to `k` about a point on the stage, holding the graph point under it still. */
+function zoomedAt(v, k, mx, my){
+  var inside = Math.min(T.zoomMax, Math.max(T.zoomMin, k));
+  if (inside === v.k) return { k: v.k, tx: v.tx, ty: v.ty };
+  return { k: inside, tx: mx - (mx - v.tx) * (inside / v.k), ty: my - (my - v.ty) * (inside / v.k) };
+}
+
+/** How strong one wheel event is — the three delta units normalised, as the app's wheelFactor does. */
+function wheelStep(deltaY, deltaMode, ctrlKey){
+  var perLine = 16, perPage = 400;
+  var pixels = deltaMode === 1 ? deltaY * perLine : deltaMode === 2 ? deltaY * perPage : deltaY;
+  var capped = Math.max(-240, Math.min(240, pixels));
+  return Math.exp(-capped * (ctrlKey ? 0.004 : 0.0016));
+}
+
+/** The camera that shows a set of nodes (and their hulls) whole, with a margin. */
+function fitted(list, hulls, w, h, pad){
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  list.forEach(function(n){
+    minX = Math.min(minX, n.x - n.radius); maxX = Math.max(maxX, n.x + n.radius + 60);
+    minY = Math.min(minY, n.y - n.radius); maxY = Math.max(maxY, n.y + n.radius + 18);
+  });
+  (hulls || []).forEach(function(b){
+    minX = Math.min(minX, b.x); maxX = Math.max(maxX, b.right);
+    minY = Math.min(minY, b.y); maxY = Math.max(maxY, b.bottom);
+  });
+  if (!isFinite(minX)) return { k: 1, tx: 0, ty: 0 };
+  var k = Math.min((w - pad*2) / Math.max(1, maxX - minX), (h - pad*2) / Math.max(1, maxY - minY));
+  k = Math.min(T.zoomMax, Math.max(T.zoomMin, k));
+  return { k: k, tx: (w - (maxX - minX) * k) / 2 - minX * k, ty: (h - (maxY - minY) * k) / 2 - minY * k };
+}
+
+/** The camera half of paint() — kept apart so a camera-only frame does not rebuild the graph. */
+function paintCamera(){
+  var svg = qs('#g-canvas');
+  if (!svg) return;
+  var vp = qs('#g-viewport', svg);
+  if (!vp) return;
+  vp.setAttribute('transform', 'translate(' + VIEW.tx + ' ' + VIEW.ty + ') scale(' + VIEW.k + ')');
+}
+
 function paint(){
   var svg = qs('#g-canvas');
   if (!svg || !G) return;
   var vp = qs('#g-viewport', svg);
   if (!vp) return;
-  vp.setAttribute('transform', 'translate(' + VIEW.tx + ' ' + VIEW.ty + ') scale(' + VIEW.k + ')');
+  paintCamera();
   var filter = visibleEdges();
   var shown = {}; filter.forEach(function(e){ shown[e.s] = 1; shown[e.t] = 1; });
 
@@ -659,15 +748,42 @@ function t0(s){ return typeof t === 'function' ? t(s) : s; }
 /* ------------------------------------------------------------------ the loop ---------- */
 function startLoop(){
   if (raf) return;
-  function frame(){
+  var last = 0;
+  function frame(now){
     raf = 0;
-    if (!G || CTRL.frozen) return;
+    if (!G) return;
     if (!qs('#g-canvas')) { teardown(); return; }
-    if (alpha > 0.004){
+    var dt = last ? Math.min(64, Math.max(1, (now || 0) - last)) : 1000 / 60;
+    last = now || 0;
+    var cameraMoved = false;
+
+    if (!CTRL.frozen && alpha > 0.004){
       layoutStep(G, { alpha: alpha, layout: CTRL.layout });
       alpha *= T.decay;
       if (alpha < 0.004){ alpha = 0; pack(G, {}); paint(); saveState(); }
     }
+
+    /* Inertia: a pan that was still moving when the finger left keeps going and slows down. One
+       frame of it is skipped when the ease below is also running, so the two never fight — and it
+       stops dead at the edge of what is on screen rather than sliding the graph out of reach. */
+    if ((VIEW_VEL.x || VIEW_VEL.y) && !panning && !dragging && !MOTION.reduced){
+      VIEW = { k: VIEW.k, tx: VIEW.tx + VIEW_VEL.x, ty: VIEW.ty + VIEW_VEL.y };
+      VIEW_VEL.x *= 0.92; VIEW_VEL.y *= 0.92;
+      if (Math.abs(VIEW_VEL.x) < 0.05) VIEW_VEL.x = 0;
+      if (Math.abs(VIEW_VEL.y) < 0.05) VIEW_VEL.y = 0;
+      VIEW_TARGET = VIEW_TARGET ? { k: VIEW_TARGET.k, tx: VIEW_TARGET.tx + VIEW_VEL.x, ty: VIEW_TARGET.ty + VIEW_VEL.y } : null;
+      cameraMoved = true;
+      paintCamera();
+    }
+
+    if (VIEW_TARGET && !panning && !dragging && !pinching){
+      var before = VIEW;
+      VIEW = MOTION.reduced ? VIEW_TARGET : easeViewOver(VIEW, VIEW_TARGET, dt);
+      if (viewEquals(VIEW, VIEW_TARGET)){ VIEW = VIEW_TARGET; VIEW_TARGET = null; saveState(); }
+      cameraMoved = cameraMoved || !viewEquals(before, VIEW);
+      paintCamera();
+    }
+
     paint();
     /* First paint: with no view of its own to restore, the graph must be shown *whole*.
        Without this the nodes render at world coordinates and the stage clips them — found by
@@ -675,7 +791,13 @@ function startLoop(){
        viewport). Fitting the view moves no node, so the persisted-layout rule of _research/14
        ("recompute only on explicit user action") still holds. */
     if (alpha === 0 && NEEDS_FIT){ NEEDS_FIT = false; fitView(); }
-    if (alpha > 0.004 || dragging) raf = requestAnimationFrame(frame);
+    /* Keep going while *anything* on screen is still moving. The camera was left out of this
+       condition at first, and the effect was a zoom that stopped a third of the way to where it
+       was asked to go (measured: six wheel events produced six frames of movement and then a
+       halt). The layout freezing is not the camera stopping either — "Freeze layout" pins the
+       nodes, not the view. */
+    var still = alpha > 0.004 || dragging || panning || pinching || VIEW_TARGET || VIEW_VEL.x || VIEW_VEL.y;
+    if (still) raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
 }
@@ -684,10 +806,22 @@ function teardown(){
   raf = 0;
   G = null;
 }
-function wake(a){ alpha = Math.max(alpha, a === undefined ? T.alpha : a); if (!CTRL.frozen) startLoop(); }
+function wake(a){ alpha = Math.max(alpha, a === undefined ? T.alpha : a); startLoop(); }
 
 /* ------------------------------------------------------------------ interaction -------- */
-var dragging = null, panning = null, moved = 0;
+var dragging = null, panning = null, pinching = null, pointers = {}, moved = 0, VIEW_SETTLED_ONCE = false;
+
+/**
+ * Capture a pointer, but never let a failed capture break the gesture.
+ *
+ * `setPointerCapture` throws NotFoundError when the pointer is already gone — which is exactly what
+ * a synthetic click (a test, a screen reader, a scripted click) does: pointerdown and pointerup
+ * arrive in the same tick. The old code called it bare, so a scripted click on a node logged an
+ * error while working anyway. Now the capture is best-effort and the gesture proceeds either way.
+ */
+function safeCapture(el, pointerId){
+  try { el.setPointerCapture(pointerId); } catch(e){ /* the pointer is already gone — the pan/drag below still works */ }
+}
 
 function worldPoint(ev){
   var svg = qs('#g-canvas');
@@ -712,14 +846,30 @@ function attachInteraction(){
     var p = worldPoint(ev);
     var n = hitTest(p);
     moved = 0;
+    pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    /* A second finger on a phone means "pinch", not "drag a node": the touch becomes a view
+       gesture, and the node under the first finger is released where it stands. */
+    if (Object.keys(pointers).length === 2){
+      var ids = Object.keys(pointers);
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      dragging = null; panning = null;
+      VIEW_TARGET = null; VIEW_VEL.x = 0; VIEW_VEL.y = 0;
+      pinching = { dist: Math.max(1, Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y))), view: { k: VIEW.k, tx: VIEW.tx, ty: VIEW.ty } };
+      safeCapture(svg, ev.pointerId);
+      ev.preventDefault();
+      return;
+    }
     if (n){
       dragging = { n: n, id: ev.pointerId };
       n.fixed = true;
-      svg.setPointerCapture(ev.pointerId);
+      safeCapture(svg, ev.pointerId);
     } else {
-      panning = { x: ev.clientX, y: ev.clientY, tx: VIEW.tx, ty: VIEW.ty, id: ev.pointerId };
+      panning = { x: ev.clientX, y: ev.clientY, tx: VIEW.tx, ty: VIEW.ty, id: ev.pointerId,
+                  lastX: ev.clientX, lastY: ev.clientY, last: 0 };
+      VIEW_TARGET = null;                    /* the hand wins over any glide in progress */
+      VIEW_VEL.x = 0; VIEW_VEL.y = 0;
       svg.setAttribute('data-panning', 'true');
-      svg.setPointerCapture(ev.pointerId);
+      safeCapture(svg, ev.pointerId);
     }
     ev.preventDefault();
   });
@@ -732,9 +882,30 @@ function attachInteraction(){
       paint();
     } else if (panning){
       moved += 1;
+      /* Track how fast the hand is moving, so the release can carry on gently instead of
+         stopping dead. `last` is the previous event's timestamp; the two together are the whole
+         of the inertia. */
+      if (panning.last){
+        var gap = Math.max(1, (ev.timeStamp || 0) - panning.last);
+        VIEW_VEL.x = (ev.clientX - panning.lastX) / gap * 14;
+        VIEW_VEL.y = (ev.clientY - panning.lastY) / gap * 14;
+      }
+      panning.last = ev.timeStamp || 0;
+      panning.lastX = ev.clientX; panning.lastY = ev.clientY;
       VIEW.tx = panning.tx + (ev.clientX - panning.x);
       VIEW.ty = panning.ty + (ev.clientY - panning.y);
-      paint();
+      paintCamera();
+    } else if (pinching){
+      var ids = Object.keys(pointers);
+      if (ids.length >= 2){
+        var a = pointers[ids[0]], b = pointers[ids[1]];
+        var dist = Math.max(1, Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y)));
+        var r = svg.getBoundingClientRect();
+        VIEW = zoomedAt(pinching.view, pinching.view.k * (dist / pinching.dist),
+                        (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+        paintCamera();
+        moved += 1;
+      }
     } else {
       var n = hitTest(p);
       if ((n ? n.id : null) !== hoverId){ hoverId = n ? n.id : null; paint(); }
@@ -751,7 +922,12 @@ function attachInteraction(){
       panning = null; svg.setAttribute('data-panning', 'false');
       USER_ADJUSTED = true;            /* the user framed the view themselves */
       saveState();
+      /* The glide. A slow, deliberate drag has no velocity worth carrying, so it simply stops;
+         a flick keeps going and decays. */
+      if (VIEW_VEL.x || VIEW_VEL.y) startLoop();
     }
+    if (pinching) pinching = null;
+    delete pointers[ev.pointerId];
     try { svg.releasePointerCapture(ev.pointerId); } catch(e){}
   }
   svg.addEventListener('pointerup', endDrag);
@@ -760,15 +936,21 @@ function attachInteraction(){
     ev.preventDefault();
     var r = svg.getBoundingClientRect();
     var mx = ev.clientX - r.left, my = ev.clientY - r.top;
-    var k = VIEW.k * (ev.deltaY < 0 ? 1.12 : 1 / 1.12);
-    k = Math.min(T.zoomMax, Math.max(T.zoomMin, k));
-    VIEW.tx = mx - (mx - VIEW.tx) * (k / VIEW.k);
-    VIEW.ty = my - (my - VIEW.ty) * (k / VIEW.k);
-    VIEW.k = k;
+    /* Anchor the zoom on the pointer — the node under the cursor stays under the cursor, which is
+       the difference between zooming *into* the graph and zooming *at* the screen. */
+    VIEW_TARGET = zoomedAt(VIEW_TARGET || VIEW, (VIEW_TARGET || VIEW).k * wheelStep(ev.deltaY, ev.deltaMode, ev.ctrlKey), mx, my);
     USER_ADJUSTED = true;
-    paint(); saveState();
+    if (MOTION.reduced){ VIEW = VIEW_TARGET; VIEW_TARGET = null; paintCamera(); saveState(); return; }
+    startLoop();
   }, { passive: false });
-  svg.addEventListener('dblclick', function(){ USER_ADJUSTED = true; fitView(); });
+  svg.addEventListener('dblclick', function(ev){
+    /* Double-click zooms one comfortable step about the point that was clicked; shift reverses it,
+       which is the convention every map has taught people. */
+    var r = svg.getBoundingClientRect();
+    var mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    USER_ADJUSTED = true;
+    aimView(zoomedAt(VIEW, VIEW.k * (ev.shiftKey ? 1/1.7 : 1.7), mx, my));
+  });
   svg.addEventListener('keydown', function(ev){
     if (ev.key === 'Enter' || ev.key === ' '){
       if (selectedId){ ev.preventDefault(); openSelected(); }
@@ -815,29 +997,44 @@ function openSelected(){
     safe(function(){ ui.thread = n.refId; navigate('comms'); });
   }
 }
-function fitView(){
+/**
+ * The view that shows everything — or null when there is nothing to show.
+ *
+ * The department hulls and their labels are on screen too: fitting without them clips them
+ * (measured once: the rings layout overflowed the stage at every viewport before this).
+ */
+function fitCandidate(){
   var svg = qs('#g-canvas');
-  if (!svg || !G) return;
+  if (!svg || !G) return null;
   var list = G.nodes.filter(isVisible);
-  if (!list.length) return;
-  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  list.forEach(function(n){
-    minX = Math.min(minX, n.x - n.radius); maxX = Math.max(maxX, n.x + n.radius + 60);
-    minY = Math.min(minY, n.y - n.radius); maxY = Math.max(maxY, n.y + n.radius + 18);
-  });
-  /* the department hulls and their labels are on screen too — fitting without them clips them
-     (measured: the rings layout overflowed the stage at every viewport before this) */
-  drawnHullBoxes(G).forEach(function(b){
-    minX = Math.min(minX, b.x); maxX = Math.max(maxX, b.right);
-    minY = Math.min(minY, b.y); maxY = Math.max(maxY, b.bottom);
-  });
+  if (!list.length) return null;
   var box = svg.getBoundingClientRect();
-  var w = box.width || svg.clientWidth || 800, h = box.height || svg.clientHeight || 520, pad = T.fitPad;
-  var k = Math.min((w - pad*2) / Math.max(1, maxX - minX), (h - pad*2) / Math.max(1, maxY - minY));
-  VIEW.k = Math.min(T.zoomMax, Math.max(T.zoomMin, k));
-  VIEW.tx = (w - (maxX - minX) * VIEW.k) / 2 - minX * VIEW.k;
-  VIEW.ty = (h - (maxY - minY) * VIEW.k) / 2 - minY * VIEW.k;
-  paint(); saveState();
+  var w = box.width || svg.clientWidth || 800, h = box.height || svg.clientHeight || 520;
+  return fitted(list, drawnHullBoxes(G), w, h, T.fitPad);
+}
+
+/** Move to a view: instantly, or gracefully. Every control goes through here. */
+function aimView(next, immediate){
+  if (!next) return;
+  var shouldJump = immediate === true || MOTION.reduced || !IS_BROWSER;
+  if (shouldJump){
+    VIEW = next; VIEW_TARGET = null;
+    if (IS_BROWSER) { paintCamera(); saveState(); }
+    return;
+  }
+  VIEW_TARGET = next;
+  startLoop();
+}
+
+function fitView(immediate){
+  var next = fitCandidate();
+  if (!next) return;
+  /* The very first framing is not animated: the graph must appear whole on frame one, and an
+     ease from the default view would show it clipped on the way there. Everything after it —
+     the F key, a double-click, a layout change — glides. */
+  if (immediate === undefined) immediate = !VIEW_SETTLED_ONCE;
+  aimView(next, immediate);
+  VIEW_SETTLED_ONCE = true;
 }
 function resetLayout(){
   if (!G) return;
@@ -871,14 +1068,11 @@ function zoomBy(factor){
   USER_ADJUSTED = true;
   var box = svg.getBoundingClientRect();
   var w = (box.width || 800) / 2, h = (box.height || 520) / 2;
-  var k = Math.min(T.zoomMax, Math.max(T.zoomMin, VIEW.k * factor));
-  VIEW.tx = w - (w - VIEW.tx) * (k / VIEW.k);
-  VIEW.ty = h - (h - VIEW.ty) * (k / VIEW.k);
-  VIEW.k = k; paint(); saveState();
+  aimView(zoomedAt(VIEW_TARGET || VIEW, (VIEW_TARGET || VIEW).k * factor, w, h));
 }
 function setFrozen(v){
   CTRL.frozen = v === undefined ? !CTRL.frozen : v;
-  if (!CTRL.frozen) wake(0.4);
+  if (!CTRL.frozen) wake(0.4); else { VIEW_TARGET = null; paintCamera(); }
   updateControls(); saveState();
   announce(CTRL.frozen ? gt('Layout frozen','تم تثبيت التخطيط') : gt('Layout running','التخطيط يعمل'));
 }
@@ -1276,6 +1470,14 @@ function scheduleEnhance(){
 
 /* ------------------------------------------------------------------ boot --------------- */
 if (IS_BROWSER){
+  /* prefers-reduced-motion is a preference about *comfort*, not a nicety: when it is set, every
+     control still works and nothing glides — the camera arrives immediately. A pinch or a drag
+     stays 1:1 either way, because that one is the hand, not an animation. */
+  MOTION.reduced = safe(function(){ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }, false);
+  safe(function(){
+    var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq.addEventListener) mq.addEventListener('change', function(e){ MOTION.reduced = !!e.matches; });
+  });
   W.graphView = graphView;
   document.addEventListener('visibilitychange', function(){
     if (document.hidden){ if (raf) { cancelAnimationFrame(raf); raf = 0; } }
@@ -1305,6 +1507,8 @@ if (IS_BROWSER){
 
 /* test surface (used by the headless verification, not by the UI) */
 W.__graph = { build: buildGraph, step: layoutStep, pack: pack, footprint: footprint,
+  camera: { clampView: clampView, viewEquals: viewEquals, easeView: easeView, easeViewOver: easeViewOver,
+            zoomedAt: zoomedAt, wheelStep: wheelStep, fitted: fitted },
               labelReserve: labelReserve, deptGroups: departmentGroups, hash: hash,
               hullBoxes: hullBoxes, boxesFor: boxForList, clearLabelBands: clearLabelBands,
               band: function(){ return T.hullLabelBand; }, version: 2 };

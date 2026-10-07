@@ -1,0 +1,199 @@
+/* =====================================================================================
+   The studio floor plan — the "world" view of the prototype.
+   -------------------------------------------------------------------------------------
+   Loaded by company-os.html on top of the designer's demo, exactly like graph.css and
+   prototype-changes.css: nothing here restyles the demo, everything here is new surface
+   for one new view. Colours come from the demo's own tokens, so the plan re-tints with the
+   palette and reads in dark and light; geometry lives in the --w-* tokens below, because
+   the prototype's rule is that no raw length appears in a rule body (verify.mjs check 4).
+
+   The class names are the app's (`apps/web/src/views/WorldView.tsx`): the same floor is
+   drawn in both places from the same data (`world-lib.js`), and matching names are what
+   let one replace the other later without a re-design.
+   ===================================================================================== */
+:root{
+  /* geometry — the one place a number may be written down */
+  --w-view-vh: 70dvh;
+  --w-view-h: 640px;
+  --w-view-h-min: 320px;
+  --w-hair: 1px;
+  --w-stroke: 2px;
+  --w-notch: 4px;
+  --w-grid: 32px;
+  --w-scale-w: 48px;
+  --w-drawer-min: 320px;
+  --w-drawer-max: 90%;
+  --w-status: 8px;
+  --w-count-min: 24px;
+  --w-art: 100%;
+  --w-phones: 800px;   /* breakpoint only — media queries cannot read custom properties */
+}
+
+.world { display: flex; flex-direction: column; gap: var(--s3); }
+
+/* ── the toolbar ───────────────────────────────────────────────────────────────────────────────
+   One row: fit, one button per room, then the zoom controls. On a phone it scrolls sideways
+   rather than wrapping the plan off the bottom of the screen. */
+.world-hud {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  overflow-x: auto;
+  padding-block-end: var(--s1);
+}
+.world-hud .btn { flex-shrink: 0; white-space: nowrap; }
+.world-hud .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.world-scale { flex-shrink: 0; min-inline-size: var(--w-scale-w); text-align: center; color: var(--muted); font-size: var(--sm); }
+
+/* ── the plan ──────────────────────────────────────────────────────────────────────────────────
+   A viewport that clips, and a canvas that is the plan's true size in plan units. The camera is
+   one CSS transform on the canvas — the same `cameraTransform()` the app uses, so nothing about
+   the drawing can drift between the two. */
+.world-viewport {
+  position: relative;
+  overflow: hidden;
+  block-size: var(--w-view-h);
+  max-block-size: var(--w-view-vh);
+  min-block-size: var(--w-view-h-min);
+  background: var(--bg);
+  border: var(--w-hair) solid var(--line);
+  box-shadow: var(--w-stroke) var(--w-stroke) 0 var(--line);
+  cursor: grab;
+  touch-action: none;                 /* the plan handles its own gestures */
+}
+.world-viewport:active { cursor: grabbing; }
+.world-viewport:focus-visible { outline: var(--ring); outline-offset: var(--w-notch); }
+.world-canvas {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  background-image:
+    linear-gradient(to right, var(--soft) var(--w-hair), transparent var(--w-hair)),
+    linear-gradient(to bottom, var(--soft) var(--w-hair), transparent var(--w-hair));
+  background-size: var(--w-grid) var(--w-grid);
+}
+
+/* ── the rooms ───────────────────────────────────────────────────────────────────────────────── */
+.room {
+  position: absolute;
+  border: var(--w-stroke) solid var(--line);
+  background: var(--surface);
+  padding: var(--s2);
+}
+.room-head { display: flex; flex-direction: column; gap: var(--s1); }
+.room-head strong { font-size: var(--base); color: var(--text); }
+.room-head small { color: var(--muted); font-size: var(--xs); }
+.room-executive-suite { background: var(--raised); }
+.room-engineering-lab { background: var(--surface); border-color: var(--accent); }
+.room-boardroom-hub { background: var(--raised); }
+.room-design-studio { background: var(--surface); }
+.room-operations-hub { background: var(--raised); }
+.room-lounge-area { background: var(--side); }
+
+/* ── the furniture ───────────────────────────────────────────────────────────────────────────── */
+.prop { position: absolute; border: var(--w-hair) solid var(--line); background: var(--hover); }
+.prop-table { background: var(--raised); border-color: var(--dim); }
+.prop-seat { background: var(--soft); }
+.prop-board { background: var(--raised); border-color: var(--accent); }
+.prop-plant { background: var(--accent-bg); border-color: var(--accent); }
+.prop-storage { background: var(--side); }
+.prop-machine { background: var(--hover); border-color: var(--dim); }
+
+.prop-art { display: block; inline-size: var(--w-art); block-size: var(--w-art); }
+.prop-art path { fill: var(--line); }
+.prop-art-desk path, .prop-art-table path { fill: var(--dim); }
+.prop-art-chair path { fill: var(--soft); }
+.prop-art-plant path { fill: var(--accent); }
+.prop-art-cabinet path, .prop-art-fridge path { fill: var(--side); stroke: var(--line); stroke-width: var(--w-hair); }
+.prop-art-screen path, .prop-art-arcade path { fill: var(--accent-bg); stroke: var(--accent); stroke-width: var(--w-hair); }
+.prop-art-sofa path { fill: var(--hover); }
+.prop-art-board path { fill: var(--raised); stroke: var(--line); stroke-width: var(--w-hair); }
+.prop-art-box path { fill: var(--dim); }
+
+/* ── the desks ───────────────────────────────────────────────────────────────────────────────── */
+.desk {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  padding: var(--s1);
+  background: var(--raised);
+  border: var(--w-hair) solid var(--line);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--xs);
+  cursor: pointer;
+  transition: background var(--speed) ease, border-color var(--speed) ease;
+}
+.desk:hover { border-color: var(--dim); background: var(--hover); }
+.desk-selected { border-color: var(--accent); background: var(--accent-bg); }
+.desk-empty { color: var(--dim); border-style: dashed; }
+.desk-name { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-status { inline-size: var(--w-status); block-size: var(--w-status); background: var(--dim); }
+.desk-status-working { background: var(--accent); }
+.desk-status-blocked { background: var(--danger); }
+.desk-count {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  min-inline-size: var(--w-count-min);
+  padding-inline: var(--s1);
+  background: var(--bg);
+  border: var(--w-hair) solid var(--line);
+  color: var(--muted);
+}
+
+/* ── one person's day, over the plan ─────────────────────────────────────────────────────────── */
+.world-drawer {
+  position: absolute;
+  inset-block-start: var(--s3);
+  inset-inline-end: var(--s3);
+  inline-size: min(var(--w-drawer-min), var(--w-drawer-max));
+  max-block-size: calc(100% - var(--s6));
+  overflow: auto;
+  z-index: 2;
+}
+.drawer-head { display: flex; align-items: flex-start; gap: var(--s3); }
+.drawer-head h3 { margin: 0; font-size: var(--base); }
+.drawer-head p { margin: 0; font-size: var(--sm); }
+.drawer-head .btn { margin-inline-start: auto; }
+.drawer-facts { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
+.drawer-facts div { display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--sm); }
+.drawer-facts dt { color: var(--muted); }
+.drawer-facts dd { margin: 0; }
+.drawer-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.drawer-tasks li { display: grid; grid-template-columns: auto 1fr; gap: var(--s2); align-items: center; font-size: var(--sm); }
+.drawer-tasks .task-id { color: var(--muted); font-size: var(--xs); }
+.drawer-tasks .progress { grid-column: 1 / -1; inline-size: var(--w-art); }
+
+/* ── the four numbers, on the floor itself ───────────────────────────────────────────────────── */
+.world-stats {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s5);
+  padding: var(--s2) var(--s3);
+  background: var(--side);
+  border-block-start: var(--w-hair) solid var(--line);
+  font-size: var(--sm);
+}
+.world-stats .stat { display: flex; gap: var(--s2); align-items: baseline; }
+.world-stats .stat-label { color: var(--muted); }
+.world-stats .stat-value { color: var(--accent); }
+.world-hint { font-size: var(--xs); }
+
+/* ── phones ────────────────────────────────────────────────────────────────────────────────────
+   A shorter plan (the toolbar above it is one swipeable row already), and the four numbers on a
+   grid so they do not become a paragraph. Same controls, same words — just arranged to fit. */
+@media (max-width: 800px) {
+  .world-viewport { block-size: 60dvh; }
+  .world-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+  .world-stats .stat { justify-content: space-between; }
+  .world-drawer { inset-inline: var(--s2); inline-size: auto; }
+}

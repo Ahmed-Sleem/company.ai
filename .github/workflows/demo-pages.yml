@@ -60,7 +60,10 @@ jobs:
           mkdir -p site/prototype
           cp design/prototype/company-os.html site/prototype/index.html
           cp design/prototype/company-os.html site/prototype/company-os.html
+          # graph.css/graph.js are the network view; world.css/world.js the world tab, which draws
+          # with world-lib.js — the app's own world code, bundled and committed (scripts/build-world-lib.mjs).
           cp design/prototype/graph.css design/prototype/graph.js design/prototype/prototype-changes.css site/prototype/
+          cp design/prototype/world.css design/prototype/world.js design/prototype/world-lib.js site/prototype/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
