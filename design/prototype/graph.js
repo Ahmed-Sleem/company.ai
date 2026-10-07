@@ -790,7 +790,11 @@ function startLoop(){
        design/prototype/probe-browser.mjs (20 of 22 nodes crossed the stage edge at every
        viewport). Fitting the view moves no node, so the persisted-layout rule of _research/14
        ("recompute only on explicit user action") still holds. */
-    if (alpha === 0 && NEEDS_FIT){ NEEDS_FIT = false; fitView(); }
+    /* Re-frame once the layout has settled — but never over a view the user has already framed
+       themselves. It used to: a wheel flick during the first second of settling was silently
+       undone when the layout stopped moving (the camera glided back to the fit), because the
+       deferred fit only checked whether *it* wanted to fit, never whether the user had taken over. */
+    if (alpha === 0 && NEEDS_FIT){ NEEDS_FIT = false; if (!USER_ADJUSTED) fitView(); }
     /* Keep going while *anything* on screen is still moving. The camera was left out of this
        condition at first, and the effect was a zoom that stopped a third of the way to where it
        was asked to go (measured: six wheel events produced six frames of movement and then a
