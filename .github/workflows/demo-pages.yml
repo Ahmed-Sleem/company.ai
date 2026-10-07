@@ -5,6 +5,11 @@
 # hosted for nothing, forever, with no cold starts. This workflow makes the root URL of the Pages
 # site BE the demo: a link you can send anyone, or open on a phone.
 #
+# It is BUILT here, from the same commit, rather than copied from the repository. A committed copy
+# goes stale the moment someone changes the app and forgets to regenerate it, and then the live
+# link quietly shows yesterday's build — which is exactly what happened once, and why this runs
+# `npm ci && build && build-demo-html.mjs` before publishing instead of trusting a file in git.
+#
 # One-time switch in the repository: Settings → Pages → Build and deployment → Source:
 # "GitHub Actions". After that, this runs by itself. The site is then at:
 #   https://<owner>.github.io/<repo>/
@@ -31,6 +36,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # The same Node the gate and the browser smoke run on locally (`node -v` → v20).
+          node-version: '20'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build the web app
+        run: npm run build -w @company/web
+      - name: Freeze the app, its data and its API into one file
+        run: node scripts/build-demo-html.mjs
       - uses: actions/configure-pages@v6
       - name: Put the demo at the root, and the designer's prototype beside it
         run: |
@@ -39,7 +55,8 @@ jobs:
           # The design prototype — the designer's demo plus the force-directed company graph
           # (design/prototype/graph.js, the "Obsidian-style" view), which the app's Network screen
           # does not have yet. Published read-only so it can be opened from anywhere while that
-          # port is done. Never edited: design/prototype/verify.mjs guards it.
+          # port is done. Never edited: design/prototype/verify.mjs guards it. Open it at
+          # /prototype/#network — the graph mounts on the Network view.
           mkdir -p site/prototype
           cp design/prototype/company-os.html site/prototype/index.html
           cp design/prototype/company-os.html site/prototype/company-os.html

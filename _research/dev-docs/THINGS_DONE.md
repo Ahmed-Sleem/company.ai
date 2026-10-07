@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-10-07 — the live link was serving yesterday's build
+
+- The phone fix was committed, pushed, deployed — and the live link still measured the old layout on
+  a phone (`row spread 300px`, heading `458px`, names `null`). Not the CDN: the file Pages publishes,
+  `demo/company-os-demo.html`, was still the pre-fix build. Its boot stamp pointed at
+  `/assets/index-DkEyv2w9.js`; the current build is `/assets/index-DB87ufb6.js`.
+- **Root cause:** that file is generated from `apps/web/dist` and committed, and the Pages workflow
+  copied the committed file. The gate has a step for exactly this — "8/10 the standalone demo file
+  matches the built app" — and it fails loudly; it simply was not run after the CSS/aria fix, so the
+  file was never regenerated. Run before the fix, it said: `demo: out of date — built from
+  /assets/index-DkEyv2w9.js … but the build is /assets/index-DB87ufb6.js`.
+- **Fixed twice over.** The file is regenerated (`node scripts/build-demo-html.mjs` → 592 KB, in sync),
+  and the workflow now **builds it from the same commit** (`npm ci` → build the web app → freeze it
+  into one file) instead of copying the repository's copy — a future "forgot to regenerate" can no
+  longer reach the live link. Concurrency is now `cancel-in-progress: false`: two pushes seconds apart
+  had left the *newer* run cancelled and the older content served.
+- **"The obsidian" is live and correct:** `/prototype/#network` → 22 nodes, 27 edges, no console
+  errors, identical to the same page served locally. The check that reported `0 nodes` was wrong, not
+  the site — the graph mounts on the Network view and that check never navigated to it. Open the view,
+  not just the page.
+- **Validation:** `bash scripts/verify.sh` → **10/10 steps green** — 90 api tests, 86 web tests,
+  11/11 design checks, 68/68 browser checks (including the five phone checks), demo in sync.
+
 ## 2026-10-07 — the phone was broken, and "the obsidian" was never in the app
 
 The owner opened the live link on his phone and called it corrupted. It was, and this is what it was:

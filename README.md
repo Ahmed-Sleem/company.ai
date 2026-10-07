@@ -81,6 +81,11 @@ https://<your-username>.github.io/<repository>/
 **In this repository that switch is already on** — the demo is live at
 <https://ahmed-sleem.github.io/company.ai/> and republishes on every push to `main`.
 
+The workflow **builds the demo from the pushed commit** (`npm ci` → build the web app → freeze it
+into one file) instead of copying the repository's copy, so the live link can never show a build
+older than the code. The designer's prototype is published beside it, and the force-directed company
+graph lives behind the Network view — open <https://ahmed-sleem.github.io/company.ai/prototype/#network>.
+
 ### The full product on Render — four clicks, once
 
 1. Go to **render.com** and **sign in with GitHub** (no card required for the free plan).
