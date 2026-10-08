@@ -938,3 +938,15 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - Next action for a session with push access: push the branch/PR, then remove the leftover
   `ai-company-os-ready (1).html` from the repo root (the demo now lives at
   `design/designer-demo/ai-company-os.html`).
+
+## 2026-10-08 — world tab + obsidian motion shipped; port audit written
+
+- Prototype gained the World tab (`#world`) and the gentle camera (commits `6d4ea66`, `d538b92`,
+  pushed; Pages verified live: world 6 rooms/21 props/16 desks/8 seated at 49 % desktop and
+  22/22 inside the frame at phone size; graph wheel flick 46 moving frames).
+- Owner direction received: stop working on the prototype URL; move everything into the real app.
+- Full audit + phased plan written: `_research/dev-docs/PORT_AUDIT.md`. Gaps: graph not in the app
+  (Network is still the OrgTree placeholder), world viewer missing inertia/pinch/double-click/
+  reduced-motion/resize-guard, shell chrome (breadcrumb, ⌘K search, +New, bell, owner card), team
+  cards without portraits, comms without the full-thread/provenance screen, no live URL for the
+  real app (render.yaml still not applied by the owner).
