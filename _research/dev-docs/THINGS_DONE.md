@@ -950,3 +950,20 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   reduced-motion/resize-guard, shell chrome (breadcrumb, ⌘K search, +New, bell, owner card), team
   cards without portraits, comms without the full-thread/provenance screen, no live URL for the
   real app (render.yaml still not applied by the owner).
+
+## 2026-10-08 — requirements v2 + rules re-read + big plan; Phase A cleanup executed
+
+- Owner answered Q1–Q5: budget and caps removed entirely; the browser is the engine (server, DB,
+  Docker, render.yaml retire; Pages hosts the real app); schedule = daily hours + manual override;
+  first run = pixel landing page with screenshots then the intro wizard; cleanup = execute-and-report.
+- `PRODUCT_REQUIREMENTS.md` refined to v2 (REQ-1…REQ-38, all opens resolved).
+- Rules re-read (all four): logged in `SUPPORTING_NOTES.md` with three documented deviations
+  (rolling checkpoint zip + git tag instead of an archive pile; the user's own keys on the user's
+  own machine; native dialog stands). The "hard caps" rule is retired by owner decision.
+- `IMPLEMENTATION_PLAN.md` rewritten: assessment table, target architecture, reuse ledger with
+  licence-verified sources (openai Apache-2.0, @google/genai Apache-2.0, jsonrepair ISC,
+  zustand MIT, Anthropic browser-fetch pattern), phases A–J, gates, risks.
+- Phase A executed (execute-and-report mandate): deleted `.data/` (scratch, untracked); merged
+  `_research/screenshots/` (6 p0-*.png) into `design/screenshots/` — one screenshots home (20
+  files); nothing else removed yet (server artefacts retire with Phase C, demo pipeline with
+  Phase J, both reported again then).
