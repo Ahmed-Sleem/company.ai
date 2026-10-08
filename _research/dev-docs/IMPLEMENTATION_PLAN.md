@@ -166,3 +166,59 @@ Phase B (budget dies) executed the same day: `BudgetMeter` deleted; team roster,
 world stats are money-free in the app and the prototype; string table cleaned (en+ar); a new
 `scripts/checks/no-budget.mjs` guards the surface (in `verify.sh`); both new checks were observed
 failing (16 hits; the roster test red) before the removals turned them green. Gate 10/10 after.
+
+## §8 · Re-audit 2026-10-08 (b) — corrections and the code-source map
+
+Corrections found by re-auditing against the repo and the owner's new directions:
+
+1. **Demos are archived, never deleted.** Phase J no longer "retires demo/"; it moves
+   `demo/` → `archive/demo/` and `design/owner-demo/` → `archive/owner-demo/`, updating every
+   reference (build-demo-html.mjs, the workflow, e2e/demo.mjs, gen-owner-data.mjs, seed.ts, the
+   parity/owner-data/avatars tests, SOURCE.md paths). `design/designer-demo/` stays where it is:
+   it is an *active* parity source read by generators and tests at build time, and the rules lock
+   it read-only. Until J, the root Pages URL keeps serving the demo, so the owner always has a
+   live link.
+2. `verify.sh`'s own step-number comments are off by one (says 1/9 then 2/10…) — fixed when Phase C
+   restructures the gate.
+3. Landing screenshots come from a fixture-loaded **static** build (Playwright against
+   `vite preview` + a seeded save), not from the old API-served app.
+4. Neither demo contains a drag-and-drop editor (verified by grep: the designer demo's only
+   `pointerdown` is its dialog scrim; the owner demo has none). The "borrow" the owner means is the
+   one already in place: the plan geometry, desk positions and sprite catalogue are generated from
+   his demo (`apps/web/src/world/layout.data.ts`, drift-checked), and the drag/drop mechanics are
+   our build mode — which Phase K extends.
+
+Code-source & adaptation map (what to take from where, and how to adapt it):
+
+| Phase | Take from | Adapt into | How |
+|---|---|---|---|
+| C | `packages/contracts/src/*.ts` (zod shapes) | `apps/web/src/data/schema.ts` | drop server brands + budget; keep ids/stages/statuses; add provider/key/managerId |
+| C | `packages/company/src/seed.ts` + `scripts/gen-owner-data.mjs` | `design/data/demo-company.save.json` fixture | one-shot generation, then hand-owned labelled fixture (tests + landing) |
+| C | `apps/web/e2e/smoke.mjs` API bootstrap | `addInitScript` seeding localStorage with the fixture | same assertions, static host |
+| D | `SettingsView` palette/skin controls + `Dialog`/`TaskForm` patterns | wizard steps | reuse components; wizard = new composition |
+| E | `openai` npm, `@google/genai`, Anthropic fetch pattern (§3 URLs) | `ai/providers.ts` | one interface; per-provider chat/test; custom baseURL via openai SDK |
+| F | — (new) | prompts/grammar/engine | grammar spec below; jsonrepair for tolerance |
+| G | `design/prototype/world.js` pointer handlers | `apps/web/src/world/gestures.ts` | React-ify; share via world-lib back to the prototype |
+| G | `design/prototype/graph.js` | `apps/web/src/graph/*` | extract sim/camera/controls to TS; esbuild bridge like world-lib |
+| G | `company-os.html:715` topbar + `:761` globalSearch | React shell components | real store data instead of demo `data` |
+| K | existing build mode (`WorldView`) + sprite catalogue (`layout.data.ts`) | extended builder | see §9 |
+
+## §9 · Phase K — world builder & sprite customisation (PLANNED ONLY, owner 2026-10-08)
+
+Scope (nothing built yet): the builder grows from "move what exists" to a real editor —
+add any furniture from the sprite catalogue (the nine-shape catalogue generated from his demo),
+drag & drop to place (pointer events, touch included — `touch-action: none` already there),
+move, select, delete, undo, reset (all exist today); choose a pixel portrait per employee from the
+portrait library (REQ-17); the edited plan and the portraits persist in the save (store), not in
+component state as now; every addition snaps to the owner's 16-unit grid; validation keeps props
+inside their room and desks inside the plan. New checks observed failing first: a browser test
+that drags a new sprite from the catalogue onto the floor on a touch viewport, and a unit test
+that a saved plan round-trips through the export file. This phase starts after G, never before.
+
+## §10 · Live URLs (owner asked where to watch)
+
+- `https://ahmed-sleem.github.io/company.ai/` — today: the frozen one-file app (seed data).
+  After Phase J: **the real product**, fully user-side. Free forever (his GitHub Pages).
+- `https://ahmed-sleem.github.io/company.ai/prototype/` — the frozen design reference
+  (`#world`, `#network`).
+No new account needed anywhere: the repo already lives on his GitHub and Pages is wired.

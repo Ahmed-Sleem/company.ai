@@ -979,3 +979,14 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   (drawer line + monthly-spend stat), i18n (en+ar) and the prototype world tab cleaned; verify.mjs
   and smoke.mjs expectations updated to the three-stat HUD.
 - Gate after: 10/10 green — 90 api · 87 web · 15/15 design · 68/68 smoke.
+
+## 2026-10-08 — re-audit (b): corrections, code-source map, builder phase planned; URLs answered
+
+- Re-audit corrections: demos are archived, never deleted (archive/ lands in J with full reference
+  updates; designer-demo stays as the active parity source); verify.sh numbering fixed in C;
+  landing screenshots from a fixture-loaded static build; neither demo has a drag editor — the
+  borrow is the generated plan/sprite catalogue plus our build mode.
+- Code-source & adaptation map written for phases C–K (exact source path → target → method).
+- Phase K planned only (owner: do not start): catalogue-driven furniture adding, drag & drop incl.
+  touch, portrait picker, plan persisted in the save; tests named before building.
+- Live URLs answered: root Pages = frozen app today, real product after J; /prototype = reference.
