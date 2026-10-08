@@ -990,3 +990,38 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - Phase K planned only (owner: do not start): catalogue-driven furniture adding, drag & drop incl.
   touch, portrait picker, plan persisted in the save; tests named before building.
 - Live URLs answered: root Pages = frozen app today, real product after J; /prototype = reference.
+
+## 2026-10-09 — Phase C: the app goes client-only; the root URL becomes the real product
+
+- Owner direction: he watches only `https://ahmed-sleem.github.io/company.ai/` — the root must be
+  the real app from now on, organised like the prototype; the demo is left as it is (it moves to
+  `/demo/`, archived not deleted); the product is **company.ai**, not company.os.
+- The engine moved into the browser (REQ-13): `apps/web/src/data/store.ts` (zustand persist,
+  save key `company.ai.save.v1`, version 1) holds the whole product state, seeded on first run
+  from `apps/web/src/data/demo.json` (the labelled demo company, no budget anywhere).
+- `apps/web/src/lib/api.ts` is now a façade over that store — same method names, same row shapes,
+  same error shape — so no view changed shape. Movement rules are the *shared* ones: the façade
+  delegates to `offeredTransitions()`/`TRANSITION_REASONS` in `@company/contracts`, the same
+  table the retired server used; the form's stage edit goes through the same gate as the buttons.
+- New shell chrome (the prototype's organisation): workspace menu with export save / import save /
+  start over; ⌘K search dialog over views, people, tasks and threads; bell with pending-decision
+  count; breadcrumb; owner card without the calm note; `company.ai 0.2.0` status bar; pixel
+  favicon (`apps/web/public/icon.svg`); scrollbars hidden but scrollable (REQ-4); every screen
+  scrolls inside `.pagebody` under a fixed chrome (REQ-18/19).
+- zustand added (MIT) — licence gate ran before install; THIRD_PARTY.md lists it as a shipped
+  runtime dependency.
+- Tests converted, not deleted: shell/tasks tests now seed the save instead of stubbing `fetch`
+  (web suite 87/87); the smoke test drives the static build with no server at all and reads the
+  save out of localStorage (66/66; the two former one-port API checks are replaced by three
+  static-hosting checks).
+- `vite.config.ts`: `base: './'` (the same dist works at the Pages root, a subfolder, or a disk);
+  dev/preview proxies retired with the API.
+- `build-demo-html.mjs` simplified to a pure freezer: no API capture, no fetch stub — the bundle
+  carries its own data now; storage shim kept for sandboxed frames.
+- Pages workflow rewritten: root = the built app; `/demo/` = the frozen demo; `/prototype/`
+  unchanged (designer's prototype + graph + world, read-only, guarded).
+- Prototype patched through `build-prototype.py` only (never by hand): P7 renames the brand
+  company.os → company.ai (sidebar, settings eyebrow, title, description); P8 removes the
+  sidebar's calm-place note. Regenerated; design gate 15/15.
+- Gate: 10/10 green — 90 api (still in the repo until Phase C's server retirement lands) ·
+  87 web · 15/15 design · 66/66 smoke.

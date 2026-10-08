@@ -14,6 +14,9 @@ set of patches so the prototype is reproducible instead of hand-edited:
       its Arabic name in the demo's dictionary
   P6  world.css is linked beside graph.css, and world-lib.js + world.js are loaded before the
       app script (world-lib.js is the app's own world code, bundled by build-world-lib.mjs)
+  P7  the product is renamed company.ai (the sidebar brand, the settings eyebrow, the page
+      title and its description) — the owner's decision of 2026-10-08
+  P8  the sidebar's "calm place" note is removed — the owner asked for no such note
 
 Every patch is exact-match and counted: if the demo changes, the build fails loudly rather
 than producing a half-patched file.
@@ -151,6 +154,37 @@ def patch_world_assets(src: str) -> str:
 
 
 
+def patch_brand(src: str) -> str:
+    """P7 — the product is company.ai, not company.os (owner, 2026-10-08)."""
+    pairs = [
+        ("<span>company.os<small>HUMAN × ARTIFICIAL</small></span>",
+         "<span>company.ai<small>HUMAN × ARTIFICIAL</small></span>"),
+        ("[ company.os ]", "[ company.ai ]"),
+        ("<title>Company OS — Pixel Edition</title>",
+         "<title>company.ai — Pixel Edition</title>"),
+        ('content="Company OS — a calm, self-contained appearance demo for an AI-powered company."',
+         'content="company.ai — a self-contained appearance demo for an AI-powered company."'),
+    ]
+    for old, new in pairs:
+        if src.count(old) != 1:
+            raise SystemExit(f"P7 failed: {old[:40]!r} appears {src.count(old)} times — the demo changed.")
+        src = src.replace(old, new, 1)
+    return src
+
+
+def patch_no_calm_note(src: str) -> str:
+    """P8 — the sidebar's calm-place note is gone (the owner asked for no such note).
+
+    The dictionary keeps the sentence: the string table is the demo's, and an unused entry
+    is harmless, while a missing one breaks t().
+    """
+    old = ('<div class="side-note"><strong>↳ ${t(\'A calm place to run your AI company.\')}</strong>'
+           "${t('No live AI connections')}</div>")
+    if src.count(old) != 1:
+        raise SystemExit(f"P8 failed: the calm note appears {src.count(old)} times — the demo changed.")
+    return src.replace(old, "", 1)
+
+
 def main() -> int:
     argv = sys.argv[1:]
     check = "--check" in argv
@@ -166,6 +200,8 @@ def main() -> int:
     src = patch_marker(src)
     src = patch_world_tab(src)
     src = patch_world_assets(src)
+    src = patch_brand(src)
+    src = patch_no_calm_note(src)
 
     checks = {
         "networkView patched": "PATCHED (build-prototype.py)" in src and "function networkView(){" in src,

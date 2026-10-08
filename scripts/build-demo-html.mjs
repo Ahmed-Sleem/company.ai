@@ -7,93 +7,24 @@
  *
  * What it does, in order:
  *
- *   1. starts the API against a throw-away database and reads every endpoint the GUI uses, so the
- *      demo shows the same rows the product does (the designer's company, its 8 agents, its tasks);
- *   2. takes the **built** web app (`apps/web/dist`) — the same bundle the browser smoke drives —
- *      and inlines its CSS, its JavaScript and the Pixelify Sans font as data URIs;
- *   3. puts a small `fetch` in front of the app that answers those endpoints from the embedded
- *      data and *mutates it in memory* for the writes, so creating a task, moving one, editing one
- *      and deciding a decision all really work in the file;
- *   4. writes one self-contained HTML file.
+ *   1. takes the **built** web app (`apps/web/dist`) — the same bundle the browser smoke drives;
+ *   2. inlines its CSS, its JavaScript and the Pixelify Sans font as data URIs;
+ *   3. writes one self-contained HTML file.
+ *
+ * There is no API to capture and no fetch to stub: the app is client-only now (REQ-13). Its data
+ * travels *inside the bundle* (the labelled demo save, apps/web/src/data/demo.json) and its
+ * writes go to localStorage — so the frozen file behaves exactly like the hosted app, offline.
  *
  * It is deliberately built from `dist`, not from source: if the demo works, the product works.
  */
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { setTimeout as sleep } from 'node:timers/promises';
 
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(REPO, 'apps/web/dist');
 export const OUT = join(REPO, 'demo/company-os-demo.html');
-const API_PORT = 8799;
 
-/** Every read the GUI performs on start-up, plus the ones a view asks for when it opens. */
-const ENDPOINTS = [
-  '/api/health',
-  '/api/company',
-  '/api/models',
-  '/api/agents',
-  '/api/tasks',
-  '/api/decisions',
-  '/api/decisions?status=pending',
-  '/api/session',
-  '/api/threads',
-];
-
-async function waitFor(url, timeoutMs = 60_000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return true;
-    } catch {
-      /* not up yet */
-    }
-    await sleep(250);
-  }
-  throw new Error(`${url} did not come up in ${timeoutMs}ms`);
-}
-
-/** Start the API, read the endpoints, stop it. */
-async function collectData() {
-  // an empty database every time: the demo must show the seeded company, not yesterday's edits
-  rmSync(join(REPO, '.data/demo-build'), { recursive: true, force: true });
-  const child = spawn('npx', ['tsx', 'services/api/src/server.ts'], {
-    cwd: REPO,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true,
-    env: { ...process.env, PORT: String(API_PORT), PGLITE_DIR: '.data/demo-build' },
-  });
-  const log = [];
-  child.stdout.on('data', (chunk) => log.push(String(chunk)));
-  child.stderr.on('data', (chunk) => log.push(String(chunk)));
-  try {
-    await waitFor(`http://127.0.0.1:${API_PORT}/api/health`);
-    const data = {};
-    for (const endpoint of ENDPOINTS) {
-      const response = await fetch(`http://127.0.0.1:${API_PORT}${endpoint}`);
-      if (!response.ok) throw new Error(`${endpoint} answered ${response.status}`);
-      data[endpoint] = await response.json();
-    }
-    // The allowed moves come from the API on every task (`offers`). Capture them per stage so the
-    // stand-in API can hand a *new* task the same offers the real one would — the rule stays the
-    // rule's own output, not a copy of it.
-    data.offersByStage = {};
-    for (const task of data['/api/tasks'].tasks) data.offersByStage[task.stage] = task.offers;
-    return data;
-  } finally {
-    try {
-      process.kill(-child.pid, 'SIGTERM');
-    } catch {
-      child.kill('SIGTERM');
-    }
-    await sleep(400);
-  }
-}
-
-/** The app's `request()` unwraps `{…}` as-is and throws `error.message` on a non-2xx. */
 /**
  * Storage that always works.
  *
@@ -122,94 +53,6 @@ const STORAGE_SHIM = `(function () {
     } catch (ignored) { /* nothing else to do — the app guards its own reads */ }
   }
 })();`;
-
-function fetchStub(data) {
-  return STORAGE_SHIM + `
-window.__DEMO_DATA__ = ${JSON.stringify(data)};
-(function () {
-  var store = window.__DEMO_DATA__;
-  var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
-  var uuid = function (n) { return '00000000-0000-4000-8000-' + String(n).padStart(12, '0'); };
-  var failures = [];
-  var respond = function (status, body) {
-    return Promise.resolve(new Response(JSON.stringify(body), { status: status, headers: { 'content-type': 'application/json' } }));
-  };
-  window.fetch = function (input, init) {
-    var url = String(input && input.url ? input.url : input);
-    var path = url.replace(/^[a-z]+:\\/\\/[^/]+/i, '').split('?')[0];
-    var query = url.indexOf('?') >= 0 ? url.slice(url.indexOf('?')) : '';
-    var method = (init && init.method) || 'GET';
-    var body = init && init.body ? JSON.parse(init.body) : null;
-    var tasks = store['/api/tasks'].tasks;
-    var decisions = store['/api/decisions'].decisions;
-
-    // reads
-    for (var key in store) {
-      if (key.split('?')[0] === path && method === 'GET') {
-        if (key === '/api/decisions' && query.indexOf('status=') >= 0) {
-          var wanted = query.split('status=')[1];
-          return respond(200, { decisions: decisions.filter(function (d) { return d.status === wanted; }) });
-        }
-        if (key === '/api/decisions') return respond(200, { decisions: decisions });
-        return respond(200, store[key]);
-      }
-    }
-
-    // writes — small, honest mutations so the demo behaves like the product
-    if (path === '/api/tasks' && method === 'POST') {
-      var next = 200 + tasks.length;
-      var created = {
-        id: uuid(tasks.length + 100), shortRef: 'TSK-' + next,
-        title: body.title, titleAr: body.titleAr || null,
-        description: body.description || null, descriptionAr: body.descriptionAr || null,
-        stage: body.stage || 'backlog', priority: body.priority || 'medium', progress: body.progress || 0,
-        dueDate: body.dueDate || null, ownerAgentId: body.ownerAgentId,
-        owner: null, offers: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-      };
-      created.offers = store.offersByStage[created.stage] || [];
-      var agent = store['/api/agents'].agents.find(function (a) { return a.id === body.ownerAgentId; }) || null;
-      created.owner = agent ? { id: agent.id, name: agent.name, nameAr: agent.nameAr, role: agent.role, avatar: agent.avatar } : null;
-      tasks.push(created);
-      return respond(200, { task: created });
-    }
-    if (path.indexOf('/api/tasks/') === 0 && method === 'PATCH') {
-      var id = path.split('/')[3];
-      var row = tasks.find(function (t) { return t.id === id; });
-      if (!row) return respond(404, { error: { code: 'not_found', message: 'That task is not here.' } });
-      for (var field in body) if (body[field] !== undefined) row[field] = body[field];
-      if (body.ownerAgentId) {
-        var owner = store['/api/agents'].agents.find(function (a) { return a.id === body.ownerAgentId; });
-        row.owner = owner ? { id: owner.id, name: owner.name, nameAr: owner.nameAr, role: owner.role, avatar: owner.avatar } : row.owner;
-      }
-      row.updatedAt = new Date().toISOString();
-      return respond(200, { task: row });
-    }
-    if (path.indexOf('/api/tasks/') === 0 && path.indexOf('/transition') > 0 && method === 'POST') {
-      var moveId = path.split('/')[3];
-      var moving = tasks.find(function (t) { return t.id === moveId; });
-      if (!moving) return respond(404, { error: { code: 'not_found', message: 'That task is not here.' } });
-      moving.stage = body.to;
-      moving.offers = store.offersByStage[moving.stage] || [];
-      moving.progress = body.to === 'done' ? 100 : moving.progress;
-      moving.updatedAt = new Date().toISOString();
-      return respond(200, { task: { id: moving.id, stage: moving.stage } });
-    }
-    if (path.indexOf('/api/decisions/') === 0 && path.indexOf('/decide') > 0 && method === 'POST') {
-      var decisionId = path.split('/')[3];
-      var decision = decisions.find(function (d) { return d.id === decisionId; });
-      if (!decision) return respond(404, { error: { code: 'not_found', message: 'That request is not here.' } });
-      decision.status = body.action === 'approve' ? 'approved' : body.action === 'reject' ? 'rejected' : decision.status;
-      decision.outcome = body.action === 'approve' ? 'approved' : body.action === 'reject' ? 'rejected' : 'question';
-      decision.audit = Object.assign({}, decision.audit, { decidedAt: new Date().toISOString(), decidedByLabel: 'Owner' });
-      return respond(200, { decision: decision });
-    }
-
-    failures.push(method + ' ' + path);
-    return respond(500, { error: { code: 'demo_unwired', message: 'This action is not wired in the demo file.' } });
-  };
-  window.__DEMO_UNWIRED__ = failures;
-})();`.replace('</script>', '<\\/script>');
-}
 
 /**
  * What the current build is, without any data: the two asset names, their contents, and the bundle
@@ -255,7 +98,7 @@ function bundleFor(jsTag, jsSrc) {
 }
 
 /** The built page, with everything it points at folded into it. */
-function inlineApp(stub) {
+function inlineApp() {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8');
   const read = (href) => readFileSync(join(DIST, href.replace(/^\//, '')), 'utf8');
 
@@ -265,7 +108,8 @@ function inlineApp(stub) {
   // the font travels with the file: a demo that needs a server for its typeface is not a demo
   const fontMatch = /url\(([^)]+\.woff2)\)/.exec(css);
   if (fontMatch) {
-    const fontPath = join(DIST, fontMatch[1].replace(/^\//, '').replace(/^\.\.\//, ''));
+    // the build emits relative urls (vite base: './'), so the font sits beside the CSS that names it
+    const fontPath = join(DIST, dirname(cssHref), fontMatch[1]);
     // a function replacer: a replacement *string* is scanned for `$&`, `$'`, `` $` ``, and the
     // bundle is full of those — the first attempt spliced fragments of the document into the script
     const dataUri = `data:font/woff2;base64,${readFileSync(fontPath).toString('base64')}`;
@@ -287,20 +131,20 @@ function inlineApp(stub) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Company OS — the demo file</title>
-<meta name="generator" content="scripts/build-demo-html.mjs — the real GUI, its data and its API in one file">
+<title>company.ai — the demo file</title>
+<meta name="generator" content="scripts/build-demo-html.mjs — the real GUI and its save, in one file">
 <meta name="demo-assets" content="${jsSrc} ${cssHref}">
-<!-- The demo's own data and the fetch in front of it. Inline and first, so the app finds them. -->
-<script>${stub}</script>
+<!-- Storage that always works: sandboxed frames throw on localStorage, and this app lives there. -->
+<script>${STORAGE_SHIM}</script>
 <style>${css}</style>
 </head>
 <body>
 ${html.replace(cssTag, '').replace(jsTag, '').replace('</body>', () => `<script>${js}</script>\n</body>`)}
 <!--
-  This file is generated. It is the real application bundle, the real seeded data, and a small
-  in-memory stand-in for the API — so every screen, the floor plan, the form, the palettes and the
-  preferences can be tried without a server. Writes (creating, editing and moving a task) work and
-  last until the page is reloaded. Rebuild with: node scripts/build-demo-html.mjs
+  This file is generated. It is the real application bundle — every screen, the floor plan, the
+  form, the palettes and the preferences — with the labelled demo save inside it. Writes (creating,
+  editing and moving a task, deciding a decision) go to this browser's own storage, exactly like
+  the hosted app. Rebuild with: node scripts/build-demo-html.mjs
 -->
 </body>
 </html>
@@ -340,17 +184,14 @@ function assertBuildIsFresh() {
   }
 }
 
-export async function build() {
+export function build() {
   assertBuildIsFresh();
-  const data = await collectData();
-  return { html: inlineApp(fetchStub(data)), data };
+  return { html: inlineApp() };
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {
   if (process.argv.includes('--check')) {
-    // No server, no data: the question is only whether the file is still this build. The seeded
-    // rows inside it legitimately differ between builds — they come from a live API.
     const result = checkDemo();
     if (!result.ok) {
       console.error(`demo: out of date — ${result.why}. Rebuild: node scripts/build-demo-html.mjs`);
@@ -358,12 +199,9 @@ if (isMain) {
     }
     console.log(`demo: in sync with the build — ${result.why}`);
   } else {
-    const { html, data } = await build();
-    const agents = data['/api/agents'].agents.length;
-    const tasks = data['/api/tasks'].tasks.length;
-    const decisions = data['/api/decisions'].decisions.length;
+    const { html } = build();
     mkdirSync(dirname(OUT), { recursive: true });
     writeFileSync(OUT, html);
-    console.log(`demo: wrote demo/company-os-demo.html — ${agents} agents · ${tasks} tasks · ${decisions} decisions · ${(html.length / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`demo: wrote demo/company-os-demo.html — ${(html.length / 1024 / 1024).toFixed(2)} MB`);
   }
 }

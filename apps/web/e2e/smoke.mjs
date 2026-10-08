@@ -2,25 +2,24 @@
 /**
  * End-to-end smoke test — the gate's browser half.
  *
- * It starts the API and the built web app itself, drives a real Chromium, and tears the
- * servers down. Nothing is mocked: the same code path the owner would run.
+ * It serves the built web app itself, drives a real Chromium, and tears the server down.
+ * Nothing is mocked: the same bundle the owner downloads, reading and writing its own save
+ * file in the browser — there is no API any more (REQ-13).
  *
  * What it proves (each check is written to be able to fail — see the mutant note in the log):
  *   1. the app renders and the shell has all six views;
  *   2. the theme control really changes the document theme;
  *   3. the language control really switches to Arabic and flips `dir` to rtl;
  *   4. every view's four data states render (`?state=`);
- *   5. the API answers and the decision inbox shows a real decision;
- *   6. no uncaught page errors, and no failed requests to our own origin.
+ *   5. the save file is what the screens read and write, and the decision inbox works;
+ *   6. no uncaught page errors, no requests to any API, nothing off-origin.
  */
 import { spawn } from 'node:child_process';
-import { rmSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium, devices } from 'playwright';
 
-// Deliberately NOT the development ports (8787/5173): a smoke test must talk to the servers
-// it started itself. Sharing a port with a running dev server silently tested the wrong app.
-const API_PORT = 8790;
+// Deliberately NOT the development port (5173): a smoke test must talk to the server it
+// started itself. Sharing a port with a running dev server silently tested the wrong app.
 const WEB_PORT = 4174;
 const ROOT = new URL('../../..', import.meta.url).pathname;
 
@@ -62,6 +61,12 @@ async function waitFor(url, timeoutMs = 30_000) {
   throw new Error(`${url} did not come up in ${timeoutMs}ms`);
 }
 
+/** The visitor's save, read out of the browser. This is the database now. */
+const readSave = (target) => target.evaluate(() => {
+  const raw = localStorage.getItem('company.ai.save.v1');
+  return raw ? JSON.parse(raw).state : null;
+});
+
 const results = [];
 const check = (name, condition, detail = '') => {
   results.push({ name, ok: Boolean(condition), detail });
@@ -69,37 +74,11 @@ const check = (name, condition, detail = '') => {
 };
 
 try {
-  // Always start from an empty database: a smoke test that only passes on the second run
-  // (because a decision was already approved) is worse than no smoke test.
-  rmSync(`${ROOT}/.data/e2e-pglite`, { recursive: true, force: true });
-
-  console.log(`· starting the API on ${API_PORT} (PGlite, mock provider — no keys)`);
-  const api = run('npx', ['tsx', 'services/api/src/server.ts'], {
-    // STATIC_DIR makes this the *deployed* shape: the API also serves the built app, one origin,
-    // no CORS. The checks further down open this port directly and prove it.
-    env: {
-      ...process.env,
-      PORT: String(API_PORT),
-      PGLITE_DIR: '.data/e2e-pglite',
-      STATIC_DIR: 'apps/web/dist',
-    },
-  });
-  let apiLog = '';
-  api.stdout.on('data', (chunk) => { apiLog += chunk; });
-  api.stderr.on('data', (chunk) => { apiLog += chunk; });
-  api.on('exit', (code) => {
-    if (code !== 0 && code !== null) console.error(`api exited early (${code}) — ${apiLog.trim().slice(0, 300)}`);
-  });
-  await waitFor(`http://127.0.0.1:${API_PORT}/api/health`);
-  if (api.exitCode !== null) {
-    // e.g. the machine ran out of memory because another API is already running
-    throw new Error(`the API died before the checks began (exit ${api.exitCode}): ${apiLog.trim().slice(0, 300)}`);
-  }
-
+  // Nothing to seed and nothing to wipe: every run gets a fresh browser profile, so the save
+  // starts absent and the app writes the labelled demo company into it on first paint.
   console.log('· starting the built web app');
   run('npx', ['vite', 'preview', '--port', String(WEB_PORT), '--strictPort'], {
     cwd: `${ROOT}/apps/web`,
-    env: { ...process.env, API_URL: `http://127.0.0.1:${API_PORT}` },
   });
   await waitFor(`http://127.0.0.1:${WEB_PORT}/`);
 
@@ -109,8 +88,8 @@ try {
   const badRequests = [];
   page.on('pageerror', (error) => pageErrors.push(String(error)));
   page.on('requestfailed', (request) => badRequests.push(request.url()));
-  page.on('response', (response) => {
-    if (response.url().includes('/api/') && response.status() >= 500) badRequests.push(response.url());
+  page.on('request', (request) => {
+    if (request.url().includes('/api/')) badRequests.push(`api call: ${request.url()}`);
   });
 
   await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
@@ -124,7 +103,8 @@ try {
     nodes.map((n) => n.querySelector('svg.pixel-icon path')?.getAttribute('d')?.length ?? 0));
   check('every nav item carries a pixel icon', navIcons.length === 7 && navIcons.every((n) => n > 40),
     navIcons.join(', '));
-  check('the status bar names the company', (await page.textContent('.statusbar'))?.includes('Acme Studio') ?? false);
+  check('the status bar names the product and its version',
+    (await page.textContent('.statusbar'))?.includes('company.ai') ?? false);
   await page.waitForSelector('text=Aria', { timeout: 10_000 });
   check('the team view shows real agents from the database', true, 'Aria rendered');
   const roster = await page.textContent('.roster');
@@ -186,7 +166,8 @@ try {
     (await page.$$eval('.toolbar', (nodes) => nodes.some((node) => node.textContent?.includes('List')))));
 
   // the designer's portraits, drawn on the cards: what the API names is what the page draws
-  const apiTasks = await (await fetch(`http://127.0.0.1:${API_PORT}/api/tasks`)).json();
+  const saved = await readSave(page);
+  const apiTasks = { tasks: saved?.tasks ?? [] };
   const portraits = await page.evaluate(() => Object.fromEntries(
     [...document.querySelectorAll('[data-task]')].map((card) => [
       card.textContent?.slice(0, 40),
@@ -203,9 +184,9 @@ try {
       new Set(drawn.map((row) => row.pathLength)).size > 1,
     `${drawn.length} portraits, ${new Set(drawn.map((row) => row.pathLength)).size} distinct`);
   const firstCard = drawn[0];
-  const firstAgent = apiTasks.tasks.find((task) => (task.owner?.avatar ?? 0) === Number(firstCard.index));
-  check('the portrait index matches the one the database stored',
-    firstAgent !== undefined && Number(firstCard.index) === firstAgent.owner.avatar);
+  const firstAgent = (saved?.agents ?? []).find((agent) => agent.avatar === Number(firstCard.index));
+  check('the portrait index matches the one the save stored',
+    firstAgent !== undefined && Number(firstCard.index) === Number(firstAgent.avatar));
 
   // the review gate, in the interface: a task in review cannot be finished without a decision
   await page.click('[data-task]:has-text("Rehearse the migration")');
@@ -383,13 +364,12 @@ try {
     rooms === 6 && desks === 16 && props === 21, `${rooms} rooms · ${desks} desks · ${props} props`);
   check('the company is sitting at the desks it has', staffed === 8, `${staffed} desks staffed`);
 
-  // the HUD counts what the API says, not what the demo said
+  // the HUD counts what the save says, not what the demo said
   const hud = await page.$$eval('.world-stats .stat', (nodes) =>
     nodes.map((n) => [n.querySelector('.stat-label')?.textContent, n.querySelector('.stat-value')?.textContent]));
-  const worldAgents = await (await fetch(`http://127.0.0.1:${API_PORT}/api/agents`)).json();
-  const worldTasks = await (await fetch(`http://127.0.0.1:${API_PORT}/api/tasks`)).json();
+  const worldSave = await readSave(page);
   check('the HUD counts the roster and the ledger, not the demo’s numbers',
-    hud.length === 3 && hud[0][1] === '8',
+    hud.length === 3 && hud[0][1] === String(worldSave?.agents.length ?? -1),
     hud.map(([label, value]) => `${label} ${value}`).join(' · '));
 
   // the plan arrives fitted — it did not, once: the fit effect ran while the world was still a
@@ -444,8 +424,8 @@ try {
   await page.click('[data-desk][data-agent]:has-text("Aria")');
   await page.waitForSelector('[data-world=drawer]', { timeout: 5_000 });
   const drawer = await page.textContent('[data-world=drawer]');
-  const aria = worldAgents.agents.find((agent) => agent.name === 'Aria');
-  const ariaTasks = worldTasks.tasks.filter((task) => task.ownerAgentId === aria.id);
+  const aria = (worldSave?.agents ?? []).find((agent) => agent.name === 'Aria');
+  const ariaTasks = (worldSave?.tasks ?? []).filter((task) => task.ownerAgentId === aria?.id);
   check('clicking a desk opens the drawer with that person and their tasks',
     (drawer?.includes('Aria') ?? false) && ariaTasks.every((task) => drawer?.includes(task.shortRef)),
     `${ariaTasks.length} tasks on the drawer`);
@@ -630,26 +610,20 @@ try {
     await phone.close();
   }
 
-  // 5g — the deployed shape: ONE port that is both the API and the app
+  // 5g — the deployed shape: a folder of static files, nothing behind it
   {
-    const root = await fetch(`http://127.0.0.1:${API_PORT}/`);
+    const root = await fetch(`http://127.0.0.1:${WEB_PORT}/`);
     const html = await root.text();
-    const health = await fetch(`http://127.0.0.1:${API_PORT}/api/health`);
-    check('the API also serves the built app, so one host is the whole product',
-      root.status === 200 && (root.headers.get('content-type') ?? '').includes('text/html') && html.includes('id="root"'),
+    check('the built app is served on its own, with no server behind it',
+      root.status === 200 && (root.headers.get('content-type') ?? '').includes('text/html') &&
+        html.includes('id="root"'),
       `GET / → ${root.status}`);
-    check('and the page it serves is the current build, never a cached one',
-      root.headers.get('cache-control') === 'no-cache' && health.status === 200,
-      `cache-control: ${root.headers.get('cache-control')}`);
+    // relative asset paths: the same build works at the Pages root, in a subfolder, and off a disk
     const assetPath = /src="([^"]+\.js)"/.exec(html)?.[1];
-    const asset = assetPath ? await fetch(`http://127.0.0.1:${API_PORT}${assetPath}`) : null;
-    check('hashed assets are served and cached for a year',
-      asset?.status === 200 && (asset.headers.get('cache-control') ?? '').includes('immutable'),
-      `${assetPath} → ${asset?.status}`);
-    const deep = await fetch(`http://127.0.0.1:${API_PORT}/some/address/the/app/owns`);
-    check('an address only the app knows returns the app, not a 404', deep.status === 200);
-    const climb = await fetch(`http://127.0.0.1:${API_PORT}/..%2Fpackage.json`);
-    check('and a path climbing out of the site is not served', !(await climb.text()).includes('"name"'));
+    check('the build points at its assets relatively, so it works from any path',
+      Boolean(assetPath?.startsWith('./')), String(assetPath));
+    const asset = assetPath ? await fetch(`http://127.0.0.1:${WEB_PORT}/${assetPath.replace('./', '')}`) : null;
+    check('and the assets it points at are really there', asset?.status === 200, `${assetPath} → ${asset?.status}`);
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
@@ -665,7 +639,7 @@ try {
   process.exit(failed.length ? 1 : 0);
 } catch (error) {
   console.error('e2e: fatal —', error instanceof Error ? error.message : error);
-  console.error('  hint: only one API can run at a time on a small machine (each one loads PostgreSQL).');
+  console.error('  hint: the app must be built first — run `npm run build -w @company/web`.');
   shutdown();
   await sleep(400);
   process.exit(1);

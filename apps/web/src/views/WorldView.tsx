@@ -23,7 +23,7 @@ import { t, type Lang } from '../lib/i18n';
 import { localized } from '../lib/format';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
 import { seatAgents, type Seat } from '../world/seat';
@@ -264,7 +264,13 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const active = (tasks ?? []).filter((task) => task.stage === 'progress' || task.stage === 'review').length;
 
   return (
-    <Panel title={t('world', lang)} note={t('worldNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('world', lang)} / ${t('overview', lang)}`}
+      title={t('headWorld', lang)}
+      subtitle={t('worldNote', lang)}
+    />
+    <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         <div className="world">
           <div className="world-hud">
@@ -452,7 +458,8 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           <p className="world-hint muted">{t('worldHint', lang)}</p>
         </div>
       </DataState>
-    </Panel>
+    </div>
+    </>
   );
 }
 

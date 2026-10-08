@@ -5,64 +5,24 @@
  * the six views exist in the demo's order, Arabic really flips the document, the theme really
  * switches, and every view renders its four data states.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { VIEWS } from '@company/contracts';
 import { App } from '../src/App';
 import { DataState } from '../src/components/DataState';
+import { useStore } from '../src/data/store';
 
-const agents = {
-  agents: [
-    {
-      id: '11111111-1111-4111-8111-111111111111', name: 'Aria', role: 'Lead engineer',
-      status: 'working', modelId: null, capabilities: ['TypeScript'],
-      budget: { limitCents: 4000, spentCents: 1250, remainingCents: 2750, exceeded: false },
-    },
-  ],
-};
-
-const tasks = {
-  tasks: [
-    { id: '33333333-3333-4333-8333-333333333333', title: 'Refine the streaming pipeline',
-      stage: 'progress', priority: 'high', progress: 65,
-      ownerAgentId: '11111111-1111-4111-8111-111111111111' },
-  ],
-};
-
-const decisions = {
-  decisions: [
-    {
-      id: '44444444-4444-4444-8444-444444444444', kind: 'access', status: 'pending',
-      title: 'Analytics read access', agentId: null,
-      rule: { id: 'access.analytics.read', observed: 0, threshold: 0, unit: 'count' },
-      diff: { kind: 'permission', summary: 'Read-only analytics access', before: 'none', after: 'read' },
-      audit: { raisedAt: '2026-10-03T00:00:00.000Z', decidedByLabel: null, decidedAt: null },
-      outcome: null,
-    },
-  ],
-};
+// The shell is exercised against the labelled demo save itself: the same rows the first-time
+// visitor sees. No fetch stubs — there is no server any more; the store is the data.
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-    const url = String(input);
-    const body = url.includes('/api/health')
-      ? { ok: true, version: 'p0', company: 'Acme Studio' }
-      : url.includes('/api/agents') ? agents
-      : url.includes('/api/tasks') ? tasks
-      : url.includes('/api/decisions') ? decisions
-      : url.includes('/api/models') ? { models: [{ id: '55555555-5555-4555-8555-555555555555', displayName: 'GPT-5.2', lane: 'strong', inputCentsPerMTok: 250, outputCentsPerMTok: 1000, lifecycle: 'ga' }] }
-      : url.includes('/api/company') ? { company: { id: '22222222-2222-4222-8222-222222222222', name: 'Acme Studio' } }
-      : url.includes('/api/threads') ? { threads: [{ id: '77777777-7777-4777-8777-777777777777', title: 'Streaming pipeline review', internal: false, lastMessage: { text: 'Ready for review', authorKind: 'agent' } }] }
-      : {};
-    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
-  }));
   localStorage.clear();
+  useStore.getState().reset();
   location.hash = '';
 });
 
 afterEach(() => {
   cleanup();
-  vi.unstubAllGlobals();
 });
 
 describe('the shell matches the locked design', () => {
@@ -131,8 +91,8 @@ describe('the shell matches the locked design', () => {
     location.hash = '#inbox';
     render(<App />);
     expect(await screen.findByText('Analytics read access')).toBeTruthy();
-    expect(screen.getByText(/access\.analytics\.read/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Approve/ })).toBeTruthy();
+    expect(screen.getAllByText(/access\.analytics\.read/).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /Approve/ }).length).toBeGreaterThan(0);
   });
 });
 

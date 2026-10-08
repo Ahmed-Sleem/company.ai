@@ -28,6 +28,12 @@ entries below are the **planned** set, verified on 2026-10-03 by
 `_research/data/harvest-scan-2026-10-03.json`). Each becomes binding when it first appears in a
 lockfile or a source file — at which point the row gains the commit and the exact path.
 
+### Shipped runtime dependencies (client-side product, 2026-10-09)
+
+| Package | Licence | Use | Shipping? |
+|---|---|---|---|
+| `zustand` (pmndrs/zustand) | MIT | the user-side store + persist middleware (the save file) | yes |
+
 ### Tooling already in use (development only, never shipped)
 
 | Package | Licence | Use | Shipping? |

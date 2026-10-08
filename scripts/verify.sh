@@ -9,13 +9,13 @@
 #   2. tokens              — the generated token files match the design source (drift fails)
 #   3. lint                — oxlint
 #   4. tests               — database/gateway/API/contract/token tests
-#   5. web tests           — the shell, states, RTL, theme, the world, icons (jsdom, 86)
+#   5. web tests           — the shell, states, RTL, theme, the world, icons (jsdom, 87)
 #   6. repo checks         — raw values, logical properties, build context, licences, docs
 #   7. build               — the production web build (this is what gets served)
 #   8. demo file           — the standalone demo still matches that build (no browser needed)
 #   9. design gate         — the designer's own prototype still passes its 15 checks (the world tab
 #                            and the camera's movement included)
-#  10. browser smoke       — real Chromium against the real API (68 checks)
+#  10. browser smoke       — real Chromium against the built app, with no server at all (66 checks)
 #
 # The design gate (8) always runs: it needs no browser. Step 9 needs Chromium and prints the
 # three commands that install it if it is missing; every other step is required.
@@ -79,16 +79,16 @@ run "6/10 repository checks" bash -c '
   done'
 run "7/10 production web build" npm run build -w @company/web --silent
 
-# The demo file is the app, its data and its API frozen into one HTML file. It is generated from the
-# build above, so "did someone edit the demo by hand?" and "is the build still the thing we shipped?"
-# are the same question — and this step answers it without a browser.
+# The demo file is the app and its save frozen into one HTML file. It is generated from the build
+# above, so "did someone edit the demo by hand?" and "is the build still the thing we shipped?" are
+# the same question — and this step answers it without a browser.
 run "8/10 the standalone demo file matches the built app" node scripts/build-demo-html.mjs --check
 
 # The design gate needs no browser — it must run on every machine, every time.
 run "9/10 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
 
 if has_browser; then
-  run "10/10 browser smoke test (real API + real Chromium)" node apps/web/e2e/smoke.mjs
+  run "10/10 browser smoke test (the built app, real Chromium, no server)" node apps/web/e2e/smoke.mjs
 else
   explain_no_browser
   SKIPPED=$((SKIPPED+1))

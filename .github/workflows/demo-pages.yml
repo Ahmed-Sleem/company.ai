@@ -1,19 +1,21 @@
-# Publish the one-file demo to GitHub Pages, on every push to main.
+# Publish company.ai to GitHub Pages, on every push to main.
 #
-# The demo file (demo/company-os-demo.html) is the whole product — the real GUI, its data and its
-# API frozen into one HTML file — and it needs no server, which makes it the one thing that can be
-# hosted for nothing, forever, with no cold starts. This workflow makes the root URL of the Pages
-# site BE the demo: a link you can send anyone, or open on a phone.
+# The root URL is the real app (REQ-13: it is client-only now — a static bundle that reads and
+# writes the visitor's own save, so any static host is the whole product). Beside it:
 #
-# It is BUILT here, from the same commit, rather than copied from the repository. A committed copy
-# goes stale the moment someone changes the app and forgets to regenerate it, and then the live
-# link quietly shows yesterday's build — which is exactly what happened once, and why this runs
-# `npm ci && build && build-demo-html.mjs` before publishing instead of trusting a file in git.
+#   /demo/      the frozen one-file demo (demo/company-os-demo.html) — archived, never deleted
+#   /prototype/ the designer's prototype (design/prototype/) — read-only, guarded by verify.mjs
+#
+# Everything is BUILT here, from the same commit, rather than copied from the repository. A
+# committed copy goes stale the moment someone changes the app and forgets to regenerate it, and
+# then the live link quietly shows yesterday's build — which is exactly what happened once, and
+# why this runs `npm ci && build && build-demo-html.mjs` before publishing instead of trusting a
+# file in git.
 #
 # One-time switch in the repository: Settings → Pages → Build and deployment → Source:
 # "GitHub Actions". After that, this runs by itself. The site is then at:
 #   https://<owner>.github.io/<repo>/
-name: Publish the demo file
+name: Publish company.ai
 
 on:
   push:
@@ -45,13 +47,18 @@ jobs:
         run: npm ci
       - name: Build the web app
         run: npm run build -w @company/web
-      - name: Freeze the app, its data and its API into one file
+      - name: Freeze the demo (app, data and rules in one file) into /demo/
         run: node scripts/build-demo-html.mjs
       - uses: actions/configure-pages@v6
-      - name: Put the demo at the root, and the designer's prototype beside it
+      - name: Root = the real app; demo and prototype beside it
         run: |
           mkdir -p site
-          cp demo/company-os-demo.html site/index.html
+          # The real app at the root. The build is emitted with relative asset paths
+          # (vite.config.ts, base: './'), so the same dist works at any path on any host.
+          cp -r apps/web/dist/. site/
+          # The frozen demo, archived where it always was — kept, not deleted.
+          mkdir -p site/demo
+          cp demo/company-os-demo.html site/demo/index.html
           # The design prototype — the designer's demo plus the force-directed company graph
           # (design/prototype/graph.js, the "Obsidian-style" view), which the app's Network screen
           # does not have yet. Published read-only so it can be opened from anywhere while that

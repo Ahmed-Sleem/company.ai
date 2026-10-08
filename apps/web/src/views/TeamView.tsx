@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { localized } from '../lib/format';
 
@@ -20,7 +20,13 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
     : error ? 'error' : agents ? 'default' : 'loading';
 
   return (
-    <Panel title={t('team', lang)} note={t('teamNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('team', lang)} / ${t('overview', lang)}`}
+      title={t('headTeam', lang)}
+      subtitle={t('teamNote', lang)}
+    />
+    <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         <div className="roster">
           {agents?.map((agent) => (
@@ -41,6 +47,7 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
           ))}
         </div>
       </DataState>
-    </Panel>
+    </div>
+    </>
   );
 }

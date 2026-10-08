@@ -3,30 +3,24 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 /**
- * The dev server proxies /api to the API service, so the browser only ever talks to one
- * origin (and the live preview works without exposing a second port to the user).
+ * The app is client-only (REQ-13): the data lives in the visitor's own save, so there is no
+ * API to proxy and nothing to boot beside the static bundle. `base: './'` keeps every asset
+ * URL relative, so the built app works from any path — the Pages root today, a folder on a
+ * disk tomorrow — without a rebuild.
  */
 export default defineConfig({
+  base: './',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
     port: 5173,
     strictPort: true,
     allowedHosts: true,
-    proxy: {
-      '/api': {
-        target: process.env.API_URL ?? 'http://127.0.0.1:8787',
-        changeOrigin: true,
-      },
-    },
   },
   preview: {
     host: true,
     port: 4173,
     allowedHosts: true,
-    proxy: {
-      '/api': { target: process.env.API_URL ?? 'http://127.0.0.1:8787', changeOrigin: true },
-    },
   },
   build: { outDir: 'dist', sourcemap: true },
 });

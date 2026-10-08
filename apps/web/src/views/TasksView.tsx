@@ -161,6 +161,7 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           </button>
         }
       />
+      <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {tasks && tasks.length > 0 && (
           <section className="stats">
@@ -324,6 +325,7 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
         onClose={() => setForm(undefined)}
       />
       {note ? <p role="status" className="note">{note}</p> : null}
+      </div>
     </>
   );
 }

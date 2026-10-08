@@ -4,7 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 import { t, type Lang } from '../lib/i18n';
-import { Panel } from '../components/Panel';
+import { api } from '../lib/api';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 
 interface ThreadSummary {
@@ -20,9 +21,8 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   useEffect(() => {
     if (forcedState && forcedState !== 'default') return;
-    fetch('/api/threads')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
-      .then((body: { threads: ThreadSummary[] }) => setThreads(body.threads))
+    api.threads()
+      .then((body) => setThreads(body.threads as ThreadSummary[]))
       .catch(() => setError(true));
   }, [forcedState]);
 
@@ -31,7 +31,13 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     : error ? 'error' : threads ? 'default' : 'loading';
 
   return (
-    <Panel title={t('comms', lang)} note={t('commsNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('comms', lang)} / ${t('overview', lang)}`}
+      title={t('headComms', lang)}
+      subtitle={t('commsNote', lang)}
+    />
+    <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {threads && threads.length === 0 && <DataState state="empty" lang={lang} />}
         {threads?.map((thread) => (
@@ -45,6 +51,7 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           </article>
         ))}
       </DataState>
-    </Panel>
+    </div>
+    </>
   );
 }

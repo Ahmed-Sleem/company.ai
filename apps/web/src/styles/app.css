@@ -25,6 +25,10 @@
   --app-world-h:640px;
   --app-world-h-min:320px;
   --app-rail:68px;
+  /* the 2026-10-09 chrome: search field, the bell's dot, its offsets */
+  --app-search-min:220px;
+  --app-bell-inset:4px;
+  --app-bell-dot:7px;
 }
 
 * { box-sizing: border-box; }
@@ -791,3 +795,49 @@ h3 { font-size: var(--base); }
   .world-stats .stat { flex-direction: column; gap: 0; }
   .world-stats .stat-label { font-size: var(--xs); }
 }
+
+/* ── 2026-10-09 — the prototype's organisation on the real app ─────────────────────────────
+   REQ-3 scrollbars stay functional but invisible; REQ-4 the sidebar never scrolls;
+   REQ-6 the footer is fixed; REQ-7 pages fit the viewport and only inner panes scroll. */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
+.shell { height: 100dvh; min-height: 0; overflow: hidden; }
+.sidebar { overflow: hidden; }
+.main { display: flex; flex-direction: column; overflow: hidden; max-inline-size: none; }
+.main > .pagebody { flex: 1; min-block-size: 0; overflow: auto; }
+
+.brandmark-img {
+  inline-size: var(--s8); block-size: var(--s8); image-rendering: pixelated;
+  border: var(--app-stroke) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
+  background: var(--raised);
+}
+.breadcrumb { display: flex; gap: var(--s2); align-items: baseline; color: var(--muted); font-size: var(--base); }
+.breadcrumb strong { color: var(--text); font-family: var(--pixel); }
+.search-trigger { min-inline-size: var(--app-search-min); justify-content: flex-start; color: var(--muted); }
+.search-trigger .kbd { margin-inline-start: auto; }
+.kbd { border: var(--app-hair) solid var(--line); padding: 0 var(--s1); font-size: var(--xs); color: var(--muted); }
+.bell { position: relative; }
+.bell .unread { position: absolute; inset-block-start: var(--app-bell-inset); inset-inline-end: var(--app-bell-inset); inline-size: var(--app-bell-dot); block-size: var(--app-bell-dot); background: var(--accent); }
+
+.workspace { position: relative; }
+.workspace summary {
+  display: flex; align-items: center; gap: var(--s2); cursor: pointer; list-style: none;
+  border: var(--app-hair) solid var(--line); background: var(--raised); padding: var(--s2);
+}
+.workspace summary::-webkit-details-marker { display: none; }
+.workspace-mark { display: grid; place-items: center; inline-size: var(--s7); block-size: var(--s7); background: var(--accent); color: var(--bg); font-family: var(--pixel); }
+.workspace-name { flex: 1; }
+.workspace-menu {
+  position: absolute; z-index: 60; inset-inline: var(--s3); background: var(--raised);
+  border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
+  display: flex; flex-direction: column; padding: var(--s2); gap: var(--s1);
+}
+.workspace-menu button, .workspace-import { text-align: start; background: transparent; border: 0; color: var(--text); padding: var(--s1); cursor: pointer; }
+.workspace-import { position: relative; }
+.workspace-import input { position: absolute; opacity: 0; inline-size: var(--app-hair); block-size: var(--app-hair); }
+.owner-card { display: flex; gap: var(--s2); align-items: center; margin-block-start: auto; border-top: var(--app-hair) solid var(--line); padding-block-start: var(--s3); }
+.owner-card small { display: block; color: var(--muted); }
+.search-results { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-direction: column; }
+.search-results button { display: flex; gap: var(--s2); align-items: center; background: transparent; border: 0; color: var(--text); padding: var(--s2); cursor: pointer; text-align: start; }
+.search-results button:hover { background: var(--hover); }

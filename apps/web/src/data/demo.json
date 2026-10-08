@@ -1,0 +1,52 @@
+{
+  "company": { "name": "Acme Studio" },
+  "operator": { "name": "Vanil", "role": "owner" },
+  "agents": [
+    { "id": "aria", "name": "Aria", "nameAr": "آريا", "role": "Lead engineer", "roleAr": "رئيسة الهندسة", "department": "Engineering", "status": "working", "avatar": 0, "capabilities": ["TypeScript", "System design", "Testing"], "focus": "Refining the streaming pipeline", "focusAr": "تحسين مسار معالجة البيانات", "managerId": null },
+    { "id": "leo", "name": "Leo", "nameAr": "ليو", "role": "Software engineer", "roleAr": "مهندس برمجيات", "department": "Engineering", "status": "working", "avatar": 2, "capabilities": ["Node.js", "Testing", "APIs"], "focus": "Testing the new billing flow", "focusAr": "اختبار نظام الفوترة الجديد", "managerId": "aria" },
+    { "id": "zara", "name": "Zara", "nameAr": "زارا", "role": "Data analyst", "roleAr": "محللة بيانات", "department": "Engineering", "status": "error", "avatar": 3, "capabilities": ["SQL", "Analytics", "Python"], "focus": "Waiting for analytics access", "focusAr": "بانتظار صلاحية الوصول للتحليلات", "managerId": "aria", "errorReason": "Waiting for analytics access" },
+    { "id": "codex", "name": "Codex", "nameAr": "كودكس", "role": "Systems engineer", "roleAr": "مهندس أنظمة", "department": "Engineering", "status": "paused", "avatar": 10, "capabilities": ["Infrastructure", "Security", "Automation"], "focus": "Migration is ready for review", "focusAr": "الترحيل جاهز للمراجعة", "managerId": "aria", "pauseReason": "Migration is ready for review" },
+    { "id": "marcus", "name": "Marcus", "nameAr": "ماركوس", "role": "Marketing lead", "roleAr": "رئيس التسويق", "department": "Go to market", "status": "working", "avatar": 1, "capabilities": ["Strategy", "Research", "Positioning"], "focus": "Shaping the launch story", "focusAr": "إعداد قصة الإطلاق", "managerId": null },
+    { "id": "chloe", "name": "Chloe", "nameAr": "كلوي", "role": "Content designer", "roleAr": "مصممة محتوى", "department": "Go to market", "status": "idle", "avatar": 4, "capabilities": ["Writing", "Content design", "Editing"], "focus": "Ready for the next brief", "focusAr": "جاهزة للمهمة التالية", "managerId": "marcus" },
+    { "id": "sam", "name": "Sam", "nameAr": "سام", "role": "Customer success", "roleAr": "نجاح العملاء", "department": "Go to market", "status": "working", "avatar": 7, "capabilities": ["Support", "Research", "Communication"], "focus": "Putting customer feedback to work", "focusAr": "تحويل ملاحظات العملاء إلى تحسينات", "managerId": "marcus" },
+    { "id": "iris", "name": "Iris", "nameAr": "آيريس", "role": "Operations analyst", "roleAr": "محللة عمليات", "department": "Go to market", "status": "idle", "avatar": 15, "capabilities": ["Finance", "Planning", "Analysis"], "focus": "Preparing the weekly review", "focusAr": "إعداد المراجعة الأسبوعية", "managerId": "marcus" }
+  ],
+  "tasks": [
+    { "id": "tsk-142", "shortRef": "TSK-142", "title": "Refine the streaming pipeline", "titleAr": "تحسين مسار معالجة البيانات", "description": "Replace batch processing with a resilient streaming flow. Keep the existing path available until the new flow passes review.", "descriptionAr": "استبدال المعالجة بالدفعات بمسار تدفق موثوق. الاحتفاظ بالمسار الحالي حتى اجتياز المراجعة.", "ownerAgentId": "aria", "stage": "progress", "priority": "high", "progress": 65, "dueDate": "2026-10-05T00:00:00.000Z" },
+    { "id": "tsk-147", "shortRef": "TSK-147", "title": "Billing integration tests", "titleAr": "اختبارات تكامل الفوترة", "description": null, "descriptionAr": null, "ownerAgentId": "leo", "stage": "progress", "priority": "medium", "progress": 40, "dueDate": "2026-10-06T00:00:00.000Z" },
+    { "id": "tsk-151", "shortRef": "TSK-151", "title": "Understand cohort retention", "titleAr": "تحليل الاحتفاظ بالعملاء", "description": null, "descriptionAr": null, "ownerAgentId": "zara", "stage": "progress", "priority": "critical", "progress": 30, "dueDate": "2026-10-04T00:00:00.000Z" },
+    { "id": "tsk-155", "shortRef": "TSK-155", "title": "Rehearse the migration", "titleAr": "تجربة ترحيل البيانات", "description": null, "descriptionAr": null, "ownerAgentId": "codex", "stage": "review", "priority": "high", "progress": 85, "dueDate": "2026-10-05T00:00:00.000Z" },
+    { "id": "tsk-158", "shortRef": "TSK-158", "title": "Write the launch narrative", "titleAr": "كتابة قصة الإطلاق", "description": null, "descriptionAr": null, "ownerAgentId": "marcus", "stage": "progress", "priority": "medium", "progress": 55, "dueDate": "2026-10-07T00:00:00.000Z" },
+    { "id": "tsk-160", "shortRef": "TSK-160", "title": "Customer response playbook", "titleAr": "دليل الاستجابة للعملاء", "description": null, "descriptionAr": null, "ownerAgentId": "sam", "stage": "backlog", "priority": "medium", "progress": 0, "dueDate": "2026-10-09T00:00:00.000Z" },
+    { "id": "tsk-163", "shortRef": "TSK-163", "title": "Build the weekly cost model", "titleAr": "إعداد نموذج التكلفة الأسبوعي", "description": null, "descriptionAr": null, "ownerAgentId": "iris", "stage": "backlog", "priority": "low", "progress": 15, "dueDate": "2026-10-08T00:00:00.000Z" },
+    { "id": "tsk-168", "shortRef": "TSK-168", "title": "Employee onboarding guide", "titleAr": "دليل تهيئة الموظفين", "description": null, "descriptionAr": null, "ownerAgentId": "chloe", "stage": "done", "priority": "low", "progress": 100, "dueDate": "2026-10-02T00:00:00.000Z" },
+    { "id": "tsk-169", "shortRef": "TSK-169", "title": "Verify the backup process", "titleAr": "التحقق من النسخ الاحتياطي", "description": null, "descriptionAr": null, "ownerAgentId": "codex", "stage": "done", "priority": "medium", "progress": 100, "dueDate": "2026-10-02T00:00:00.000Z" },
+    { "id": "tsk-170", "shortRef": "TSK-170", "title": "Review the October roadmap", "titleAr": "مراجعة خطة أكتوبر", "description": null, "descriptionAr": null, "ownerAgentId": "aria", "stage": "review", "priority": "high", "progress": 80, "dueDate": "2026-10-05T00:00:00.000Z" }
+  ],
+  "decisions": [
+    {
+      "id": "dec-31", "shortRef": "DEC-31", "kind": "access", "status": "pending", "risk": "low",
+      "agentId": "zara", "title": "Analytics read access", "titleAr": "صلاحية قراءة التحليلات",
+      "rule": { "id": "access.analytics.read", "observed": 0, "threshold": 0, "unit": "count" },
+      "diff": { "kind": "permission", "summary": "Zara needs read-only access to the analytics view to finish the retention report. No data will be modified.", "summaryAr": "تحتاج زارا صلاحية قراءة عرض التحليلات لإنهاء تقرير الاحتفاظ. لن تُعدّل أي بيانات.", "before": "No analytics access", "after": "Read-only analytics access" },
+      "audit": { "raisedAt": "2026-10-08T09:00:00.000Z", "decidedByLabel": null, "decidedAt": null }
+    },
+    {
+      "id": "dec-33", "shortRef": "DEC-33", "kind": "share", "status": "pending", "risk": "medium",
+      "agentId": "marcus", "title": "Open a launch thread with the partner", "titleAr": "فتح محادثة إطلاق مع الشريك",
+      "rule": { "id": "share.external.thread", "observed": 0, "threshold": 0, "unit": "count" },
+      "diff": { "kind": "conversation", "summary": "Marcus wants a shared thread with the launch partner to agree the announcement order.", "summaryAr": "يريد ماركوس محادثة مشتركة مع شريك الإطلاق للاتفاق على ترتيب الإعلان.", "before": "Internal only", "after": "One shared thread" },
+      "audit": { "raisedAt": "2026-10-08T09:05:00.000Z", "decidedByLabel": null, "decidedAt": null }
+    }
+  ],
+  "threads": [
+    { "id": "thr-1", "title": "Streaming pipeline rewrite", "internal": true, "lastMessage": { "text": "The new flow passed the soak test; sending it to review.", "authorKind": "agent" } },
+    { "id": "thr-2", "title": "Launch story", "internal": true, "lastMessage": { "text": "Draft two is tighter — the customer comes first now.", "authorKind": "agent" } },
+    { "id": "thr-3", "title": "Weekly review", "internal": false, "lastMessage": { "text": "Numbers are ready for Monday.", "authorKind": "agent" } }
+  ],
+  "models": [
+    { "id": "m-strong", "provider": "openai", "providerModel": "gpt-5.2", "lane": "strong", "displayName": "GPT-5.2" },
+    { "id": "m-balanced", "provider": "anthropic", "providerModel": "claude-sonnet-4.6", "lane": "balanced", "displayName": "Claude Sonnet 4.6" },
+    { "id": "m-cheap", "provider": "open", "providerModel": "qwen3-coder:30b", "lane": "cheap", "displayName": "Qwen3 Coder 30B (local)" }
+  ]
+}

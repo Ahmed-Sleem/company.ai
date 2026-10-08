@@ -6,10 +6,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { Badge, toneOf } from '../components/Badge';
-import { dateTime, localized, money } from '../lib/format';
+import { dateTime, localized } from '../lib/format';
 
 type Decision = Awaited<ReturnType<typeof api.decisions>>['decisions'][number];
 
@@ -48,7 +48,13 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     : error ? 'error' : decisions ? 'default' : 'loading';
 
   return (
-    <Panel title={t('inbox', lang)} note={t('inboxNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('inbox', lang)} / ${t('overview', lang)}`}
+      title={t('headInbox', lang)}
+      subtitle={t('inboxNote', lang)}
+    />
+    <div className="pagebody">
       {note && <p role="status" className="tag">{note}</p>}
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {decisions && decisions.length === 0 && <DataState state="empty" lang={lang} />}
@@ -71,7 +77,6 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
               <span className="tag">{decision.kind}</span>
               <Badge tone={toneOf(decision.risk)}>{decision.risk}</Badge>
               <Badge tone={toneOf(decision.status)}>{decision.status}</Badge>
-              {decision.costCents > 0 ? <span>{money(decision.costCents, lang)}</span> : null}
             </div>
             <div className="actions">
               <button className="btn primary" type="button" disabled={busy === decision.id}
@@ -86,6 +91,7 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           </article>
         ))}
       </DataState>
-    </Panel>
+    </div>
+    </>
   );
 }

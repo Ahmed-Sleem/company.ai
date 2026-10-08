@@ -9,7 +9,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import {
   applyPalette, paletteNameKey, readCustomAccent, readPalette, resolvedTheme, saveCustomAccent,
@@ -168,37 +168,22 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
     ? forcedState
     : error ? 'error' : models ? 'default' : 'loading';
 
-  const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   return (
-    <Panel title={t('settings', lang)} note={t('settingsNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('settings', lang)} / ${t('overview', lang)}`}
+      title={t('headSettings', lang)}
+      subtitle={t('settingsNote', lang)}
+    />
+    <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         <p><strong>{t('company', lang)}:</strong> {company}</p>
-        <h3>{t('models', lang)}</h3>
-        <table className="models" style={{ inlineSize: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'start' }}>{t('models', lang)}</th>
-              <th style={{ textAlign: 'start' }}>{t('lane', lang)}</th>
-              <th style={{ textAlign: 'start' }}>{t('inLabel', lang)}</th>
-              <th style={{ textAlign: 'start' }}>{t('outLabel', lang)}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {models?.map((model) => (
-              <tr key={model.id}>
-                <td>{model.displayName}</td>
-                <td><span className="tag">{model.lane}</span></td>
-                <td>{`${money(model.inputCentsPerMTok)} ${t('perMillion', lang)}`}</td>
-                <td>{`${money(model.outputCentsPerMTok)} ${t('perMillion', lang)}`}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </DataState>
       {/* Outside the data states on purpose: the palette is a local preference, so it must be
           reachable even while the company and the model list are still loading or unreachable. */}
       <PaletteSetting lang={lang} />
       <SkinSetting lang={lang} />
-    </Panel>
+    </div>
+    </>
   );
 }

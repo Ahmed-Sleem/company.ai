@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
-import { Panel } from '../components/Panel';
+import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { OrgTree } from '../components/OrgTree';
 
@@ -24,10 +24,17 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     : error ? 'error' : agents ? 'default' : 'loading';
 
   return (
-    <Panel title={t('network', lang)} note={t('networkNote', lang)}>
+    <>
+    <ScreenHead
+      eyebrow={`${t('network', lang)} / ${t('overview', lang)}`}
+      title={t('headNetwork', lang)}
+      subtitle={t('networkNote', lang)}
+    />
+    <div className="pagebody">
       <DataState state={state} lang={lang} onRetry={() => location.reload()}>
         {agents && <OrgTree agents={agents} lang={lang} />}
       </DataState>
-    </Panel>
+    </div>
+    </>
   );
 }
