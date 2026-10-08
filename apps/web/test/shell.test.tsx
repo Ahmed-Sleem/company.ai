@@ -10,7 +10,6 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { VIEWS } from '@company/contracts';
 import { App } from '../src/App';
 import { DataState } from '../src/components/DataState';
-import { BudgetMeter } from '../src/components/BudgetMeter';
 
 const agents = {
   agents: [
@@ -91,12 +90,14 @@ describe('the shell matches the locked design', () => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
   });
 
-  it('shows the team roster with a budget meter bound to the ledger', async () => {
+  it('shows the team roster with no budget meter anywhere (REQ-32)', async () => {
+    // The product has no budget: the roster keeps names, roles and status, and the meter —
+    // the last thing on this screen that spoke money — is gone. This test failed while the
+    // meter still rendered, which is the observation the rule requires.
     render(<App />);
     expect(await screen.findByText('Aria')).toBeTruthy();
-    const meter = screen.getByRole('meter');
-    expect(meter.getAttribute('aria-valuenow')).toBe('1250');
-    expect(meter.getAttribute('aria-valuemax')).toBe('4000');
+    expect(screen.queryByRole('meter')).toBeNull();
+    expect(document.body.textContent?.toLowerCase()).not.toContain('budget');
   });
 
   it('shows the board in the demo’s four stages', async () => {
@@ -151,13 +152,8 @@ describe('the four data states', () => {
     expect(screen.getByText(/ليست لديك صلاحية/)).toBeTruthy();
   });
 
-  it('Arabic strings come from the same table as English (no hard-coded text)', () => {
-    render(<BudgetMeter label="x" spentCents={500} limitCents={1000} lang="ar" />);
-    expect(screen.getByText(/من الميزانية الشهرية/)).toBeTruthy();
-  });
-
-  it('a meter over its cap is marked, not silently full', () => {
-    render(<BudgetMeter label="y" spentCents={1200} limitCents={1000} lang="en" />);
-    expect(screen.getByText(/Paused by budget/)).toBeTruthy();
+  it('the Arabic string table carries the same words as English (no hard-coded text)', () => {
+    render(<DataState state="restricted" lang="ar" />);
+    expect(screen.getByText(/ليست لديك صلاحية/)).toBeTruthy();
   });
 });

@@ -47,7 +47,6 @@ export const STRINGS = {
   restrictedTitle: { en: 'You do not have access', ar: 'ليست لديك صلاحية' },
   restrictedBody: { en: 'Ask an owner if you need it.', ar: 'اطلب من المالك إذا كنت تحتاجه.' },
   owner: { en: 'Owner', ar: 'المالك' },
-  spendOf: { en: 'of monthly budget', ar: 'من الميزانية الشهرية' },
   approve: { en: 'Approve', ar: 'موافقة' },
   reject: { en: 'Reject', ar: 'رفض' },
   decided: { en: 'Already decided', ar: 'تم البتّ فيه' },
@@ -57,7 +56,7 @@ export const STRINGS = {
   status: { en: 'Status', ar: 'الحالة' },
   online: { en: 'Live', ar: 'متصل' },
   version: { en: 'P0 foundation', ar: 'أساس المرحلة صفر' },
-  teamNote: { en: 'Roles, budgets and the model behind each employee.', ar: 'الأدوار والميزانيات والنموذج وراء كل موظف.' },
+  teamNote: { en: 'Roles and the model behind each employee.', ar: 'الأدوار والنموذج وراء كل موظف.' },
   tasksNote: { en: 'Backlog to completed — nothing reaches completed without a person approving it.', ar: 'من قائمة الانتظار إلى مكتملة — لا شيء يكتمل دون موافقة شخص.' },
   inboxNote: { en: 'Every request shows the rule behind it, the change, and who decided.', ar: 'كل طلب يُظهر القاعدة خلفه، والتغيير، ومن بتّ فيه.' },
   commsNote: { en: 'Threads carry the model that wrote each message.', ar: 'كل محادثة تحمل النموذج الذي كتب كل رسالة.' },
@@ -70,7 +69,6 @@ export const STRINGS = {
   lane: { en: 'Lane', ar: 'المسار' },
   company: { en: 'Company', ar: 'الشركة' },
   members: { en: 'People', ar: 'الأشخاص' },
-  blocked: { en: 'Paused by budget', ar: 'متوقف بسبب الميزانية' },
 
   /* tasks — the words the demo uses on its board */
   openTasks: { en: 'Open tasks', ar: 'مهام مفتوحة' },
@@ -130,7 +128,6 @@ export const STRINGS = {
   statusWorking: { en: 'Working', ar: 'يعمل' },
   statusBlocked: { en: 'Blocked', ar: 'متوقف' },
   statusIdle: { en: 'Idle', ar: 'متاح' },
-  budgetSpent: { en: 'Budget', ar: 'الميزانية' },
   // Appearance, the owner's two toggles (both default on) and the custom accent.
   customAccent: { en: 'Custom accent', ar: 'لون مخصص' },
   pickAccent: { en: 'Pick a colour', ar: 'اختر لوناً' },
@@ -146,7 +143,6 @@ export const STRINGS = {
   // The World Map: their plan, their words for the rooms, and the build-mode verbs.
   worldSummary: { en: '{people} people, {rooms} rooms and {furniture} pieces of furniture.', ar: '{people} أشخاص و{rooms} غرف و{furniture} قطعة أثاث.' },
   staff: { en: 'Staff', ar: 'الفريق' },
-  monthlySpend: { en: 'Monthly spend', ar: 'إنفاق الشهر' },
   taskCount: { en: '{n} tasks', ar: '{n} مهام' },
   // Build mode, inside the world.
   build: { en: 'Build', ar: 'التحرير' },

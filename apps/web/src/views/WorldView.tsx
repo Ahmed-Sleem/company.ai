@@ -7,7 +7,7 @@
  *
  *   · the camera is pure maths (`world/camera.ts`) — the wheel moves a *target* and a frame loop
  *     eases the view toward it, anchored on the pointer, which is the smoother zoom they asked for;
- *   · the numbers are real — staff, working, active tasks and spend come from the same rows every
+ *   · the numbers are real — staff, working and active tasks come from the same rows every
  *     other screen reads;
  *   · the drawing is tokens — rooms, desks and props are coloured from our variables, so the plan
  *     re-tints with the five palettes and reads in both themes and both languages;
@@ -35,8 +35,6 @@ import {
 } from '../world/camera';
 
 type AgentRow = Awaited<ReturnType<typeof api.agents>>['agents'][number];
-
-const money = (cents: number) => (cents / 100).toFixed(2);
 
 export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
   const [agents, setAgents] = useState<AgentRow[] | null>(null);
@@ -264,7 +262,6 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const chosenAgent = selected?.kind === 'agent' ? seats.find((seat) => seat.agent?.id === selected.id) ?? null : null;
   const working = seats.filter((seat) => seat.working).length;
   const active = (tasks ?? []).filter((task) => task.stage === 'progress' || task.stage === 'review').length;
-  const spend = (agents ?? []).reduce((sum, agent) => sum + agent.budget.spentCents, 0);
 
   return (
     <Panel title={t('world', lang)} note={t('worldNote', lang)}>
@@ -428,10 +425,6 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                 <dl className="drawer-facts">
                   <div><dt>{t('status', lang)}</dt><dd>{t(seatStatusKey(chosenAgent.agent.status), lang)}</dd></div>
                   <div><dt>{t('sitsIn', lang)}</dt><dd>{roomNameAt(plan, chosenAgent.desk, lang)}</dd></div>
-                  <div>
-                    <dt>{t('budgetSpent', lang)}</dt>
-                    <dd>{`$${money(chosenAgent.agent.budget.spentCents)} / $${money(chosenAgent.agent.budget.limitCents)}`}</dd>
-                  </div>
                 </dl>
                 <h4>{t('tasks', lang)}</h4>
                 {chosenAgent.tasks.length === 0 ? (
@@ -454,7 +447,6 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
               <span className="stat"><span className="stat-label">{t('staff', lang)}</span><span className="stat-value">{seats.filter((seat) => seat.agent).length}</span></span>
               <span className="stat"><span className="stat-label">{t('workingNow', lang)}</span><span className="stat-value">{working}</span></span>
               <span className="stat"><span className="stat-label">{t('activeTasks', lang)}</span><span className="stat-value">{active}</span></span>
-              <span className="stat"><span className="stat-label">{t('monthlySpend', lang)}</span><span className="stat-value">{`$${money(spend)}`}</span></span>
             </div>
           </div>
           <p className="world-hint muted">{t('worldHint', lang)}</p>

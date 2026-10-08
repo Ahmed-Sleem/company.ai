@@ -53,12 +53,10 @@
       zoomOut: gt('Zoom out', 'تبعيد'),
       emptyDesk: gt('Empty desk', 'مكتب فارغ'),
       sitsIn: gt('Sits in', 'يجلس في'),
-      budget: gt('Budget', 'الميزانية'),
       status: gt('Status', 'الحالة'),
       staff: gt('Staff', 'الفريق'),
       workingNow: gt('Working now', 'يعمل الآن'),
       activeTasks: gt('Active tasks', 'مهام جارية'),
-      monthlySpend: gt('Monthly spend', 'إنفاق الشهر'),
       close: gt('Close', 'إغلاق'),
       noTasks: gt('Nothing on this desk right now.', 'لا شيء على هذا المكتب الآن.'),
       tasks: gt('Tasks', 'المهام'),
@@ -199,11 +197,9 @@
     var active = safe(function () {
       return (data.tasks || []).filter(function (t) { return t.stage === 'progress' || t.stage === 'review'; }).length;
     }, 0);
-    var spend = safe(function () { return totalSpent(); }, 0);
     return stat(c.staff, num(people.length), '', '') +
       stat(c.workingNow, num(working), '', '') +
-      stat(c.activeTasks, num(active), '', '') +
-      stat(c.monthlySpend, money(spend), '', '');
+      stat(c.activeTasks, num(active), '', '');
   }
 
   function summaryText(seatList, lib) {
@@ -327,7 +323,6 @@
       '<dl class="drawer-facts">' +
         '<div><dt>' + esc(c.status) + '</dt><dd>' + esc(statusWord) + '</dd></div>' +
         '<div><dt>' + esc(c.sitsIn) + '</dt><dd>' + esc(roomWord(seat.desk.room || seatRoom(seat.desk))) + '</dd></div>' +
-        '<div><dt>' + esc(c.budget) + '</dt><dd>' + esc('$' + num(person.spent) + ' / $' + num(person.budget)) + '</dd></div>' +
       '</dl>' +
       '<h4>' + esc(c.tasks) + '</h4>' +
       (mine.length

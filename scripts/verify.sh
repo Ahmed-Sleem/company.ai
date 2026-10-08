@@ -74,7 +74,7 @@ run "3/10 lint" npx oxlint
 run "4/10 database, gateway, API and contract tests" npx vitest run
 run "5/10 web app tests (shell, states, RTL, world, icons)" npm test -w @company/web --silent
 run "6/10 repository checks" bash -c '
-  for check in raw-values logical-properties namespace-lock build-context licence-gate docs; do
+  for check in raw-values logical-properties namespace-lock build-context licence-gate no-budget docs; do
     node "scripts/checks/$check.mjs" || exit 1
   done'
 run "7/10 production web build" npm run build -w @company/web --silent

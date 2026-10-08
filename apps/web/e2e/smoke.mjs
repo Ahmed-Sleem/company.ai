@@ -73,7 +73,7 @@ try {
   // (because a decision was already approved) is worse than no smoke test.
   rmSync(`${ROOT}/.data/e2e-pglite`, { recursive: true, force: true });
 
-  console.log(`· starting the API on ${API_PORT} (PGlite, mock provider — no keys, no spend)`);
+  console.log(`· starting the API on ${API_PORT} (PGlite, mock provider — no keys)`);
   const api = run('npx', ['tsx', 'services/api/src/server.ts'], {
     // STATIC_DIR makes this the *deployed* shape: the API also serves the built app, one origin,
     // no CORS. The checks further down open this port directly and prove it.
@@ -128,7 +128,8 @@ try {
   await page.waitForSelector('text=Aria', { timeout: 10_000 });
   check('the team view shows real agents from the database', true, 'Aria rendered');
   const roster = await page.textContent('.roster');
-  check('the meter shows the money the ledger recorded, not zero', roster?.includes('$12.50') ?? false,
+  check('the roster shows roles and no budget meter (REQ-32)',
+    (roster?.includes('Lead engineer') ?? false) && !/budget|\$/i.test(roster ?? ''),
     (roster ?? '').slice(0, 80).replace(/\s+/g, ' '));
 
   // 2 — theme
@@ -387,9 +388,8 @@ try {
     nodes.map((n) => [n.querySelector('.stat-label')?.textContent, n.querySelector('.stat-value')?.textContent]));
   const worldAgents = await (await fetch(`http://127.0.0.1:${API_PORT}/api/agents`)).json();
   const worldTasks = await (await fetch(`http://127.0.0.1:${API_PORT}/api/tasks`)).json();
-  const spend = (worldAgents.agents.reduce((sum, a) => sum + a.budget.spentCents, 0) / 100).toFixed(2);
   check('the HUD counts the roster and the ledger, not the demo’s numbers',
-    hud.length === 4 && hud[0][1] === '8' && hud[3][1] === `$${spend}`,
+    hud.length === 3 && hud[0][1] === '8',
     hud.map(([label, value]) => `${label} ${value}`).join(' · '));
 
   // the plan arrives fitted — it did not, once: the fit effect ran while the world was still a

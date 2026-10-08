@@ -967,3 +967,15 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   `_research/screenshots/` (6 p0-*.png) into `design/screenshots/` — one screenshots home (20
   files); nothing else removed yet (server artefacts retire with Phase C, demo pipeline with
   Phase J, both reported again then).
+
+## 2026-10-08 — plan audit + Phase B: budget dies
+
+- Plan audit (§7 of IMPLEMENTATION_PLAN.md): zustand persist versioning confirmed; engine corrected
+  to timestamp ticks + fetch-driven loops (background-tab throttling); quota strategy confirmed;
+  icon set corrected to SVG + dependency-free PNG generation; openai-SDK fallback noted; licence
+  gate confirmed enforcing the reuse ledger.
+- Phase B executed, tests-first: `scripts/checks/no-budget.mjs` (16 hits at first) and the REQ-32
+  roster test both observed failing, then: BudgetMeter component deleted; TeamView, WorldView
+  (drawer line + monthly-spend stat), i18n (en+ar) and the prototype world tab cleaned; verify.mjs
+  and smoke.mjs expectations updated to the three-stat HUD.
+- Gate after: 10/10 green — 90 api · 87 web · 15/15 design · 68/68 smoke.

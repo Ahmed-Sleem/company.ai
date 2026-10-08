@@ -1,10 +1,9 @@
-/** Team — the demo's roster: people, their roles, their budgets and the model behind them. */
+/** Team — the roster: people, their roles and the model behind them. */
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { t, type Lang } from '../lib/i18n';
 import { Panel } from '../components/Panel';
 import { DataState, type DataStateKind } from '../components/DataState';
-import { BudgetMeter } from '../components/BudgetMeter';
 import { localized } from '../lib/format';
 
 export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
@@ -33,8 +32,6 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
               </header>
               <p className="role">{localized(agent.role, agent.roleAr, lang)}</p>
               {agent.department ? <p className="role">{agent.department}</p> : null}
-              <BudgetMeter label={`${agent.name}-budget`} spentCents={agent.budget.spentCents}
-                           limitCents={agent.budget.limitCents} lang={lang} />
               {agent.capabilities.length > 0 && (
                 <p className="group">
                   {agent.capabilities.map((c) => <span className="tag" key={c}>{c}</span>)}

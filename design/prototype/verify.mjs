@@ -430,7 +430,7 @@ check('view: the world tab renders in both languages and all five data states', 
   assert(en.includes('world-hud') && en.includes('world-viewport'), 'the world shell is missing');
   assert(!en.includes('undefined'), 'undefined leaked into the world markup');
   /* room names contain '&', which the markup escapes — assert on the plain part */
-  ['Whole plan', 'Executive Wing', 'Engineering Lab', 'Breakroom', 'Empty desk', 'Monthly spend'].forEach(x =>
+  ['Whole plan', 'Executive Wing', 'Engineering Lab', 'Breakroom', 'Empty desk'].forEach(x =>
     assert(en.includes(x), `missing: ${x}`));
   assert((en.match(/class="room room-/g) || []).length === 6, 'not every room is drawn');
   assert((en.match(/class="prop prop-/g) || []).length === 21, 'not every piece of furniture is drawn');
