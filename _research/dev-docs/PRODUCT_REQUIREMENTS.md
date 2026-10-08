@@ -1,173 +1,132 @@
 # Product requirements — the real company.os
 
-_2026-10-08 · v1 (draft for the owner's review) · written from his message of the same day,
-one requirement per ID, nothing dropped. Status: **questions open** (§12). After his answers this
-doc is refined to v2, then the rules are re-read, the repo re-assessed, and the full plan written._
-
-How to read this: `REQ-<n>` is stable — the plan, the tests and the done-log will refer back to
-these IDs. `(open)` marks a point the owner must decide (§12); `(decided)` marks a decision taken
-here with the reason written down, which stands unless he objects.
+_2026-10-08 · **v2** — every `(open)` from v1 resolved by the owner's answers of the same day
+(Q1 all / Q2 browser / Q3 both / Q4 custom: landing page / Q5 execute-and-report). v1 is superseded;
+IDs are stable. The plan (`IMPLEMENTATION_PLAN.md`) and the tests refer back to these IDs._
 
 ---
 
 ## §1 · The product and its look
 
-- REQ-1  The product is the real app, wearing the prototype's look exactly: pixel type, hairlines,
-  notches, palettes, dark/light, Arabic RTL, the screen effect. The prototype stays the frozen
-  design reference; where a requirement below changes the look (scrollbars, footer, sidebar text),
-  the change lands in the app **and** as a prototype patch so the two never disagree.
-- REQ-2  Pixelated app icon: draw a pixel SVG mark; use it as the favicon, the sidebar brand mark
-  and the app icon (PWA/manifest sizes generated from the one SVG).
-- REQ-3  Scrollbars: keep every scrollable region scrollable but **visually remove all scrollbars**
-  app-wide (`scrollbar-width: none` + `::-webkit-scrollbar { display: none }` on the shared rules,
-  not per-view hacks).
-- REQ-4  The sidebar ("menu bar") is **not scrollable** — it must fit its content in the viewport;
-  and it **contracts and expands** (the rail toggle, kept and made to work at every width).
-- REQ-5  Remove the text "↳ A calm place to run your AI company. / No live AI connections" from the
-  sidebar, in the app and in the prototype.
-- REQ-6  The footer is **fixed in place on every page**, de-demo-ified: no demo wording; it carries
-  the useful small info (company name, state of the work loop, version) so pages can drop that
-  info and become more minimal.
-- REQ-7  Pages fit the viewport — no page-level scrolling on `#world`, `#network`, `#comms`
-  (and by the same rule, every view): the view sizes itself to the window; only inner panes scroll
-  (invisibly, per REQ-3). The world's inner window is improved to work fine at every size, phone
-  included.
+- REQ-1  The product is the real app wearing the prototype's look exactly (pixel type, hairlines,
+  notches, palettes, dark/light, Arabic RTL, screen effect). The prototype stays the frozen design
+  reference; look changes land in the app **and** as prototype patches so the two never disagree.
+- REQ-2  Pixelated app icon: one pixel SVG mark used as favicon, sidebar brand mark and app icon
+  (manifest/PWA sizes generated from the same SVG).
+- REQ-3  Scrollbars stay functional but are **visually removed app-wide** (shared rules:
+  `scrollbar-width: none` + `::-webkit-scrollbar { display: none }`), matching DESIGN_SYSTEM's own
+  "no visible scrollbars on dense interior surfaces".
+- REQ-4  The sidebar never scrolls; it contracts and expands at every width (rail toggle kept).
+- REQ-5  The "↳ A calm place to run your AI company / No live AI connections" text is removed from
+  the sidebar, in the app and in the prototype.
+- REQ-6  The footer is **fixed on every page**, de-demo-ified, and absorbs small useful info
+  (company name, work-loop state, version) so pages become more minimal.
+- REQ-7  No page-level scrolling on any view (`#world`, `#network`, `#comms` named; the rule covers
+  all): each view sizes to the viewport; only inner panes scroll (invisibly). The world's inner
+  window works fine at every size, phone included.
 
 ## §2 · Repo hygiene
 
-- REQ-8  Clean the repository of unwanted/bad/trash files and organise it fully. An inventory with
-  keep / move / delete per path is part of the plan (§13 of the plan doc); nothing is deleted
-  silently — the inventory is committed and his approval is taken for the delete list (open Q5).
-- REQ-9  Anything kept stays reachable: the four rule docs remain mandatory and findable; the
-  done-log stays append-only; generated files keep their generators and drift checks.
+- REQ-8  Clean unwanted/bad/trash files and organise fully, under an execute-and-report mandate
+  (Q5): the inventory lives in the plan; the report of what went is in the done-log.
+- REQ-9  Rule docs stay mandatory and findable; the done-log stays append-only; generated files
+  keep their generators and drift checks; one screenshots home.
 
 ## §3 · Data ownership — everything on the user's side
 
 - REQ-10 All product data (company, employees, tasks, messages, histories, settings, schedule) is
-  stored **on the user's side**. `(decided)` localStorage, not cookies: cookies cap at ~4 KB and
-  are sent with every request; histories of model runs will be megabytes. localStorage (~5–10 MB)
-  plus the file export (REQ-11) removes the ceiling in practice.
-- REQ-11 One-file save/load: export **everything** to a single JSON file (download), and load it
-  back (file picker), validated on import with a clear error on a bad file. This is the backup,
-  the transfer between machines, and the "share my company" mechanism.
-- REQ-12 No hard-coded company, people or tasks: what today is seed data becomes the *demo company*
-  at most (open Q4); the product starts from the user's own input (§4).
-- REQ-13 `(open Q2)` If all data is user-side, the browser is also the engine that talks to the
-  model APIs with the user's keys — which makes the current server + database redundant. The
-  decision (retire `services/api` + DB entirely, or keep an optional server) is the biggest fork in
-  the plan and is asked in §12.
+  stored on the user's side in localStorage (decided in v1: cookies are too small).
+- REQ-11 One-file save/load: export **everything** to a single JSON file and load it back with
+  validation and a clear error on a bad file. The file is backup, transfer and share.
+- REQ-12 No hard-coded company/people/tasks in the product; sample data exists only as a labelled
+  test/landing fixture, never as product state.
+- REQ-13 **(Q2)** The browser is the engine: model APIs are called from the browser with the user's
+  keys; `services/api`, the database, the Dockerfile and `render.yaml` are **retired**. The real
+  app becomes a static site hosted on GitHub Pages (free), prototype beside it at `/prototype`.
 
-## §4 · First run — the intro (onboarding)
+## §4 · First run — landing, then the intro
 
-- REQ-14 A new visitor is greeted by an intro wizard before any shell: it collects, in order —
-  (a) the **company**: name, description and further details answered as questions;
-  (b) the **employees**, created in a hierarchy (§5); (c) the **options and settings** (appearance,
-  language, work hours §7, effect/rail defaults).
-- REQ-15 Everything the wizard collects is editable later from Settings/Team — the intro is the
-  first edit, not a one-way door. The wizard itself is resumable if closed halfway.
-- REQ-16 The company's name, description and answered questions are **given to the models as
-  context**: they are compiled into the system prompts (§6), so the models understand the company
-  the user described.
+- REQ-33 **(Q4)** A brand-new visitor first sees a **landing page** in the same pixel style,
+  explaining the product **with screenshots** of it, and one start button.
+- REQ-14 The start button opens the intro wizard: (a) the **company** — name, description and
+  further details answered as questions; (b) the **employees** in a hierarchy (§5); (c) the
+  **options and settings** (appearance, language, work hours, effect/rail defaults).
+- REQ-15 Everything the wizard collects is editable later; the wizard is resumable if closed.
+- REQ-16 The company profile (name, description, answers) is compiled into the models' system
+  prompts (§6) so they understand the company the user described.
 
 ## §5 · Employees — general, user-typed, validated hierarchy
 
-- REQ-17 Each employee: name, role, description/details (user-typed, free text — no hard-coded
-  roster), a pixel portrait chosen from the sprite set, and a place in the hierarchy.
-- REQ-18 Each employee has **their own model connection**: a provider (any available model API —
-  OpenAI, Anthropic, Gemini, … and a custom/OpenAI-compatible endpoint for the rest), a model
-  identifier, and an API key entered by the user. Two employees may share a model or differ.
-- REQ-19 A **test connection** button per employee: makes a tiny real request to that provider with
-  that key and model and reports success/failure with the provider's own error, before saving.
-- REQ-20 Hierarchy: the user chooses per employee — no manager (a root) or which employee is their
-  manager; any shape of hierarchy is allowed (more than one root included, with a warning).
-- REQ-21 Validation, enforced live in the UI and on save: no cycles (an employee may not report,
-  directly or transitively, to themselves), no self-manager, manager must exist; when a problem
-  exists the UI **tells the user what it is** (names the chain) and blocks the save.
-- REQ-22 Keys are stored on the user's side (REQ-10) and are never sent anywhere except to the
-  provider the user chose (and, if Q2 keeps a server, never there).
+- REQ-17 Each employee: user-typed name, role, description/details; a pixel portrait from the
+  sprite set; a place in the hierarchy.
+- REQ-18 Each employee has their own model connection: provider (OpenAI, Anthropic, Gemini, and a
+  custom/OpenAI-compatible endpoint for anything else), model identifier, user-entered API key.
+- REQ-19 A **test connection** button per employee: a tiny real request to that provider with that
+  key and model, reporting success or the provider's own error, before saving.
+- REQ-20 Hierarchy: per employee — no manager (root) or which employee manages them; any shape
+  allowed, more than one root allowed with a warning.
+- REQ-21 Validation live and on save: no cycles, no self-manager, manager must exist; the UI names
+  the offending chain and blocks the save.
+- REQ-22 Keys live on the user's side and are sent only to the provider the user chose.
+  (Documented deviation from the rules' "no secrets" line — the keys are the *user's own*, on the
+  *user's machine*; recorded in SUPPORTING_NOTES.)
 
 ## §6 · The work engine — managers assign, employees work, loops until done
 
-- REQ-23 Every model call receives a system prompt compiled by our system from the user's data:
-  the company profile (REQ-16), the employee's own description, their manager and reports, and the
-  task-assignment grammar below. The prompts are generated, never hand-written per company.
-- REQ-24 The manager reads the company and its employees and assigns work using a **special text
-  structure** we specify in its system prompt (a strict, parseable block — e.g. a fenced JSON
-  array of {to, title, detail, priority}). The app parses the manager's output, extracts each
-  assignment, and delivers it: the message goes to the addressed employee, and the task appears on
-  that employee's task page.
-- REQ-25 Employees, with their full context, then **work in an agent loop** (ReAct-style): each
-  step the model chooses one of the structured options — continue working / ask the manager
-  something / delegate a sub-task to a report (same grammar as REQ-24, downward only) / finish and
-  report. The loop runs until the employee reports done or blocked.
-- REQ-26 Reports flow back up: the manager receives the work and chooses — accept / ask for
-  changes / report failure (to its own manager, or to the user at the top). Dynamic work, not a
-  one-shot pipeline.
-- REQ-27 The owner can **chat with any employee who is not working right now** (a free conversation
-  with that employee's model and context), and can see every loop's trail while it runs.
-- REQ-28 **All history** is kept, per employee and per task: every model message, tool-less
-  reasoning step, assignment and report — on the user's side (REQ-10), viewable in the UI
-  (the conversations/task screens), included in the export (REQ-11).
-- REQ-29 The engine is resumable: every loop persists its checkpoint after each step, so a reload
-  or a stop resumes **from the point it ended**, never re-running or losing a step.
+- REQ-23 Every model call gets a system prompt compiled from the user's data: company profile, the
+  employee's own description, their manager and reports, and the assignment grammar. Generated,
+  never hand-written per company.
+- REQ-24 The manager assigns work using a **special text structure** specified in its system prompt
+  (strict parseable block: fenced JSON array of {to, title, detail, priority}). The app parses the
+  output, delivers each message to the addressed employee, and puts the task on that employee's
+  task page.
+- REQ-25 Employees work in a ReAct-style loop: each step the model chooses one structured option —
+  continue working / ask the manager / delegate a sub-task downward (same grammar) / finish and
+  report — until it reports done or blocked.
+- REQ-26 Reports flow up: the manager accepts / asks for changes / reports failure (upward, or to
+  the user at the top). Dynamic work, not a one-shot pipeline.
+- REQ-27 The owner can chat with any employee who is not working right now, and can watch every
+  loop's trail while it runs.
+- REQ-28 All history is kept per employee and per task — every message, choice, assignment, report
+  — on the user's side, viewable in the UI, included in the export.
+- REQ-29 The engine is resumable: a checkpoint persists after each step; reload or stop resumes from
+  the point it ended, never re-running or losing a step.
+- REQ-35 **(Q1 consequence)** No caps of any kind ("we do not have something called budget").
+  Correctness handling instead: persistently malformed output or a provider error pauses that loop
+  and asks the user — that is failure handling, not a budget.
 
 ## §7 · Timing
 
-- REQ-30 The user chooses when the company **starts work and when it stops** (open Q3: a daily
-  schedule, a manual start/stop, or both). Auto-start at the chosen time, auto-stop at the chosen
-  time, auto-resume from checkpoint (REQ-29).
-- REQ-31 `(decided, consequence of Q2 if browser-engine)` a browser cannot run while the tab is
-  closed; the schedule therefore means "while the app is open". If the owner wants 24/7 unattended
-  work, that is the server option in Q2 — the two answers must be taken together.
+- REQ-30 **(Q3)** Both: a daily schedule (start/stop times, user's timezone) **and** manual
+  start-now / stop-now override. Auto-start, auto-stop, auto-resume from checkpoint (REQ-29).
+- REQ-31 (decided) The browser cannot run while closed; the schedule means "while the app is open".
+  The landing/intro says so plainly.
 
 ## §8 · Removals
 
-- REQ-32 **Budget is removed — "we do not have something called budget in this product."** Known
-  touch-points to strip: the team cards' budget meters, the world drawer's budget line, the world
-  stats' monthly spend, the API/DB `budget` columns and seeds, the tests around them, and the
-  prototype drawer's budget line (patch). *(open Q1: what happens to the safety caps and the model
-  price table.)*
+- REQ-32 **Budget is removed entirely** (Q1 "all"): team meters, drawer line, spend stat, API/DB
+  columns and seeds, tests, prototype drawer line — and no caps of any kind (REQ-35). The model
+  price table goes too.
 
-## §9 · Conflicts with standing rules — resolutions proposed
+## §9 · Conflicts with standing rules — resolutions (owner-approved via Q1–Q5)
 
-- C-1  Standing rule "hard caps per agent and per task" vs REQ-32. Proposed: the *money budget UI*
-  dies; token/step **safety caps** on the agent loops stay, as loop limits (max steps per run, max
-  concurrent loops) — they are engine safety, not "budget". (open Q1.)
-- C-2  Standing rule "harvest with CI licence gate + THIRD_PARTY.md, blocked-licence list" vs
-  "copy-paste reusable code from the internet". Proposed: reuse is encouraged **and** every reused
-  component is licence-checked into THIRD_PARTY.md before it lands; GPL/AGPL/unlicenced stay
-  blocked; MIT/Apache/BSL-with-check pass. The plan will cite URLs + licences.
-- C-3  The MVP P0–P2 roadmap (approval inbox, cost tracking, provider gateway) vs the new
-  user-keyed, user-side product. Proposed: the inbox becomes "the manager asks the user" (approval
-  of failures/changes at the top of the hierarchy); the premade gateway becomes the client-side
-  provider adapters (REQ-18); cost tracking dies with budget unless Q1 says otherwise.
-- C-4  "Never edit the demo files" stands; prototype patches (build-prototype.py) are ours and
-  carry the look changes (REQ-1, REQ-5).
+- C-1  "Hard caps per agent/task" rule is **retired** by Q1; replaced by REQ-35 failure handling.
+- C-2  Copy-paste reuse **and** the licence gate both stand: every reused component is licence-
+  checked into THIRD_PARTY.md before landing; only permissive licences (MIT/Apache-2.0/ISC) pass.
+- C-3  The premade gateway becomes client-side provider adapters (REQ-18); the approval inbox
+  becomes "the top of the hierarchy reports to the user" (REQ-26); cost tracking dies with budget.
+- C-4  "Never edit the demo files" stands; prototype patches carry the look changes (REQ-1/5).
+- C-5  `render.yaml`/Docker retire with the server (REQ-13); GitHub Pages hosts the real thing.
 
-## §10 · Out of scope for now (standing, unchanged)
+## §10 · Out of scope for now (unchanged)
 
-- The owner's sprite pack from online — blocked until he names the source and provenance is
-  checked; our pixel art is the placeholder.
+- The owner's sprite pack from online — blocked until he names the source (provenance gate).
 - Minimalism reductions — only after he picks from the audit list.
-- Render/`render.yaml` — its fate follows Q2 (if the server retires, the yaml retires with it and
-  GitHub Pages becomes the host of the real thing, which it can now be: a fully client-side app).
 
-## §11 · What "done" looks like for this document set
+## §11 · Definition of done for the document set
 
-1. v2 of this doc with every `(open)` resolved and his sign-off.
-2. A rules re-read note (what changed since the rules were written).
-3. A repo assessment (what exists vs the requirements, gap by gap).
-4. The big plan: phases, per-phase file lists, reuse URLs + licences, test plans, and the repo
-   reorganisation map — committed and pushed.
-5. Then execution, phase by phase, each pushed.
-
----
-
-## §12 · Questions for the owner (asked via the question UI alongside this doc)
-
-- Q1 — Budget removal scope (UI only / everything including caps / keep the price table).
-- Q2 — Engine location: fully browser-side (server + DB retired, Pages hosts the real thing,
-  work runs while the app is open) vs keep a small server (24/7 work possible, needs free hosting).
-- Q3 — Schedule shape: daily work hours / manual start-stop / both.
-- Q4 — New visitor: straight into the intro, or intro plus an optional "explore the demo company".
-- Q5 — Repo cleanup mandate: delete-list approved by him first, or execute and report.
+1. ✅ v2 requirements (this file) with all opens resolved.
+2. Rules re-read note — SUPPORTING_NOTES, §"2026-10-08 rules re-read".
+3. Repo assessment — IMPLEMENTATION_PLAN §1.
+4. The big plan with reuse URLs + licences — IMPLEMENTATION_PLAN (rewritten).
+5. Execution phase by phase, each pushed, each logged.

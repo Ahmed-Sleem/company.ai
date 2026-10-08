@@ -146,3 +146,37 @@ gestures are a poor fit on touch and the list gives a real accessible path). Doc
    its SVG layout; the P3 engine (footprint, packing, hulls) replaces the layout function only, and
    the token/fallback pairing rule then applies to it the way the design gate applies it to the
    prototype graph (37 pairs in step today).
+
+## 2026-10-08 — rules re-read against the new product direction
+
+Re-read all four rule docs before writing the v2 plan. Findings:
+
+1. **The owner's new cosmetics are the rules.** Hidden scrollbars (DESIGN_SYSTEM "❌ Visible
+   scrollbars on dense interior surfaces", `<Panel scrollable hideScrollbar>`), pinned footers via
+   `flex-none`, never `position: sticky` (DESIGN_SYSTEM §4.3), an `onboarding` spacing slot, the
+   four data states, RTL, the accessibility floor, tokens-only CSS — all mandated already. The new
+   requirements raise no design conflict; they tighten the same screws.
+2. **Process rules drive the plan shape:** atomic requirements (done: PRODUCT_REQUIREMENTS v2 IDs),
+   plan before code, verify after each step with each new check observed failing first, append-only
+   done-log, project map, central verification command, completion gate, dependency discipline
+   (reused code must be licence-audited — matches the owner's "copy-paste and adapt" directive via
+   C-2).
+3. **Documented deviations (justified, flagged "do not correct"):**
+   - *Checkpoints*: DEVELOPMENT_REQUIREMENTS §2 step 6 asks for a compressed checkpoint per phase.
+     We keep exactly one rolling checkpoint zip in `_research/snapshots/` (replaced per phase,
+     named per phase) plus the pushed git tag — permanent, lighter than an archive pile, and the
+     repo is public so the tag is the durable checkpoint.
+   - *Secrets*: GENERAL_GUI_AGENT_RULES §16 bans credentials in project files. The product now
+     stores the **user's own** API keys in the **user's own** localStorage (owner's explicit
+     direction, REQ-18/22). Mitigations: keys are never committed, never sent anywhere but the
+     chosen provider, and the export file warns that it contains keys.
+   - *Native `<dialog>`* deviation stands as previously recorded.
+4. **Rules retired by owner decision on this date:** "hard caps per agent and per task" (Q1: budget
+   and caps removed entirely; REQ-35 replaces it with failure handling). Recorded here per the
+   rules' own requirement that rule changes carry explicit user approval and a log entry.
+5. **What the rules still enforce on the new build:** one implementation per concept (so the work
+   engine, the store and the provider adapters each live once); no fake controls (every button in
+   the onboarding and the engine UI really works); the layout verification matrix (320→1920, RTL,
+   both themes); the wording rules (no internal identifiers in user text); and §17.3 no fake
+   production behaviour — the engine's loops must be real model calls, and the test-connection
+   button a real request.
