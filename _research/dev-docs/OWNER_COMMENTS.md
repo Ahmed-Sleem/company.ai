@@ -249,3 +249,26 @@ Comments (the work list):
   every cycle in a structured form we define in the prompt and parse. → REQ-42
 - R6-11 new requirements → docs, update the plan, move to the next phase, miss nothing. → this
   file, PRODUCT_REQUIREMENTS §12, IMPLEMENTATION_PLAN §4 (Phase G is next).
+
+**DONE 2026-10-10** — the whole round shipped in one gate-green pass:
+- R6-1/2 → REQ-36/37: the composer is a fixed box that scrolls inside itself with a send button
+  and nothing else; search is typed straight into the topbar with results under it — the modal
+  dialog is gone, ⌘K focuses the field.
+- R6-3/4 → REQ-38: one pointer language on every node in every mode — drag moves, double-click
+  inspects, hover holds only the node under the cursor. A real bug surfaced and died here: the
+  simulation loop was bound to the graph it was born with, so any filter switch froze the new
+  picture; the loop now steps whatever graph is current. The smoke now proves every mode drifts.
+- R6-5 → held: shared components, tokens only, one i18n table, the contract in ONE place
+  (lib/prompt.ts) with ONE parser (lib/engine.ts).
+- R6-6 → REQ-39: the company save/load button is inert while the rail is contracted.
+- R6-7 → REQ-40: "Needs attention" is gone — an error reads *Blocked* everywhere, the team strip
+  counts blocked loops, and OrgTree (dead code the plan had marked for retirement) was deleted.
+- R6-8 → the phone matrix + RTL stay in the gate (90/90).
+- R6-9 → REQ-41: the landing is now the front door on EVERY fresh load — reloads and revisits
+  meet it, and one click ("Open {company}") gives the studio back untouched. The flag lives in
+  memory only, deliberately out of the save.
+- R6-10 → REQ-42: every system prompt now carries the progress-report contract; the engine asks
+  wired models each cycle, parses the JSON (fences tolerated), clamps it, keeps stages legal
+  through the shared transition table, posts the model's own note in its thread; one format
+  retry, then the local heartbeat, and a failing loop is the pause-and-ask case of REQ-35.
+  8 new unit tests hold the parser and the cycle (101 total).

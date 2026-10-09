@@ -7,7 +7,7 @@
  * every page. The per-screen head (pixel title + one line) lives in each view via ScreenHead,
  * exactly as the prototype draws it.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
 import { t, type Lang } from './lib/i18n';
 import { applyCustomAccent, deriveAccent } from './lib/accent';
@@ -19,7 +19,6 @@ import { FX, LANG_EVENT, LANG_KEY, RAIL, applyAttr, onPrefsChange, readFx, readR
 import { downloadSave, parseSave, resetSave } from './lib/savefile';
 import { useStore } from './data/store';
 import { Icon } from './components/Icon';
-import { Dialog } from './components/Dialog';
 import { localized } from './lib/format';
 import { TeamView } from './views/TeamView';
 import { TasksView } from './views/TasksView';
@@ -74,7 +73,8 @@ export function App() {
   const [rail, setRail] = useState(readRail);
   const [health, setHealth] = useState<{ version: string; company: string | null } | null>(null);
   const [openDecisions, setOpenDecisions] = useState<number | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
+  /** REQ-37: search is typed straight into the topbar — no dialog, nothing between. */
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const [query, setQuery] = useState('');
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,6 +86,11 @@ export function App() {
   const introDraft = useStore((s) => s.introDraft);
   const chooseDemo = useStore((s) => s.chooseDemo);
   const [starting, setStarting] = useState(false);
+  /** REQ-41: the landing is the front door on EVERY fresh load. Passing it lives in memory
+      only (the store keeps it out of the save on purpose), so a reload meets the door again —
+      and one click gives the studio back, exactly where it was left. */
+  const doorPassed = useStore((s) => s.doorPassed);
+  const enter = useStore((s) => s.passDoor);
   const people = useStore((s) => s.agents.length);
   const openTasks = useStore((s) => s.tasks.filter((task) => task.stage !== 'done').length);
   const waiting = useStore((s) => s.decisions.filter((d) => d.status === 'pending').length);
@@ -112,6 +117,17 @@ export function App() {
   useEffect(() => {
     applyPalette(readPalette());
   }, []);
+
+  /** The intro finishing walks the owner straight into their new studio (REQ-41). */
+  useEffect(() => {
+    if (introDone && starting) enter();
+  }, [introDone, starting, enter]);
+
+  /** REQ-39 (owner, sixth round): a contracted rail is a strip of labels — it never holds an
+      open menu, and the company button below is inert until the rail expands. */
+  useEffect(() => {
+    if (rail) setMenuOpen(false);
+  }, [rail]);
 
   useEffect(() => {
     applyAttr(FX, readFx());
@@ -150,7 +166,8 @@ export function App() {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setSearchOpen(true);
+        searchRef.current?.focus();
+        searchRef.current?.select();
       }
     };
     addEventListener('keydown', onKey);
@@ -236,7 +253,9 @@ export function App() {
     );
   };
 
-  if (!introDone) {
+  // A forced state (?state=…) is the QA door — it looks straight at the shell's states and
+  // never meets the landing.
+  if ((!introDone || !doorPassed) && !forcedState) {
     const toggleLang = () => setLang(lang === 'en' ? 'ar' : 'en');
     return starting ? (
       <IntroWizard lang={lang} onLanguage={toggleLang} />
@@ -244,8 +263,10 @@ export function App() {
       <LandingView
         lang={lang}
         resumable={introDraft !== null}
+        studio={introDone ? company : null}
         onStart={() => setStarting(true)}
-        onDemo={chooseDemo}
+        onDemo={() => { chooseDemo(); enter(); }}
+        onOpen={enter}
         onLanguage={toggleLang}
       />
     );
@@ -276,6 +297,7 @@ export function App() {
             data-rail-label={`${company} · ${t('workspace', lang)}`}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
+            disabled={rail}
             onClick={() => setMenuOpen((open) => !open)}
           >
             <span className="box" aria-hidden="true">{company.slice(0, 1).toUpperCase()}</span>
@@ -345,11 +367,30 @@ export function App() {
             </div>
           </div>
           <div className="top-actions">
-            <button type="button" className="btn search-trigger" data-action="search" onClick={() => setSearchOpen(true)}>
+            <div className="topsearch">
               <Icon name="search" />
-              <span className="grow">{t('searchTrigger', lang)}</span>
-              <kbd className="kbd">⌘ K</kbd>
-            </button>
+              <input
+                ref={searchRef}
+                type="search"
+                data-action="search"
+                value={query}
+                placeholder={t('searchTrigger', lang)}
+                aria-label={t('searchTitle', lang)}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') { setQuery(''); e.currentTarget.blur(); } }}
+              />
+              {query.trim() ? (
+                <ul className="search-results" aria-live="polite">
+                  {results.map((r) => (
+                    <li key={`${r.kind}-${r.label}`}>
+                      <button type="button" onClick={() => { navigate(r.to); setQuery(''); }}>
+                        <span className="tag">{r.kind}</span> {r.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
             <button
               type="button"
               className="btn ghost iconbtn"
@@ -408,28 +449,6 @@ export function App() {
 
       {navOpen ? <button type="button" className="nav-scrim" aria-label={t('closeNav', lang)} onClick={() => setNavOpen(false)} /> : null}
 
-      <Dialog open={searchOpen} onClose={() => { setSearchOpen(false); setQuery(''); }} title={t('searchTitle', lang)} eyebrow={t('workspace', lang)} lang={lang}>
-        <label className="field">
-          <span className="small muted">{t('searchNote', lang)}</span>
-          <input
-            type="search"
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('searchTrigger', lang)}
-            aria-label={t('searchTrigger', lang)}
-          />
-        </label>
-        <ul className="search-results" aria-live="polite">
-          {results.map((r) => (
-            <li key={`${r.kind}-${r.label}`}>
-              <button type="button" onClick={() => { navigate(r.to); setSearchOpen(false); setQuery(''); }}>
-                <span className="tag">{r.kind}</span> {r.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </Dialog>
     </>
   );
 }

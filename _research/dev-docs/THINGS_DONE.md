@@ -1148,3 +1148,9 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   function (5 unit tests), presence chips + dimmed away-desks + walking on every real move,
   theme-based room lookup with a desk fallback so no floor can dead-end. Smoke gained an
   adaptive break-room check. Gates green: verify 10/10, smoke 84/84, web tests 92/92.
+- 10 October 2026 (evening) — sixth round (REQ-36..42) shipped: direct composer + inline topbar
+  search, unified network interaction (drag / double-click / hover-pin) with the frozen-after-
+  filter-switch sim bug fixed, company menu inert in the contracted rail, GUI vocabulary cleaned
+  to real states (OrgTree deleted), landing as the true front door with one-click resume, and
+  structured model progress reports (contract in the prompt, strict parser, retry, heartbeat
+  fallback). Gates green: verify 10/10, smoke 90/90 (5 new checks), web tests 101/101.

@@ -17,15 +17,20 @@ const SHOTS = [
 export function LandingView({
   lang,
   resumable,
+  studio,
   onStart,
   onDemo,
+  onOpen,
   onLanguage,
 }: {
   lang: Lang;
   /** A draft from an earlier visit turns the start button into "continue where I left off". */
   resumable: boolean;
+  /** REQ-41: when a studio already exists, the landing leads with one door — open it. */
+  studio?: string | null;
   onStart: () => void;
   onDemo: () => void;
+  onOpen?: () => void;
   onLanguage: () => void;
 }) {
   return (
@@ -44,15 +49,25 @@ export function LandingView({
         <p className="eyebrow">{t('brandSub', lang)}</p>
         <h1 id="page-title" tabIndex={-1}>{t('landingTitle', lang)}</h1>
         <p className="landing-body">{t('landingBody', lang)}</p>
-        <div className="row landing-actions">
-          <button type="button" className="btn primary" data-landing="start" onClick={onStart}>
-            <Icon name="play" />{resumable ? t('landingResume', lang) : t('landingStart', lang)}
-          </button>
-          <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
-            {t('landingDemo', lang)}
-          </button>
-        </div>
-        <p className="small dim landing-demo-note">{t('landingDemoNote', lang)}</p>
+        {studio && onOpen ? (
+          <div className="row landing-actions">
+            <button type="button" className="btn primary" data-landing="open" onClick={onOpen}>
+              <Icon name="play" />{t('landingOpen', lang).replace('{company}', studio)}
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="row landing-actions">
+              <button type="button" className="btn primary" data-landing="start" onClick={onStart}>
+                <Icon name="play" />{resumable ? t('landingResume', lang) : t('landingStart', lang)}
+              </button>
+              <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
+                {t('landingDemo', lang)}
+              </button>
+            </div>
+            <p className="small dim landing-demo-note">{t('landingDemoNote', lang)}</p>
+          </>
+        )}
       </section>
 
       <section className="landing-shots" aria-label={t('landingTitle', lang)}>

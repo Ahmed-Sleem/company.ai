@@ -128,6 +128,10 @@ interface SaveState {
   company: CompanyProfile;
   /** False until the intro is finished or the demo company is chosen (REQ-33). */
   introDone: boolean;
+  /** REQ-41: has the landing door been passed THIS session? In memory only — deliberately not
+      persisted (see partialize), so every fresh load meets the front door again. */
+  doorPassed: boolean;
+  passDoor: () => void;
   introDraft: IntroDraft | null;
   /** When the save last changed, for the status bar. Not part of the save file itself. */
   savedAt: string | null;
@@ -171,6 +175,7 @@ const fixture = () => ({
   savedAt: null as string | null,
   company: { description: '', answers: [] as { q: string; a: string }[], ...demo.company } as CompanyProfile,
   introDone: false,
+  doorPassed: false,
   introDraft: null as IntroDraft | null,
   operator: { ...demo.operator },
   agents: demo.agents.map((a) => ({ model: null, ...a })) as AgentRow[],
@@ -186,7 +191,8 @@ export const useStore = create<SaveState>()(
     (set, get) => ({
       ...fixture(),
       load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
-      reset: () => set(() => ({ ...fixture(), introDone: true, savedAt: new Date().toISOString() })),
+      passDoor: () => set({ doorPassed: true }),
+      reset: () => set(() => ({ ...fixture(), introDone: true, doorPassed: true, savedAt: new Date().toISOString() })),
       patchTask: (id, patch) => {
         let out: TaskRow | null = null;
         set((state) => ({

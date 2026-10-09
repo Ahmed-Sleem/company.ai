@@ -5,4 +5,6 @@
  */
 import { useStore } from '../src/data/store';
 
-useStore.setState({ introDone: true });
+// REQ-41: the landing is the front door on every fresh load; the unit tests live inside the
+// studio, so both in-memory flags say the door was passed (the smoke still walks the real door).
+useStore.setState({ introDone: true, doorPassed: true });

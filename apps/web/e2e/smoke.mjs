@@ -92,7 +92,13 @@ try {
     if (request.url().includes('/api/')) badRequests.push(`api call: ${request.url()}`);
   });
 
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
+  /** Every navigation walks back through the landing door like a real visitor would —
+      REQ-41 made the door the front door of every fresh load. */
+  const openDoor = async (target) => {
+    await page.goto(target, { waitUntil: 'networkidle' });
+    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
+  };
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/`);
 
   // 0 — the front door (REQ-33): a brand-new visitor has no save at all, so the product shows
   // its landing page before anything else. The rest of the smoke looks at the demo company,
@@ -119,6 +125,62 @@ try {
   check('the roster shows roles and no budget meter (REQ-32)',
     (roster?.includes('Lead engineer') ?? false) && !/budget|\$/i.test(roster ?? ''),
     (roster ?? '').slice(0, 80).replace(/\s+/g, ' '));
+
+  // REQ-41 (owner, sixth round): the landing is the front door on EVERY fresh load — and one
+  // click gives the studio back, exactly where it was left.
+  await page.reload({ waitUntil: 'networkidle' });
+  const resumeDoor = await page.$('[data-landing=open]');
+  check('the landing is the front door on every fresh load, offering the studio back',
+    resumeDoor !== null);
+  if (resumeDoor) await page.click('[data-landing=open]');
+  await page.waitForSelector('.sidebar');
+
+  // REQ-37: search is typed straight into the topbar; results hang under the field; no dialog.
+  await page.fill('[data-action=search]', 'Aria');
+  await page.waitForSelector('.topsearch .search-results li', { timeout: 5_000 });
+  const anyDialog = await page.$('.dialog');
+  check('search lives inline in the topbar — typing shows results, no dialog',
+    (await page.$('.topsearch .search-results li')) !== null && !(anyDialog && await anyDialog.isVisible()));
+  await page.fill('[data-action=search]', '');
+
+  // REQ-39: the contracted rail is a strip of labels — the company menu does not open there.
+  // the rail defaults to contracted, so the button starts inert; expanding wakes it
+  const inertInRail = await page.$eval('.workspace', (b) => b.disabled);
+  await page.click('[data-action=rail]');
+  const liveAgain = await page.$eval('.workspace', (b) => !b.disabled);
+  await page.click('[data-action=rail]');
+  const inertAgain = await page.$eval('.workspace', (b) => b.disabled);
+  check('the company save/load menu is inert while the rail is contracted',
+    inertInRail && liveAgain && inertAgain);
+
+  // REQ-38: one pointer language on every node — a single click never opens the inspector,
+  // a double-click does, and the graph is alive in every filter mode.
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#network`);
+  await page.waitForSelector('.gnode', { timeout: 10_000 });
+  await page.waitForTimeout(2_200); // let the opening simulation breathe
+  const anyNode = page.locator('.gnode.person').first();
+  const nodeBox = await anyNode.boundingBox();
+  await page.mouse.move(nodeBox.x + nodeBox.width / 2, nodeBox.y + nodeBox.height / 2);
+  await page.waitForTimeout(250); // the hover pin holds the node still
+  await page.mouse.down(); await page.mouse.up(); // a single click…
+  await page.waitForTimeout(400);
+  const noWindowOnClick = (await page.$('.node-window')) === null;
+  await page.mouse.dblclick(nodeBox.x + nodeBox.width / 2, nodeBox.y + nodeBox.height / 2);
+  await page.waitForSelector('.node-window', { timeout: 5_000 });
+  check('network: double-click inspects, a single click does not', noWindowOnClick);
+  // every filter mode keeps the graph alive — nothing freezes under any variant
+  let aliveInEveryMode = true;
+  const modes = [];
+  for (const mode of ['people', 'tasks', 'threads', 'all']) {
+    const btn = page.locator(`[data-graph-mode=${mode}]`);
+    if (await btn.count() > 0) { await btn.click(); modes.push(mode); }
+    await page.waitForTimeout(1_800);
+    const t1 = await page.$$eval('.gnode', (ns) => ns.map((n) => n.getAttribute('transform')).join('|'));
+    await page.waitForTimeout(700);
+    const t2 = await page.$$eval('.gnode', (ns) => ns.map((n) => n.getAttribute('transform')).join('|'));
+    if (t1 === t2) aliveInEveryMode = false;
+  }
+  check('network: every agency drifts in every filter mode — nothing freezes', aliveInEveryMode, modes.join(','));
 
   // 2 — theme
   const before = await page.getAttribute('html', 'data-theme');
@@ -150,7 +212,7 @@ try {
   }
 
   // 5 — the board: the demo's layout on real state, and the review gate refusing the wrong move
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#tasks`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#tasks`);
   await page.waitForSelector('[data-task]', { timeout: 10_000 });
   const cards = (await page.$$('[data-task]')).length;
   check('the board shows the designer’s ten tasks', cards === 10, `${cards} cards`);
@@ -221,7 +283,7 @@ try {
   await page.keyboard.press('Escape');
 
   // 5b — the form the designer drew: create a task, see it on the board, then edit it
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#tasks`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#tasks`);
   await page.waitForSelector('[data-task]');
   await page.click('button:has-text("New task")');
   await page.waitForSelector('#task-form', { timeout: 5_000 });
@@ -271,10 +333,11 @@ try {
   const setTheme = async (theme) => {
     await page.evaluate((value) => localStorage.setItem('company-os.theme', value), theme);
     await page.reload({ waitUntil: 'networkidle' });
+    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
     await page.waitForSelector('.palette-option');
   };
 
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#settings`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#settings`);
   await page.waitForSelector('.palette-option', { timeout: 10_000 });
   const paletteNames = await page.$$eval('.palette-option', (nodes) => nodes.map((n) => n.textContent?.trim()));
   // Changed 2026-10-06: the group now ends with the custom accent, which is an app feature rather
@@ -298,6 +361,7 @@ try {
 
   // the palette has to survive a reload: a preference that lasts only until you navigate is a bug
   await page.reload({ waitUntil: 'networkidle' });
+  if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
   check('the palette survives a reload',
     (await page.evaluate(() => document.documentElement.dataset.palette)) === 'ocean' && (await bg()) === oceanLight);
 
@@ -366,7 +430,7 @@ try {
     });
   };
 
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#world`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#world`);
   await page.waitForSelector('.room', { timeout: 10_000 });
   const rooms = (await page.$$('[data-room-box]')).length;
   const desks = (await page.$$('[data-desk]')).length;
@@ -547,7 +611,7 @@ try {
   await page.waitForFunction(() => document.documentElement.dir === 'ltr');
 
   // 5e — the two preferences the owner asked for, both defaulting to on
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#settings`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#settings`);
   await page.waitForSelector('.switch', { timeout: 8_000 });
   const defaults = await page.evaluate(() => ({
     fxAttr: document.documentElement.getAttribute('data-fx'),
@@ -595,7 +659,7 @@ try {
   }
 
   // 6 — inbox with a real decision and a working decision commit
-  await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#inbox`);
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });
   check('the inbox lists a decision from the database', true, 'Analytics read access');
   const decisionText = await page.textContent('.decision-slide');
@@ -607,7 +671,12 @@ try {
   // screen off the bottom. These checks hold the fix in place.
   {
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
-    await phone.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
+    const openDoorPhone = async (target) => {
+      await phone.goto(target, { waitUntil: 'networkidle' });
+      if (await phone.$('[data-landing=open]')) await phone.click('[data-landing=open]');
+      else if (await phone.$('[data-landing=demo]')) await phone.click('[data-landing=demo]');
+    };
+    await openDoorPhone(`http://127.0.0.1:${WEB_PORT}/#team`);
     // a fresh context has no save, so it meets the landing page first (REQ-33) — take the demo door
     if (await phone.$('.landing')) {
       await phone.click('[data-landing=demo]');
@@ -643,7 +712,7 @@ try {
         check('an icon-only item can still say what it is',
       names.every((name) => name.length > 1), JSON.stringify(names));
 
-    await phone.goto(`http://127.0.0.1:${WEB_PORT}/#world`, { waitUntil: 'networkidle' });
+    await openDoorPhone(`http://127.0.0.1:${WEB_PORT}/#world`);
     await phone.waitForSelector('[data-desk]', { timeout: 15_000 });
     const map = await phone.evaluate(() => {
       const viewport = document.querySelector('[data-world=viewport]').getBoundingClientRect();
@@ -673,7 +742,7 @@ try {
   // 5i — the team editor (owner C23 / REQ-17): people are typed in by the owner, given a pixel
   // portrait from the sprite set and a place in the hierarchy — and it all survives a reload.
   {
-    await page.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
+    await openDoor(`http://127.0.0.1:${WEB_PORT}/#team`);
     await page.waitForSelector('.team-card');
     const before = await page.locator('.team-card').count();
     await page.click('[data-team=add]');
@@ -694,6 +763,7 @@ try {
       added.name === 'Nour' && added.role === 'Quality engineer' && added.avatar === 12 && added.id === 'p-new-1',
       `${added.id} ${added.name} avatar ${added.avatar}`);
     await page.reload({ waitUntil: 'networkidle' });
+    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
     await page.waitForSelector('.team-card');
     check('the typed-in teammate survives a reload',
       (await page.textContent('.roster'))?.includes('Nour') ?? false);
@@ -770,7 +840,13 @@ try {
     check('finishing the wizard starts MY company from scratch — not the hard-coded demo',
       mine.name === 'Nile Pixels' && mine.agents === 1 && mine.tasks === 0 && mine.introDone === true,
       JSON.stringify(mine));
+    // REQ-41: even my own studio now waits behind the front door — one click gives it back.
     await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-landing=open]');
+    check('the landing offers MY studio back by name (REQ-41)',
+      (await page.textContent('[data-landing=open]'))?.includes('Nile Pixels') ?? false,
+      (await page.textContent('[data-landing=open]')) ?? '');
+    await page.click('[data-landing=open]');
     await page.waitForSelector('.sidebar');
     check('and my own company is what opens from now on',
       (await page.textContent('.workspace'))?.includes('Nile Pixels') ?? false);

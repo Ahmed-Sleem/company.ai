@@ -37,7 +37,9 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
   const openTasksOf = (agent: AgentRow) => tasks.filter((task) => task.ownerAgentId === agent.id && task.stage !== 'done');
 
   const working = agents.filter((a) => a.status === 'working').length;
-  const attention = agents.filter((a) => a.status === 'error' || a.status === 'paused').length;
+  /** REQ-40: the strip counts real states. 'Blocked' means blocked loops; a pause is its own
+      state and wears its own badge on the card — nothing is editorialised into 'attention'. */
+  const attention = agents.filter((a) => a.status === 'error').length;
   const open = tasks.filter((task) => task.stage !== 'done').length;
   const openForced = !forcedState || forcedState === 'default';
 

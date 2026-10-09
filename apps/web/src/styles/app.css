@@ -64,6 +64,9 @@
   --app-landing-title:34px;
   --app-clock:52px;
   --app-bubble-w:160px;
+  --app-composer-h:96px;
+  --app-send:44px;
+  --sh-search-sm:150px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -159,8 +162,14 @@ body {
 .grow { flex: 1; min-inline-size: 0; }
 .breadcrumb { font-family: var(--font); font-size: var(--xs); color: var(--dim); display: flex; align-items: center; gap: var(--s3); }
 .breadcrumb strong { color: var(--text); font-weight: 400; }
-.search-trigger { display: flex; align-items: center; gap: var(--s2); font-size: var(--xs); color: var(--dim); inline-size: var(--sh-search); justify-content: flex-start; background: transparent; }
-.search-trigger .kbd { margin-inline-start: auto; }
+/* REQ-37 (owner, sixth round): search lives in the topbar itself — type straight into it and
+   the results hang under the field. The modal dialog is gone. */
+.topsearch { position: relative; display: flex; align-items: center; gap: var(--s2); inline-size: var(--sh-search); padding-inline: var(--s2); border: var(--app-hair) solid var(--line); background: var(--surface); color: var(--dim); }
+.topsearch input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--xs); padding-block: var(--s1); }
+.topsearch input:focus { outline: none; }
+.topsearch .search-results { position: absolute; inset-block-start: calc(100% + var(--s1)); inset-inline: 0; z-index: 40; margin: 0; padding: var(--s1); list-style: none; background: var(--raised); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); max-block-size: 60vh; overflow-y: auto; }
+.topsearch .search-results button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--xs); text-align: start; padding: var(--s1) var(--s2); cursor: pointer; }
+.topsearch .search-results button:hover { background: var(--surface); }
 .top-actions { display: flex; align-items: center; gap: var(--s2); }
 .notification { position: relative; }
 .notification .unread { position: absolute; inset-block-start: var(--sh-unread); inset-inline-end: var(--sh-unread); inline-size: var(--sh-unread); block-size: var(--sh-unread); background: var(--accent); }
@@ -947,10 +956,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .message-text { padding: var(--s3) var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); border-radius: var(--radius); overflow-wrap: anywhere; }
 .message.own .message-text { background: var(--accent-bg); border-color: var(--accent); }
 .chat-start { display: flex; flex-direction: column; align-items: center; gap: var(--s3); padding: var(--s8) 0; text-align: center; }
-.composer { display: flex; gap: var(--s3); padding: var(--s4); border-block-start: var(--app-hair) solid var(--soft); align-items: flex-end; background: var(--raised); }
-.composer textarea { flex: 1; resize: none; max-block-size: 6lh; background: var(--surface); }
-.composer-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s1); }
-.composer-hint { font-size: var(--sh-fine); color: var(--dim); }
+/* REQ-36 (owner, sixth round): the composer is one calm unit — a fixed-size box that scrolls
+   inside itself and a send button. No hint text, no side column, no chrome between you and it. */
+.composer { display: flex; gap: var(--s2); padding: var(--s3); border-block-start: var(--app-hair) solid var(--soft); align-items: flex-end; background: var(--raised); }
+.composer textarea { flex: 1; resize: none; block-size: var(--app-composer-h); overflow-y: auto; background: var(--surface); margin: 0; }
+.composer-send { block-size: var(--app-send); inline-size: var(--app-send); flex: none; }
 @media (max-width: 800px) {
   .chat-layout { grid-template-columns: 1fr; }
   .threads { flex-direction: row; overflow-x: auto; max-block-size: none; padding: var(--s2); }
@@ -1115,8 +1125,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
   .crumb-title { font-family: var(--pixel); font-size: var(--lg); letter-spacing: var(--track-tight); }
 :root[lang='ar'] .crumb-title { font-family: var(--font); letter-spacing: 0; }
 .topbar .breadcrumb > .icon { display: none; }
-  .search-trigger { inline-size: var(--control); padding: 0; justify-content: center; }
-  .search-trigger span, .search-trigger .kbd { display: none; }
+  .topsearch { inline-size: var(--sh-search-sm); }
   .main { padding: var(--s6) var(--s4); }
   .statusbar .secondary { display: none; }
   .statusbar { padding: var(--s3) var(--s4); font-size: var(--sh-fine); gap: var(--s2); }

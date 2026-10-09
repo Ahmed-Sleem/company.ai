@@ -169,10 +169,13 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                     ) : null}
                   </div>
 
+                  {/* REQ-36: one calm unit — a fixed box that scrolls inside itself, a send
+                      button, nothing else. Enter sends, Shift+Enter adds a line; the field
+                      just works, like every modern messenger. */}
                   {thread ? (
                     <form className="composer" onSubmit={send}>
-                      <label className="sr-only" htmlFor="composer-input">{t('chatPlaceholder', lang)}</label>
-                      <textarea id="composer-input" rows={2} value={draft}
+                      <label className="visually-hidden" htmlFor="composer-input">{t('chatPlaceholder', lang)}</label>
+                      <textarea id="composer-input" value={draft}
                         placeholder={t('chatPlaceholder', lang)}
                         onChange={(e) => setDraft(e.target.value)}
                         onKeyDown={(e) => {
@@ -181,12 +184,11 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                             send(e);
                           }
                         }} />
-                      <div className="composer-side">
-                        <button type="submit" className="btn primary" disabled={draft.trim() === ''}>
-                          <Icon name="send" />{t('chatSend', lang)}
-                        </button>
-                        <span className="composer-hint">{t('composerHint', lang)}</span>
-                      </div>
+                      <button type="submit" className="btn primary iconbtn composer-send"
+                        disabled={draft.trim() === ''}
+                        aria-label={t('chatSend', lang)} title={t('chatSend', lang)}>
+                        <Icon name="send" />
+                      </button>
                     </form>
                   ) : null}
                 </>

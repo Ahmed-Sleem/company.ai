@@ -3,7 +3,9 @@
  *
  *  · a controls window chooses WHICH graph to look at — everything, just the people and how
  *    they report, the people and their tasks, or the people and their conversations;
- *  · clicking a node opens its details with real controls: a person's status can be changed,
+ *  · the pointer language is one and the same on every node, in every mode: drag moves it
+ *    (the graph stays alive around it), double-click opens its details — a person's status can
+ *    be changed,
  *    a task can be moved along its stages (the shared transition table decides what is legal)
  *    and re-prioritised, a conversation opens in the messenger;
  *  · the graph is alive: the simulation never fully freezes, it settles into a slow drift the
@@ -81,6 +83,12 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
   const alpha = useRef<number>(G.alpha);
   const running = useRef(false);
   const dragNode = useRef<string | null>(null);
+  /** The loop steps whatever graph is current, not the one it was started with: a filter
+      switch builds a NEW graph while the old loop is still alive (the drift never ends), and
+      a loop bound to its birth graph would leave the new picture frozen — owner, sixth round:
+      every agency moves in every mode. */
+  const graphRef = useRef(graph);
+  graphRef.current = graph;
   const panning = useRef<{ x: number; y: number } | null>(null);
   /** The node under the cursor holds still (you cannot click a moving target) while the rest
       of the graph keeps breathing — owner, fifth round: never freeze, always in motion. */
@@ -96,10 +104,11 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     if (running.current) return;
     running.current = true;
     const loop = () => {
-      const mv = layoutStep(graph, alpha.current);
+      const current = graphRef.current;
+      const mv = layoutStep(current, alpha.current);
       const held = pin.current;
       if (held) {
-        const pn = graph.byId[held.id];
+        const pn = current.byId[held.id];
         if (pn) { pn.x = held.x; pn.y = held.y; }
       }
       // Cool toward the live floor instead of to zero: the picture keeps breathing.
@@ -180,7 +189,8 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     dragNode.current = id;
     graph.byId[id]!.fixed = true;
     alpha.current = Math.max(alpha.current, 0.25); // a grabbed node wakes the graph up
-    setSelected(id);
+    // REQ-38: grabbing is not inspecting. The drag moves the node; the inspector waits for
+    // the double-click (or the accessible list beside the toggle).
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
@@ -310,7 +320,7 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
                         onPointerDown={onNodePointerDown(n.id)}
                         onMouseEnter={() => { setHover(n.id); pin.current = { id: n.id, x: n.x, y: n.y }; }}
                         onMouseLeave={() => { setHover(null); pin.current = null; }}
-                        onClick={() => setSelected(n.id)}
+                        onDoubleClick={() => setSelected(n.id)}
                       >
                         <circle r={n.radius} />
                         <text y={n.radius + G.labelGap}>{n.label}</text>

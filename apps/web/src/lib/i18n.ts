@@ -19,7 +19,6 @@ export const STRINGS = {
   headWorld: { en: 'The whole studio at once.', ar: 'الاستوديو كله في نظرة واحدة.' },
   searchTrigger: { en: 'Search anything…', ar: 'ابحث عن أي شيء…' },
   searchTitle: { en: 'Search', ar: 'بحث' },
-  searchNote: { en: 'Search employees, tasks, conversations and pages.', ar: 'ابحث في الموظفين والمهام والمحادثات والصفحات.' },
   notifications: { en: 'Notifications', ar: 'الإشعارات' },
   openNav: { en: 'Open navigation', ar: 'افتح التنقل' },
   closeNav: { en: 'Close navigation', ar: 'أغلق التنقل' },
@@ -30,7 +29,7 @@ export const STRINGS = {
   footSaved: { en: 'saved', ar: 'حُفظ' },
   teamPeople: { en: 'People', ar: 'الأفراد' },
   teamWorking: { en: 'Working now', ar: 'يعملون الآن' },
-  teamAttention: { en: 'Need attention', ar: 'يحتاجون انتباهاً' },
+  teamAttention: { en: 'Blocked', ar: 'متعثّرون' },
   teamOpen: { en: 'Open tasks', ar: 'مهام مفتوحة' },
   teamReports: { en: 'Reports to', ar: 'يتبع إلى' },
   teamNoManager: { en: 'Answers to no one', ar: 'لا يتبع أحداً' },
@@ -68,7 +67,6 @@ export const STRINGS = {
   graphLinks: { en: 'links', ar: 'روابط' },
   graphOpenChat: { en: 'Open the conversation', ar: 'افتح المحادثة' },
   graphYouNote: { en: 'That is you — the whole company reports here.', ar: 'هذا أنت — الشركة كلها تتبعك.' },
-  composerHint: { en: 'Enter sends · Shift+Enter adds a line', ar: 'Enter للإرسال · Shift+Enter لسطر جديد' },
   teamAdd: { en: 'Add a teammate', ar: 'أضف زميلًا' },
   teamAddTitle: { en: 'A new teammate', ar: 'زميل جديد' },
   teamEditBtn: { en: 'Edit', ar: 'تعديل' },
@@ -147,6 +145,7 @@ export const STRINGS = {
   liveDelivering: { en: 'delivering to {name}', ar: 'يُسلّم إلى {name}' },
   /* ── fifth round, C42: the owner's rule — work at the desk, free in the break room, talk in
      the meeting room. Nothing more. ── */
+  landingOpen: { en: 'Open {company}', ar: 'افتح {company}' },
   liveOnBreak: { en: 'on break', ar: 'في الاستراحة' },
   liveInMeeting: { en: 'talking with {name}', ar: 'يتحدّث مع {name}' },
   roomLoungeNote: { en: 'Free during work hours', ar: 'متاحون في ساعات العمل' },
@@ -313,7 +312,7 @@ export const STRINGS = {
   statusWorking: { en: 'Working', ar: 'يعمل' },
   statusBlocked: { en: 'Blocked', ar: 'متوقف' },
   statusIdle: { en: 'Idle', ar: 'متاح' },
-  statusError: { en: 'Needs attention', ar: 'يحتاج انتباهاً' },
+  statusError: { en: 'Blocked', ar: 'متعثّر' },
   statusPaused: { en: 'Paused', ar: 'متوقف مؤقتاً' },
   // Appearance, the owner's two toggles (both default on) and the custom accent.
   customAccent: { en: 'Custom accent', ar: 'لون مخصص' },
