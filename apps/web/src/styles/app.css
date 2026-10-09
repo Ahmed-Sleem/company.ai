@@ -54,6 +54,7 @@
   --app-chatside:250px;
   --app-settings-aside:300px;
   --app-grid:16px;
+  --app-worldmenu-w:240px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -573,10 +574,17 @@ h3 { font-size: var(--base); }
    One transform layer holds the plan; everything inside is positioned in plan units, so panning
    is a transform and nothing re-lays-out. Room tints come from the theme names the owner gave
    their rooms; the tints are ours, mixed from the accent and the surfaces. */
-.world { display: flex; flex-direction: column; gap: var(--s3); }
-.world-hud { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
-.world-hud .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
-.world-scale { min-inline-size: var(--s8); text-align: center; color: var(--muted); font-size: var(--sm); }
+.world { position: relative; display: flex; flex-direction: column; gap: var(--s3); }
+.world-scale { position: absolute; inset-block-end: var(--s2); inset-inline-end: var(--s2); z-index: 5; min-inline-size: var(--s8); text-align: center; color: var(--muted); font-size: var(--sm); background: var(--raised); border: var(--app-hair) solid var(--soft); padding-inline: var(--s2); pointer-events: none; }
+
+/* ── the one controls menu (owner C19): floats over the floor, closed by default ─────────── */
+.world-controls { position: absolute; inset-block-start: var(--s2); inset-inline-end: var(--s2); z-index: 6; display: flex; flex-direction: column; align-items: flex-end; gap: var(--s2); }
+.world-menu { background: var(--surface); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); inline-size: var(--app-worldmenu-w); max-block-size: calc(100% - var(--s10)); overflow-y: auto; animation: pop-in var(--anim-fast) var(--anim-ease); }
+.world-menu .menu-label { margin: 0; font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; color: var(--dim); }
+.world-menu .menu-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.world-menu .menu-rooms { display: flex; flex-direction: column; gap: var(--s1); align-items: stretch; }
+.world-menu .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.menu-room-edit { display: flex; flex-direction: column; gap: var(--s3); }
 .world-viewport {
   position: relative;
   overflow: hidden;
@@ -677,19 +685,7 @@ h3 { font-size: var(--base); }
 .drawer-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
 .drawer-tasks li { display: grid; grid-template-columns: auto 1fr; gap: var(--s2); align-items: center; font-size: var(--sm); }
 .drawer-tasks .progress { inline-size: 100%; block-size: var(--s2); grid-column: 1 / -1; }
-.world-stats {
-  position: absolute;
-  inset-block-end: 0;
-  inset-inline: 0;
-  display: flex;
-  gap: var(--s5);
-  padding: var(--s2) var(--s3);
-  background: var(--side);
-  border-block-start: var(--app-hair) solid var(--line);
-  font-size: var(--sm);
-}
-.world-stats .stat { display: flex; gap: var(--s2); align-items: baseline; }
-.world-stats .stat-label { color: var(--muted); }
+
 .world-stats .stat-value { color: var(--accent); }
 
 /* ── the prop art ─────────────────────────────────────────────────────────────────────────────
@@ -710,18 +706,12 @@ h3 { font-size: var(--base); }
 /* ── build mode ───────────────────────────────────────────────────────────────────────────────
    The only mode that changes what a drag means, so it says so in words above the plan and in the
    cursor over it. Nothing here is discoverable-only: the bar names each verb and its key. */
-.world-build {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: var(--s2) var(--s3);
-  background: var(--accent-bg);
-  border: var(--app-hair) solid var(--accent);
-  font-size: var(--sm);
-}
+
 .world-build span:first-child { flex: 1; }
 .world-building .room { border-style: dashed; }
-.world-building .prop, .world-building .desk { cursor: move; }
+.world-building .prop, .world-building .desk, .world-building .room { cursor: move; }
+.room-selected { outline: var(--app-stroke) solid var(--accent); outline-offset: calc(var(--app-stroke) * -1); }
+.room-resize { position: absolute; inset-block-end: 0; inset-inline-end: 0; inline-size: var(--s3); block-size: var(--s3); background: var(--accent); cursor: nwse-resize; }
 .prop-selected { outline: var(--app-stroke) solid var(--accent); outline-offset: 0; }
 
 /* ── phones: the sidebar is a strip of icons, not a column ──────────────────────────────────────

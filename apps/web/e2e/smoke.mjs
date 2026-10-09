@@ -369,13 +369,13 @@ try {
     rooms === 6 && desks === 16 && props === 21, `${rooms} rooms · ${desks} desks · ${props} props`);
   check('the company is sitting at the desks it has', staffed === 8, `${staffed} desks staffed`);
 
-  // the HUD counts what the save says, not what the demo said
-  const hud = await page.$$eval('.world-stats .stat', (nodes) =>
-    nodes.map((n) => [n.querySelector('.stat-label')?.textContent, n.querySelector('.stat-value')?.textContent]));
+  // the stats strip is gone (owner 2026-10-09): the floor belongs to the plan; the facts the
+  // strip carried still exist for screen readers in the hidden summary sentence
+  const noStats = (await page.$('.world-stats')) === null;
+  const summary = await page.$eval('[data-world=summary]', (n) => n.textContent ?? '');
   const worldSave = await readSave(page);
-  check('the HUD counts the roster and the ledger, not the demo’s numbers',
-    hud.length === 3 && hud[0][1] === String(worldSave?.agents.length ?? -1),
-    hud.map(([label, value]) => `${label} ${value}`).join(' · '));
+  check('the floor has no stats strip and the spoken summary still counts the save',
+    noStats && summary.includes(String(worldSave.agents.length)), `${noStats} · ${summary.trim()}`);
 
   // the plan arrives fitted — it did not, once: the fit effect ran while the world was still a
   // skeleton, found no viewport, and left the owner looking at a cropped floor at 100%
@@ -447,9 +447,13 @@ try {
   await page.click('[data-desk]:not([data-agent])');
   check('clicking an empty desk chooses nothing', (await page.$$('[data-desk].desk-selected')).length === 0);
 
-  // build mode: drag a prop, watch it snap to the owner's grid, then undo it
-  await page.click('[data-world=build]');
+  // every control now lives in one menu (owner 2026-10-09): open it, then build
+  await page.click('[data-world=controls]');
   await page.waitForSelector('[data-world=build-bar]', { timeout: 4_000 });
+  check('one menu carries every control',
+    (await page.$('[data-world=fit]')) !== null && (await page.$('[data-world=zoom-in]')) !== null &&
+    (await page.$('[data-world=build]')) !== null && (await page.$('[data-room=lounge]')) !== null);
+  await page.click('[data-world=build]');
   await page.click('[data-world=fit]');
   await settled();
   // Pick a prop that is genuinely grabbable: fully inside the viewport, and the topmost element at
@@ -480,6 +484,12 @@ try {
   await page.click('[data-world=undo]');
   const undone = await page.$eval(`[data-prop=${propBefore.id}]`, (prop) => getComputedStyle(prop).insetInlineStart);
   check('undo puts it back', Math.abs(parseFloat(undone) - parseFloat(propBefore.inlineStart)) < 0.5, `${undone}`);
+  // rooms are buildable too: add one, then undo it away again
+  await page.click('[data-world=add-room]');
+  const withNewRoom = (await page.$$('[data-room-box]')).length;
+  await page.click('[data-world=undo]');
+  const afterUndo = (await page.$$('[data-room-box]')).length;
+  check('a room can be built — and undone', withNewRoom === 7 && afterUndo === 6, `${withNewRoom} → ${afterUndo}`);
   await page.click('[data-world=build]');
 
   // the room jumps move the camera to that room
