@@ -226,3 +226,26 @@ Comments (the work list):
   **DONE 2026-10-10** — commit `362d13a`: work hours in prefs, the work loop
   (progress → review → done with thread announcements), provider-or-local replies in Comms,
   compiled system prompts (REQ-16/26/28/35). Gates green: verify 10/10, smoke 83/83, tests 87/87.
+
+## 2026-10-10 (evening) — sixth round of comments
+
+- R6-1 chat: remove "Enter sends · Shift+Enter adds a line"; redesign the composer — fixed-size
+  text box, scrolls inside, send button, no overlays: direct typing, modern. → REQ-36
+- R6-2 the search bar: the same treatment. → REQ-37
+- R6-3 network: every agency (people, tasks, all filter variants) must move and behave the same.
+  → REQ-38
+- R6-4 network: double-click inspects; normal click + drag moves nodes; the graph stays dynamic.
+  → REQ-38
+- R6-5 do not miss the rules and the philosophy — everything centralised, as the rules say.
+  → held: shared components, tokens only, one i18n table, checks in the gate.
+- R6-6 the company button (save/load menu) must not be clickable while the sidebar is contracted.
+  → REQ-39
+- R6-7 remove garbage that does not fit our logic all over the GUI — e.g. "Needs attention":
+  our states are working / on break / sleeping / paused / blocked. → REQ-40
+- R6-8 make sure the GUI is adapted (every width, both languages). → gate: phone matrix + RTL.
+- R6-9 "still just a demo… no landing page, I am waiting for that" — the landing must be the
+  real front door, and the product must be usable, not a demo. → REQ-41 (+ Phase F engine is in)
+- R6-10 system prompts must assign each model the right info: the model reports task progress
+  every cycle in a structured form we define in the prompt and parse. → REQ-42
+- R6-11 new requirements → docs, update the plan, move to the next phase, miss nothing. → this
+  file, PRODUCT_REQUIREMENTS §12, IMPLEMENTATION_PLAN §4 (Phase G is next).

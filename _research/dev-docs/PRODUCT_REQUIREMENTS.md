@@ -130,3 +130,32 @@ IDs are stable. The plan (`IMPLEMENTATION_PLAN.md`) and the tests refer back to 
 3. Repo assessment — IMPLEMENTATION_PLAN §1.
 4. The big plan with reuse URLs + licences — IMPLEMENTATION_PLAN (rewritten).
 5. Execution phase by phase, each pushed, each logged.
+
+## §12 · Sixth round (2026-10-10) — the owner's new requirements
+
+- REQ-36 The messenger composer is one calm unit: a fixed-size text box that scrolls inside
+  itself, a send button beside it, and nothing else — no hint text, no overlays, no selection
+  chrome. Typing is direct, like every modern messenger. (Enter sends, Shift+Enter adds a line —
+  the behaviour stays; the explanation on screen goes.)
+- REQ-37 Search is typed directly into the topbar — an inline field with its results under it.
+  The modal search dialog is removed. ⌘K/Ctrl+K focuses the field instead of opening a dialog.
+- REQ-38 The network treats every agency identically: people, tasks and conversations share the
+  same movement, the same collision, the same hover-hold, in every filter mode. Interaction:
+  drag moves a node (the graph stays alive around it), **double-click inspects**, a single click
+  no longer opens the inspector. The accessible list keeps a one-activation path to every
+  inspector.
+- REQ-39 The company button (save to file / load / start over) is inert while the sidebar is
+  contracted — a collapsed rail shows labels on hover, it does not open menus.
+- REQ-40 The GUI speaks only real states: working, in review, on break, sleeping, paused,
+  blocked. Derived editorialising ("Needs attention", and anything like it) is removed from
+  every view — an error is *blocked*, a pause is *paused*, and the words match the live bubbles.
+- REQ-41 The landing page is the front door on **every** fresh load — the app never opens over
+  it silently. When a studio exists, the landing offers "Open {company}" and one click resumes
+  exactly where the owner left off (the save is untouched).
+- REQ-42 Structured progress reports: the system prompt hands every model one strict contract —
+  each engine cycle the model answers with a single JSON object `{"progress": 0-100,
+  "stage": "progress|review|done", "note": "one short line"}` for the task it is working. The
+  engine parses it (fenced code tolerated), clamps it, writes progress/stage, and posts the note
+  in the task's thread. A malformed answer gets one format-retry; a second failure falls back to
+  the local heartbeat for that cycle and, if it persists, pauses the loop and asks (REQ-35).
+  Agents without a provider keep the local heartbeat unchanged.

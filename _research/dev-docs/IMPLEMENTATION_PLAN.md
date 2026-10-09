@@ -97,7 +97,13 @@ the inbox: "asks from the company"); histories view (task trail + thread provena
 model per message); chat-with-idle; schedule + manual override; checkpoints + resume (unit-tested
 with a deterministic fake provider; observed failing first).
 
-### Phase G — the look completes (REQ-1..7 + PORT_AUDIT world/graph work)
+### Phase G — the look completes (REQ-1..7 + PORT_AUDIT world/graph work + sixth round REQ-36..42)
+Sixth round additions folded in (owner 2026-10-10 evening): composer + topbar search go direct
+(REQ-36/37), network interaction unifies — drag to move, double-click to inspect, identical for
+every agency in every mode (REQ-38), the company menu goes inert in the contracted rail
+(REQ-39), the GUI vocabulary is cleaned to real states only (REQ-40), the landing becomes the
+front door on every fresh load (REQ-41), and the engine upgrades to structured progress reports
+with the contract written into every system prompt (REQ-42).
 Hidden scrollbars app-wide; fixed de-demo footer absorbing company/loop-state/version; views fit
 the viewport (world/network/comms; inner panes scroll invisibly); sidebar never scrolls; pixel
 icon = favicon + brand + manifest; calm note removed (app + prototype patch); prototype patches
