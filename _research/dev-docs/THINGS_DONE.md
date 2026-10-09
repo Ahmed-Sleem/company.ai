@@ -1025,3 +1025,28 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   sidebar's calm-place note. Regenerated; design gate 15/15.
 - Gate: 10/10 green — 90 api (still in the repo until Phase C's server retirement lands) ·
   87 web · 15/15 design · 66/66 smoke.
+
+## 2026-10-09 — shell rebuilt on the prototype's exact structure (owner: "re-read the prototype")
+
+- Owner verdict on the first Phase C publish: the world view is better, but the page structure
+  was not the demo's — "use the demo as base and do the improvements over it".
+- Re-read `design/prototype/company-os.html` line by line (shell(), topbar, navButton, the demo
+  stylesheet, the pixel skin, the collapsed-rail and phone media blocks) and rebuilt the real
+  app's shell to the prototype's DOM and measures:
+  · sidebar = brand row ([a] + company.ai + HUMAN × ARTIFICIAL, phone close button) → the
+    workspace button (company initial box + name + chevron; it now also carries the one-file
+    save menu: export / import / start over) → WORKSPACE navlabel + nav items with counts →
+    sidebar-bottom with Settings, World Map and the owner account row;
+  · topbar = rail toggle + hamburger (phone) + breadcrumb left; the 218px "Search anything… ⌘K"
+    trigger, theme icon, language and the bell in `.top-actions` right;
+  · `.app` column with padded centred `.main` and the three-span statusbar
+    (company · Live / all-data-in-this-browser / company.ai 0.2.0);
+  · phone = the prototype's drawer (off-screen sidebar + scrim), not the old strip.
+- Every raw measure the prototype uses is declared once as an `--sh-*` token (the raw-value law
+  still applies to the real app), pixel skin and collapsed-rail blocks ported, desktop-only.
+- Three of my own leftovers caused visible corruption and were root-caused and deleted: the old
+  `.shell` grid phone media block, the un-gated collapsed-rail rules (leaked into the phone
+  drawer), and the missing global `.icon` size (the search magnifier drew ~150px).
+- Screenshots: design/screenshots/shell-{desktop,expanded,phone}-2026-10-09.png now match the
+  prototype's rail, drawer and topbar. Gate 10/10 green (87 web · 68/68 smoke with the drawer
+  tests).

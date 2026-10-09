@@ -74,6 +74,8 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [saveNote, setSaveNote] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const company = useStore((s) => s.company.name);
   const operator = useStore((s) => s.operator);
 
@@ -109,6 +111,12 @@ export function App() {
   useEffect(() => {
     applyCustomAccentForTheme();
   }, [theme, view]);
+
+  // the phone drawer is body-class driven, exactly like the prototype's open-nav/close-nav
+  useEffect(() => {
+    document.body.classList.toggle('nav-open', navOpen);
+    return () => document.body.classList.remove('nav-open');
+  }, [navOpen]);
 
   useEffect(() => {
     const onHash = () => {
@@ -198,138 +206,194 @@ export function App() {
 
   const viewProps = { lang, ...(forcedState ? { forcedState } : {}) };
 
+  /** The prototype's nav button, verbatim in shape: icon, the word, an optional count. */
+  const navButton = (item: (typeof VIEWS)[number]) => {
+    const label = lang === 'ar' ? item.labelAr : item.label;
+    const count = item.id === 'inbox' ? (openDecisions ?? 0) : item.id === 'team' ? useStore.getState().agents.length : 0;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className="navitem"
+        data-nav={item.id}
+        aria-label={count > 0 ? `${label} · ${count}` : label}
+        data-rail-label={count > 0 ? `${label} · ${count}` : label}
+        title={label}
+        aria-current={view === item.id ? 'page' : undefined}
+        onClick={() => { navigate(item.id); setNavOpen(false); }}
+      >
+        <Icon name={item.icon} />
+        <span className="itemlabel">{label}</span>
+        {count > 0 ? <span className="count">{count}</span> : null}
+      </button>
+    );
+  };
+
   return (
-    <div className="shell">
+    <>
       <a className="skip-link" href="#main">{t('skip', lang)}</a>
 
-      <aside className="sidebar" aria-label={t('brand', lang)}>
-        <div className="brand">
-          <img className="brandmark-img" src="./icon.svg" alt="" aria-hidden="true" />
-          <span className="brand-text">
-            {t('brand', lang)}
-            <small>{t('brandSub', lang)}</small>
-          </span>
+      {/* ── the sidebar, exactly as the prototype draws it ─────────────────────────────── */}
+      <aside className="sidebar" id="sidebar" aria-label={t('brand', lang)}>
+        <div className="row">
+          <div className="brand grow">
+            <span className="brandmark" aria-hidden="true">[a]</span>
+            <span>{t('brand', lang)}<small>{t('brandSub', lang)}</small></span>
+          </div>
+          <button type="button" className="btn ghost iconbtn nav-close" aria-label={t('closeNav', lang)} onClick={() => setNavOpen(false)}>
+            <Icon name="close" />
+          </button>
         </div>
 
-        <details className="workspace">
-          <summary aria-label={t('workspace', lang)}>
-            <span className="workspace-mark" aria-hidden="true">{company.slice(0, 1)}</span>
-            <span className="workspace-name">{company}</span>
-            <Icon name="menu" />
-          </summary>
-          <div className="workspace-menu" role="menu">
-            <button type="button" role="menuitem" onClick={exportSave}>{t('exportSave', lang)}</button>
-            <label role="menuitem" className="workspace-import">
-              {t('importSave', lang)}
-              <input type="file" accept="application/json,.json" onChange={(e) => { const f = e.target.files?.[0]; if (f) importSave(f); e.target.value = ''; }} />
-            </label>
-            <button type="button" role="menuitem" onClick={() => { useStore.getState().reset(); setSaveNote(t('startOver', lang)); }}>{t('startOver', lang)}</button>
-            {saveNote ? <p role="status" className="muted small">{saveNote}</p> : null}
-          </div>
-        </details>
+        {/* the company — and, as the product's one-file save (REQ-11), the place where the
+            workspace travels: export, import, start over. The demo's button becomes a menu. */}
+        <div className="workspace-wrap">
+          <button
+            type="button"
+            className="workspace"
+            aria-label={`${company} · ${t('workspace', lang)}`}
+            data-rail-label={`${company} · ${t('workspace', lang)}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className="box" aria-hidden="true">{company.slice(0, 1).toUpperCase()}</span>
+            <span className="grow">{company}</span>
+            <Icon name="down" />
+          </button>
+          {menuOpen ? (
+            <div className="workspace-menu" role="menu" aria-label={t('workspace', lang)}>
+              <button type="button" role="menuitem" onClick={() => { exportSave(); setMenuOpen(false); }}>{t('exportSave', lang)}</button>
+              <label role="menuitem" className="workspace-import">
+                {t('importSave', lang)}
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importSave(f); e.target.value = ''; }}
+                />
+              </label>
+              <button type="button" role="menuitem" onClick={() => { useStore.getState().reset(); setSaveNote(t('startOver', lang)); setMenuOpen(false); }}>
+                {t('startOver', lang)}
+              </button>
+              {saveNote ? <p role="status" className="small muted">{saveNote}</p> : null}
+            </div>
+          ) : null}
+        </div>
 
-        <nav>
-          <ul className="navlist">
-            {VIEWS.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className="navitem"
-                  data-nav={item.id}
-                  aria-label={lang === 'ar' ? item.labelAr : item.label}
-                  title={lang === 'ar' ? item.labelAr : item.label}
-                  aria-current={view === item.id ? 'page' : undefined}
-                  onClick={() => navigate(item.id)}
-                >
-                  <Icon name={item.icon} />
-                  <span className="navlabel">{lang === 'ar' ? item.labelAr : item.label}</span>
-                  {item.id === 'inbox' && openDecisions !== null && openDecisions > 0 && (
-                    <span className="count">{openDecisions}</span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
+        <nav className="navgroup" aria-label={t('workspace', lang)}>
+          <p className="navlabel">{t('workspace', lang)}</p>
+          {VIEWS.slice(0, 4).map(navButton)}
+          <div className="navgap" aria-hidden="true" />
+          {navButton(VIEWS[4]!)}
         </nav>
 
-        <div className="owner-card">
-          <span className="workspace-mark" aria-hidden="true">{operator.name.slice(0, 1)}</span>
-          <span>
-            <strong>{operator.name}</strong>
-            <small>{t('owner', lang)}</small>
-          </span>
+        <div className="sidebar-bottom">
+          {navButton(VIEWS[5]!)}
+          {navButton(VIEWS[6]!)}
+          <button
+            type="button"
+            className="navitem account"
+            aria-label={`${operator.name} · ${t('owner', lang)}`}
+            data-rail-label={`${operator.name} · ${t('owner', lang)}`}
+            onClick={() => navigate('settings')}
+          >
+            <span className="initial" aria-hidden="true">{operator.name.slice(0, 1).toUpperCase()}</span>
+            <span className="grow">{operator.name}<span className="small dim ownerrole">{t('owner', lang)}</span></span>
+            <Icon name="more" />
+          </button>
         </div>
       </aside>
 
-      <header className="topbar">
-        <button
-          type="button"
-          className="rail-toggle icon-btn"
-          data-action="rail"
-          aria-expanded={!rail}
-          aria-label={rail ? t('expandRail', lang) : t('collapseRail', lang)}
-          onClick={() => saveAttr(RAIL, !rail)}
-        >
-          <Icon name="menu" />
-        </button>
-        <div className="breadcrumb" aria-label={company}>
-          <span>{company}</span>
-          <span aria-hidden="true">/</span>
-          <strong>{viewLabel(view)}</strong>
-        </div>
-        <span className="spacer" />
-        <button type="button" className="btn small search-trigger" data-action="search" onClick={() => setSearchOpen(true)}>
-          <Icon name="search" />
-          <span className="search-words">{t('searchTrigger', lang)}</span>
-          <kbd className="kbd"> K</kbd>
-        </button>
-        <button
-          type="button"
-          className="btn small"
-          data-action="theme"
-          onClick={() => setTheme((current) => nextTheme(current))}
-          aria-label={`${t('theme', lang)}: ${theme}`}
-        >
-          {theme}
-        </button>
-        <button
-          type="button"
-          className="btn small"
-          data-action="language"
-          onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-        >
-          {lang === 'en' ? 'العربية' : 'English'}
-        </button>
-        <button
-          type="button"
-          className="btn small icon-btn bell"
-          data-action="notifications"
-          aria-label={t('notifications', lang)}
-          onClick={() => navigate('inbox')}
-        >
-          <Icon name="inbox" />
-          {openDecisions !== null && openDecisions > 0 && <span className="unread" aria-hidden="true" />}
-        </button>
-      </header>
+      {/* ── the app column: topbar, screen, statusbar — the prototype's .app ───────────── */}
+      <div className="app">
+        <header className="topbar" id="topbar">
+          <div className="row">
+            <button
+              type="button"
+              className="btn ghost iconbtn rail-toggle"
+              data-action="rail"
+              aria-controls="sidebar"
+              aria-expanded={!rail}
+              aria-label={rail ? t('expandRail', lang) : t('collapseRail', lang)}
+              title={rail ? t('expandRail', lang) : t('collapseRail', lang)}
+              onClick={() => saveAttr(RAIL, !rail)}
+            >
+              <Icon name="menu" />
+            </button>
+            <button
+              type="button"
+              className="btn ghost iconbtn mobile-nav"
+              aria-controls="sidebar"
+              aria-expanded={navOpen}
+              aria-label={t('openNav', lang)}
+              onClick={() => setNavOpen(true)}
+            >
+              <Icon name="menu" />
+            </button>
+            <div className="breadcrumb">
+              <span>{company}</span>
+              <span aria-hidden="true">/</span>
+              <strong>{viewLabel(view)}</strong>
+            </div>
+          </div>
+          <div className="top-actions">
+            <button type="button" className="btn search-trigger" data-action="search" onClick={() => setSearchOpen(true)}>
+              <Icon name="search" />
+              <span className="grow">{t('searchTrigger', lang)}</span>
+              <kbd className="kbd">⌘ K</kbd>
+            </button>
+            <button
+              type="button"
+              className="btn ghost iconbtn"
+              data-action="theme"
+              aria-label={`${t('theme', lang)}: ${theme}`}
+              title={`${t('theme', lang)}: ${theme}`}
+              onClick={() => setTheme((current) => nextTheme(current))}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              data-action="language"
+              aria-label={lang === 'en' ? 'العربية' : 'English'}
+              onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
+            >
+              {lang === 'en' ? 'ع' : 'EN'}
+            </button>
+            <button
+              type="button"
+              className="btn ghost iconbtn notification"
+              data-action="notifications"
+              aria-label={t('notifications', lang)}
+              onClick={() => navigate('inbox')}
+            >
+              <Icon name="bell" />
+              {openDecisions !== null && openDecisions > 0 ? <span className="unread" aria-hidden="true" /> : null}
+            </button>
+          </div>
+        </header>
 
-      <main className="main" id="main">
-        {view === 'team' && <TeamView {...viewProps} />}
-        {view === 'tasks' && <TasksView {...viewProps} />}
-        {view === 'inbox' && <InboxView {...viewProps} />}
-        {view === 'comms' && <CommsView {...viewProps} />}
-        {view === 'network' && <NetworkView {...viewProps} />}
-        {view === 'world' && <WorldView {...viewProps} />}
-        {view === 'settings' && <SettingsView {...viewProps} />}
-      </main>
+        <main className="main" id="main">
+          {view === 'team' && <TeamView {...viewProps} />}
+          {view === 'tasks' && <TasksView {...viewProps} />}
+          {view === 'inbox' && <InboxView {...viewProps} />}
+          {view === 'comms' && <CommsView {...viewProps} />}
+          {view === 'network' && <NetworkView {...viewProps} />}
+          {view === 'world' && <WorldView {...viewProps} />}
+          {view === 'settings' && <SettingsView {...viewProps} />}
+        </main>
 
-      {fx && <div className="fx-overlay" data-fx-overlay aria-hidden="true" />}
+        {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 
-      <footer className="statusbar">
-        <span className="dot" aria-hidden="true">▪</span>
-        <span>{health ? `${health.company ?? '—'} · ${t('online', lang)}` : t('loading', lang)}</span>
-        <span className="spacer" style={{ flex: 1 }} />
-        <span>{`company.ai ${health?.version ?? ''}`}</span>
-      </footer>
+        <footer className="statusbar">
+          <span><span className="dot" aria-hidden="true" />{health ? `${health.company ?? '—'} · ${t('online', lang)}` : t('loading', lang)}</span>
+          <span className="secondary">{t('statusNote', lang)}</span>
+          <span>{`company.ai ${health?.version ?? ''}`}</span>
+        </footer>
+      </div>
+
+      {navOpen ? <button type="button" className="nav-scrim" aria-label={t('closeNav', lang)} onClick={() => setNavOpen(false)} /> : null}
 
       <Dialog open={searchOpen} onClose={() => { setSearchOpen(false); setQuery(''); }} title={t('searchTitle', lang)} eyebrow={t('workspace', lang)} lang={lang}>
         <label className="field">
@@ -353,6 +417,6 @@ export function App() {
           ))}
         </ul>
       </Dialog>
-    </div>
+    </>
   );
 }

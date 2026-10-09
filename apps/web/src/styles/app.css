@@ -29,6 +29,27 @@
   --app-search-min:220px;
   --app-bell-inset:4px;
   --app-bell-dot:7px;
+  /* the prototype's own measures (2026-10-09 re-read): named here, used below as vars */
+  --sh-topbar:66px;
+  --sh-brandmark:28px;
+  --sh-box:25px;
+  --sh-initial:32px;
+  --sh-item:40px;
+  --sh-railpad:12px;
+  --sh-railitem:44px;
+  --sh-rail:68px;
+  --sh-search:218px;
+  --sh-nav-mid:188px;
+  --sh-count:18px;
+  --sh-unread:5px;
+  --sh-dotgap:6px;
+  --sh-fine:9px;
+  --sh-tiny:10px;
+  --sh-track:1.6px;
+  --sh-brandfont:17px;
+  --sh-topbar-m:58px;
+  --sh-scrim:#00000088;
+  --sh-icon:18px;
 }
 
 * { box-sizing: border-box; }
@@ -62,81 +83,82 @@ body {
 }
 .skip-link:focus { inset-block-start: var(--s2); }
 
-.shell {
-  display: grid;
-  /* three rows: the top bar, the content, the status bar — and one full-height sidebar
-     beside them. Without the explicit rows the sidebar's height stretched the top bar. */
-  grid-template-columns: var(--nav) minmax(0, 1fr);
-  grid-template-rows: auto 1fr auto;
-  min-height: 100%;
-}
-
+/* ── the shell, structured exactly like the prototype (2026-10-09 re-read) ────────────────
+   Fixed sidebar + a .app column (topbar / main / statusbar), the demo's own DOM. The measures
+   below are the prototype's; every raw length lives once in the token block above. */
 .sidebar {
-  grid-row: 1 / 3;
-  background: var(--side);
-  border-inline-end: var(--app-hair) solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-  padding: var(--s3);
+  position: fixed; inset-block: 0; inset-inline-start: 0; inline-size: var(--nav);
+  background: var(--side); border-inline-end: var(--app-hair) solid var(--soft);
+  display: flex; flex-direction: column; padding: var(--s6) var(--s3);
+  z-index: 30; gap: var(--s8); overflow: hidden;
 }
-
-.brand { display: flex; align-items: center; gap: var(--s2); font-size: var(--lg); }
-.brand .brandmark {
-  display: grid;
-  place-items: center;
-  inline-size: var(--s8);
-  block-size: var(--s8);
-  border: var(--app-stroke) solid var(--line);
-  box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
-  background: var(--raised);
-  font-size: var(--sm);
+.brand { display: flex; align-items: center; gap: var(--s3); padding-inline: var(--s3); font-size: var(--body); font-weight: bold; letter-spacing: var(--track-tight); }
+.brandmark {
+  inline-size: var(--sh-brandmark); block-size: var(--sh-brandmark); display: grid; place-items: center;
+  color: var(--accent); border: var(--app-stroke) solid var(--line); border-radius: var(--radius);
+  font-size: var(--sh-pixelsmall); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
 }
-.brand small { display: block; font-family: var(--font); font-size: var(--base); letter-spacing: var(--app-track); color: var(--muted); }
+.brand small { display: block; font-size: var(--sh-fine); font-weight: normal; letter-spacing: var(--sh-track); color: var(--dim); margin-block-start: var(--app-stroke); }
 
-.navlist { display: flex; flex-direction: column; gap: var(--app-stroke); margin: 0; padding: 0; list-style: none; }
+.workspace-wrap { position: relative; }
+.workspace {
+  display: flex; align-items: center; gap: var(--s2); border: var(--app-hair) solid var(--line);
+  border-radius: var(--radius); padding: var(--s3); background: transparent; text-align: start;
+  inline-size: 100%; font-size: var(--xs); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--line);
+}
+.workspace .box { inline-size: var(--sh-box); block-size: var(--sh-box); display: grid; place-items: center; background: var(--accent-bg); color: var(--accent); }
+.workspace-menu {
+  position: absolute; z-index: 40; inset-inline-start: 0; inset-block-start: calc(100% + var(--s1));
+  inline-size: 100%; background: var(--raised); border: var(--app-hair) solid var(--line);
+  box-shadow: var(--s1) var(--s1) 0 var(--line); padding: var(--s2);
+  display: flex; flex-direction: column; gap: var(--s1);
+}
+.workspace-menu button, .workspace-import { text-align: start; background: transparent; border: 0; color: var(--text); padding: var(--s1); cursor: pointer; }
+.workspace-menu button:hover, .workspace-import:hover { background: var(--hover); }
+.workspace-import { position: relative; }
+.workspace-import input { position: absolute; opacity: 0; inline-size: var(--app-hair); block-size: var(--app-hair); }
+
+.navgroup { display: flex; flex-direction: column; gap: var(--s1); }
+.navlabel { font-size: var(--sh-fine); letter-spacing: var(--sh-track); color: var(--dim); margin: 0 var(--s3) var(--s3); }
+.navgap { block-size: var(--s3); }
 .navitem {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  justify-content: flex-start;
-  inline-size: 100%;
-  min-height: var(--control);
-  padding-inline: var(--s3);
-  background: transparent;
-  border: var(--app-hair) solid transparent;
-  color: var(--text);
-  font-size: var(--base);
-  text-align: start;
-  cursor: pointer;
-  transition: background-color 100ms, border-color 100ms, color 100ms;
+  display: flex; align-items: center; gap: var(--s3); min-block-size: var(--sh-item);
+  padding: var(--s2) var(--s3); border: none; border-radius: var(--radius);
+  background: transparent; text-align: start; color: var(--muted); font-size: var(--sm); inline-size: 100%;
 }
-.navitem:hover { background: var(--hover); }
-.navitem[aria-current='page'] { border-color: var(--line); background: var(--raised); box-shadow: inset var(--app-notch) 0 0 var(--accent); }
+.navitem:hover { background: var(--raised); color: var(--text); }
+.navitem[aria-current='page'] { background: var(--accent-bg); color: var(--accent); box-shadow: inset var(--app-notch) 0 0 var(--accent); }
 [dir='rtl'] .navitem[aria-current='page'] { box-shadow: inset calc(var(--app-notch) * -1) 0 0 var(--accent); }
-.navitem .count { margin-inline-start: auto; color: var(--muted); font-size: var(--sm); }
+.navitem .count { margin-inline-start: auto; font-size: var(--sh-tiny); min-inline-size: var(--sh-count); text-align: center; }
+.sidebar-bottom { margin-block-start: auto; display: flex; flex-direction: column; gap: var(--s4); }
+.account { padding-block-start: var(--s4); border-top: var(--app-hair) solid var(--soft); }
+.initial {
+  inline-size: var(--sh-initial); block-size: var(--sh-initial); display: grid; place-items: center;
+  border-radius: var(--radius); border: var(--app-hair) solid var(--line);
+  font-family: var(--font); color: var(--accent); background: var(--raised);
+}
+.ownerrole { display: block; }
 
+.app { margin-inline-start: var(--nav); min-block-size: 100dvh; display: flex; flex-direction: column; }
 .topbar {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  min-height: calc(var(--control) + var(--s8));
-  padding: var(--s3) var(--s5);
-  background: var(--side);
-  border-bottom: var(--app-hair) solid var(--line);
+  block-size: var(--sh-topbar); flex-shrink: 0; border-bottom: var(--app-hair) solid var(--soft);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
+  padding-inline: var(--s10); background: var(--bg);
 }
-.topbar h1 { margin: 0; font-size: var(--lg); }
-.topbar .spacer { flex: 1; }
+.row { display: flex; align-items: center; gap: var(--s3); min-inline-size: 0; }
+.grow { flex: 1; min-inline-size: 0; }
+.breadcrumb { font-family: var(--font); font-size: var(--xs); color: var(--dim); display: flex; align-items: center; gap: var(--s3); }
+.breadcrumb strong { color: var(--text); font-weight: 400; }
+.search-trigger { display: flex; align-items: center; gap: var(--s2); font-size: var(--xs); color: var(--dim); inline-size: var(--sh-search); justify-content: flex-start; background: transparent; }
+.search-trigger .kbd { margin-inline-start: auto; }
+.top-actions { display: flex; align-items: center; gap: var(--s2); }
+.notification { position: relative; }
+.notification .unread { position: absolute; inset-block-start: var(--sh-unread); inset-inline-end: var(--sh-unread); inline-size: var(--sh-unread); block-size: var(--sh-unread); background: var(--accent); }
+.mobile-nav { display: none; }
+.nav-close { display: none; }
+.nav-scrim { display: none; }
 
-.main {
-  grid-column: 2;
-  grid-row: 2;
-  padding: var(--s5);
-  max-inline-size: var(--max);
-  inline-size: 100%;
-}
+.main { padding: var(--s8) var(--s10) var(--s10); inline-size: 100%; max-inline-size: var(--max); margin-inline: auto; flex: 1; }
 
 .panel {
   position: relative;
@@ -236,40 +258,20 @@ body {
 .skeleton i:nth-child(3) { inline-size: 60%; }
 
 .statusbar {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  padding: var(--s2) var(--s5);
-  border-top: var(--app-hair) solid var(--line);
-  color: var(--dim);
-  font-size: var(--base);
+  display: flex; align-items: center; gap: var(--s4); justify-content: space-between;
+  padding: var(--s3) var(--s10); border-top: var(--app-hair) solid var(--soft);
+  font-size: var(--sh-tiny); color: var(--dim); font-family: var(--font);
 }
-.statusbar .dot { color: var(--accent); }
+.statusbar .dot { display: inline-block; inline-size: var(--sh-unread); block-size: var(--sh-unread); margin-inline-end: var(--sh-dotgap); color: var(--accent); background: currentColor; }
 
-.icon-btn {
-  min-inline-size: var(--control);
-  min-block-size: var(--control);
-  display: inline-grid;
-  place-items: center;
-  background: transparent;
-  border: var(--app-hair) solid var(--line);
-  color: var(--text);
-  cursor: pointer;
-}
+.iconbtn { inline-size: var(--control); block-size: var(--control); padding: 0; display: inline-grid; place-items: center; }
+.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .icon-btn:hover { background: var(--hover); }
 
 .group { display: flex; gap: var(--s2); flex-wrap: wrap; }
 svg.tree { inline-size: 100%; block-size: var(--app-tree-h); background: var(--raised); border: var(--app-hair) solid var(--soft); }
 
 @media (max-width: 800px) {
-  .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; }
-  .topbar { grid-column: 1; grid-row: 1; }
-  .sidebar { grid-row: 2; }
-  .main { grid-column: 1; grid-row: 3; }
-  .statusbar { grid-row: 4; }
-  .sidebar { flex-direction: row; overflow-inline: auto; }
   .board { grid-template-columns: minmax(0, 1fr); }
   .decision { grid-template-columns: minmax(0, 1fr); }
 }
@@ -536,25 +538,6 @@ h3 { font-size: var(--base); }
 /* ── the rail, the screen effect, and the switches (owner: both default on) ──────────────────
    The collapsed sidebar is the owner's demo, ported: their `[data-collapsed=true]` rules, with
    the same 68px rail, icon-only items and the count badge moved into the corner. */
-.rail-toggle { margin-inline-start: auto; }
-[data-collapsed='true'] { --nav: var(--app-rail); }
-[data-collapsed='true'] .sidebar { padding-inline: var(--s3); }
-[data-collapsed='true'] .brand { padding-inline: 0; justify-content: center; }
-[data-collapsed='true'] .brand-text,
-[data-collapsed='true'] .navlabel { display: none; }
-[data-collapsed='true'] .navitem { position: relative; min-block-size: var(--control); justify-content: center; padding-inline: 0; gap: 0; }
-[data-collapsed='true'] .navitem .count {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: 0;
-  min-inline-size: var(--s3);
-  padding-inline: var(--s1);
-  line-height: var(--lg);
-  font-size: var(--xs);
-  background: var(--side);
-  border: var(--app-hair) solid var(--line);
-}
-
 /* The screen effect: one empty element over everything the tokens colour. It is decoration, so it
    never takes a pointer event, and it is defined here rather than in a component. */
 .fx-overlay {
@@ -753,26 +736,6 @@ h3 { font-size: var(--base); }
    (MINIMALISM_AUDIT A4), the rail here becomes a horizontal strip: one row of icons across the
    top, scrollable sideways if it ever needs to be, labels put away, and the desktop-only rail
    toggle hidden rather than left as a control that does nothing. */
-@media (max-width: 800px) {
-  .sidebar {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--s2);
-    padding: var(--s2) var(--s3);
-    overflow-x: auto;
-    border-inline-end: 0;
-    border-block-end: var(--app-hair) solid var(--line);
-  }
-  .sidebar .brand,
-  .sidebar .rail-toggle { display: none; }
-  .sidebar .navlist { flex-direction: row; gap: var(--s2); }
-  /* `.sidebar .navitem` matches the specificity of the collapsed-rail rule and comes later, so the
-     icon boxes keep a tap-sized target instead of collapsing to the rail's zero padding. */
-  .sidebar .navitem { min-block-size: var(--control); padding-inline: var(--s3); }
-  .sidebar .navlabel { display: none; }
-  .main { padding: var(--s3); }
-}
-
 /* The world's toolbar on a phone: six room names wrap into five rows and push the plan below the
    fold, which is the opposite of a map you are supposed to look at. One swipeable row instead —
    the same controls with the same words, just not stacked (the audit's C1 would go further and
@@ -796,48 +759,63 @@ h3 { font-size: var(--base); }
   .world-stats .stat-label { font-size: var(--xs); }
 }
 
-/* ── 2026-10-09 — the prototype's organisation on the real app ─────────────────────────────
-   REQ-3 scrollbars stay functional but invisible; REQ-4 the sidebar never scrolls;
-   REQ-6 the footer is fixed; REQ-7 pages fit the viewport and only inner panes scroll. */
+/* ── 2026-10-09 — the prototype's shell, completed ────────────────────────────────────────
+   REQ-3 scrollbars stay functional but invisible; the rail stays scroll-free; the phone gets
+   the prototype's drawer instead of a strip. */
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
 
-.shell { height: 100dvh; min-height: 0; overflow: hidden; }
-.sidebar { overflow: hidden; }
-.main { display: flex; flex-direction: column; overflow: hidden; max-inline-size: none; }
-.main > .pagebody { flex: 1; min-block-size: 0; overflow: auto; }
+/* every pixel icon keeps its 18px box — the demo's `.icon` measure, named */
+.icon { inline-size: var(--sh-icon); block-size: var(--sh-icon); flex-shrink: 0; }
+/* the phone-only controls stay gone on desktop (the later `.iconbtn` rule sets display) */
+.mobile-nav { display: none; }
+.nav-close { display: none; }
 
-.brandmark-img {
-  inline-size: var(--s8); block-size: var(--s8); image-rendering: pixelated;
-  border: var(--app-stroke) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
-  background: var(--raised);
-}
-.breadcrumb { display: flex; gap: var(--s2); align-items: baseline; color: var(--muted); font-size: var(--base); }
-.breadcrumb strong { color: var(--text); font-family: var(--pixel); }
-.search-trigger { min-inline-size: var(--app-search-min); justify-content: flex-start; color: var(--muted); }
-.search-trigger .kbd { margin-inline-start: auto; }
-.kbd { border: var(--app-hair) solid var(--line); padding: 0 var(--s1); font-size: var(--xs); color: var(--muted); }
-.bell { position: relative; }
-.bell .unread { position: absolute; inset-block-start: var(--app-bell-inset); inset-inline-end: var(--app-bell-inset); inline-size: var(--app-bell-dot); block-size: var(--app-bell-dot); background: var(--accent); }
+/* pixel type for the chrome, the prototype's rule: hierarchy gets the bitmap face, never Arabic */
+:root:not([lang='ar']) .brand { font-size: var(--sh-brandfont); }
+:root:not([lang='ar']) :is(.brand, .navitem, .btn, .breadcrumb strong) { font-family: var(--pixel); font-weight: 500; letter-spacing: 0; }
+:root:not([lang='ar']) .brand small { font-family: var(--font); }
 
-.workspace { position: relative; }
-.workspace summary {
-  display: flex; align-items: center; gap: var(--s2); cursor: pointer; list-style: none;
-  border: var(--app-hair) solid var(--line); background: var(--raised); padding: var(--s2);
+/* the compact rail, the prototype's desktop-only block */
+@media (min-width: 801px) {
+  :root[data-collapsed='true'] { --nav: var(--sh-rail); }
+  [data-collapsed='true'] .sidebar { padding-inline: var(--sh-railpad); }
+  [data-collapsed='true'] .brand { padding: 0; justify-content: center; }
+  [data-collapsed='true'] .brand > span:last-child { display: none; }
+  [data-collapsed='true'] .workspace { justify-content: center; padding: var(--s2); min-block-size: var(--sh-railitem); }
+  [data-collapsed='true'] .workspace > .grow, [data-collapsed='true'] .workspace > .icon { display: none; }
+  [data-collapsed='true'] .navlabel, [data-collapsed='true'] .side-note { display: none; }
+  [data-collapsed='true'] .navitem { position: relative; min-block-size: var(--sh-railitem); justify-content: center; padding: var(--s2) 0; gap: 0; }
+  [data-collapsed='true'] .navitem > span:not(.count):not(.initial) { display: none; }
+  [data-collapsed='true'] .navitem .count { position: absolute; inset-block-start: var(--s1); inset-inline-end: var(--s1); min-inline-size: auto; }
+  [data-collapsed='true'] .account .grow { display: none; }
+  [data-collapsed='true'] .account > .icon { display: none; }
 }
-.workspace summary::-webkit-details-marker { display: none; }
-.workspace-mark { display: grid; place-items: center; inline-size: var(--s7); block-size: var(--s7); background: var(--accent); color: var(--bg); font-family: var(--pixel); }
-.workspace-name { flex: 1; }
-.workspace-menu {
-  position: absolute; z-index: 60; inset-inline: var(--s3); background: var(--raised);
-  border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft);
-  display: flex; flex-direction: column; padding: var(--s2); gap: var(--s1);
+
+/* mid widths: the sidebar narrows, the topbar breathes less */
+@media (max-width: 1190px) {
+  :root { --nav: var(--sh-nav-mid); }
+  .main { padding: var(--s6); }
+  .topbar { padding-inline: var(--s6); }
+  .statusbar { padding-inline: var(--s6); }
 }
-.workspace-menu button, .workspace-import { text-align: start; background: transparent; border: 0; color: var(--text); padding: var(--s1); cursor: pointer; }
-.workspace-import { position: relative; }
-.workspace-import input { position: absolute; opacity: 0; inline-size: var(--app-hair); block-size: var(--app-hair); }
-.owner-card { display: flex; gap: var(--s2); align-items: center; margin-block-start: auto; border-top: var(--app-hair) solid var(--line); padding-block-start: var(--s3); }
-.owner-card small { display: block; color: var(--muted); }
-.search-results { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-direction: column; }
-.search-results button { display: flex; gap: var(--s2); align-items: center; background: transparent; border: 0; color: var(--text); padding: var(--s2); cursor: pointer; text-align: start; }
-.search-results button:hover { background: var(--hover); }
+
+/* the phone: the prototype's drawer, not a strip */
+@media (max-width: 800px) {
+  .sidebar { transform: translateX(-100%); transition: transform var(--speed); }
+  [dir='rtl'] .sidebar { transform: translateX(100%); }
+  body.nav-open .sidebar { transform: translateX(0); }
+  .nav-close { display: inline-flex; }
+  .nav-scrim { position: fixed; inset: 0; border: 0; background: var(--sh-scrim); z-index: 29; }
+  body.nav-open .nav-scrim { display: block; }
+  .app { margin-inline-start: 0; }
+  .mobile-nav { display: inline-grid; }
+  .rail-toggle { display: none; }
+  .topbar { padding-inline: var(--s4); block-size: var(--sh-topbar-m); }
+  .topbar .breadcrumb > span, .topbar .breadcrumb > .icon { display: none; }
+  .search-trigger { inline-size: var(--control); padding: 0; justify-content: center; }
+  .search-trigger span, .search-trigger .kbd { display: none; }
+  .main { padding: var(--s6) var(--s4); }
+  .statusbar .secondary { display: none; }
+  .statusbar { padding: var(--s3) var(--s4); font-size: var(--sh-fine); gap: var(--s2); }
+}

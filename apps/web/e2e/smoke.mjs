@@ -531,7 +531,7 @@ try {
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-collapsed'));
   const expanded = await page.evaluate(() => ({
     nav: getComputedStyle(document.documentElement).getPropertyValue('--nav').trim(),
-    labels: [...document.querySelectorAll('.navlabel')].filter((n) => getComputedStyle(n).display !== 'none').length,
+    labels: [...document.querySelectorAll('.navitem .itemlabel')].filter((n) => getComputedStyle(n).display !== 'none').length,
   }));
   check('turning the rail off expands the sidebar and shows the labels',
     expanded.nav !== navWidthBefore && expanded.labels === 7, `${navWidthBefore} → ${expanded.nav}, ${expanded.labels} labels`);
@@ -575,29 +575,35 @@ try {
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
     await phone.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
     await phone.waitForSelector('[data-nav]', { timeout: 15_000 });
-    const layout = await phone.evaluate(() => {
-      const items = [...document.querySelectorAll('[data-nav]')].map((n) => n.getBoundingClientRect());
+    // the prototype's phone answer: the sidebar is a drawer, opened by the hamburger — not a strip
+    const closed = await phone.evaluate(() => {
       const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
-      // the *screen's* heading, not the top bar's — the top bar's h1 is always at the top, which
-      // made an earlier version of this check pass while the content sat below the fold
+      const burger = document.querySelector('.mobile-nav');
       const heading = document.querySelector('.main h1, .main h2, .pagehead')?.getBoundingClientRect() ?? null;
       return {
-        navRow: Math.max(...items.map((r) => r.top)) - Math.min(...items.map((r) => r.top)),
-        sidebarHeight: Math.round(sidebar.height),
+        offscreen: sidebar.right <= 1,
+        burger: burger ? getComputedStyle(burger).display !== 'none' : false,
         headingTop: heading ? Math.round(heading.top) : null,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        // the attribute, not `textContent`: the label is `display:none` when it is hidden, so its
-        // text is in the DOM but gone from the accessibility tree — textContent was a false pass
-        names: [...document.querySelectorAll('[data-nav]')].map((n) => n.getAttribute('aria-label') ?? ''),
       };
     });
-    check('the sidebar is one strip across a phone, not a column of icons',
-      layout.navRow < 8 && layout.sidebarHeight < 160, `row spread ${Math.round(layout.navRow)}px · rail ${layout.sidebarHeight}px`);
-    check('so the screen itself starts on the first screenful',
-      layout.headingTop !== null && layout.headingTop < 400, `heading at ${layout.headingTop}px`);
-    check('and nothing runs off the side of a phone', layout.overflow <= 2, `overflow ${layout.overflow}px`);
-    check('an icon-only item can still say what it is',
-      layout.names.every((name) => name.length > 1), JSON.stringify(layout.names));
+    check('on a phone the sidebar waits off-screen and the hamburger shows', closed.offscreen && closed.burger, JSON.stringify(closed));
+    check('so the screen itself starts on the first screenful', closed.headingTop !== null && closed.headingTop < 400, `heading at ${closed.headingTop}px`);
+    check('and nothing runs off the side of a phone', closed.overflow <= 2, `overflow ${closed.overflow}px`);
+    await phone.click('.mobile-nav');
+    await phone.waitForFunction(() => document.body.classList.contains('nav-open') &&
+      document.querySelector('.sidebar').getBoundingClientRect().left >= 0, null, { timeout: 5_000 });
+    const open = await phone.evaluate(() => {
+      const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
+      return { left: Math.round(sidebar.left), height: Math.round(sidebar.height) };
+    });
+    check('the hamburger opens the drawer with the whole navigation', open.left >= 0 && open.height > 300, JSON.stringify(open));
+    const names = await phone.$$eval('[data-nav]', (n) => n.map((x) => x.getAttribute('aria-label') ?? ''));
+    await phone.click('.nav-close');
+    await phone.waitForFunction(() => document.querySelector('.sidebar').getBoundingClientRect().right <= 1);
+    check('and the close button puts it back off-screen', true);
+        check('an icon-only item can still say what it is',
+      names.every((name) => name.length > 1), JSON.stringify(names));
 
     await phone.goto(`http://127.0.0.1:${WEB_PORT}/#world`, { waitUntil: 'networkidle' });
     await phone.waitForSelector('[data-desk]', { timeout: 15_000 });
