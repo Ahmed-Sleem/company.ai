@@ -15,7 +15,8 @@ import { api } from './lib/api';
 import {
   applyPalette, applyTheme, nextTheme, readCustomAccent, readPalette, readTheme, resolvedTheme, type Theme,
 } from './lib/theme';
-import { FX, RAIL, applyAttr, onPrefsChange, readFx, readRail, safeGet, safeSet, saveAttr } from './lib/prefs';
+import { FX, LANG_EVENT, LANG_KEY, RAIL, applyAttr, onPrefsChange, readFx, readRail, safeGet, safeSet, saveAttr } from './lib/prefs';
+import { downloadSave, parseSave, resetSave } from './lib/savefile';
 import { useStore } from './data/store';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
@@ -29,7 +30,7 @@ import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
 import type { DataStateKind } from './components/DataState';
 
-const LANG_KEY = 'company-os.lang';
+
 
 function readLang(): Lang {
   try {
@@ -78,7 +79,7 @@ export function App() {
   const [navOpen, setNavOpen] = useState(false);
   const company = useStore((s) => s.company.name);
   const people = useStore((s) => s.agents.length);
-  const openTasks = useStore((s) => s.tasks.filter((t) => t.stage !== 'done').length);
+  const openTasks = useStore((s) => s.tasks.filter((task) => task.stage !== 'done').length);
   const waiting = useStore((s) => s.decisions.filter((d) => d.status === 'pending').length);
   const savedAt = useStore((s) => s.savedAt);
 
@@ -89,6 +90,12 @@ export function App() {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     safeSet(LANG_KEY, lang);
   }, [lang]);
+
+  useEffect(() => {
+    const onLang = (event: Event) => setLang((event as CustomEvent<'en' | 'ar'>).detail);
+    window.addEventListener(LANG_EVENT, onLang);
+    return () => window.removeEventListener(LANG_EVENT, onLang);
+  }, []);
 
   useEffect(() => {
     applyTheme(theme);
@@ -156,26 +163,15 @@ export function App() {
     setView(id);
   };
 
-  /** The one-file save, both directions (REQ-11). */
+  /** The one-file save, both directions (REQ-11) — the logic lives in lib/savefile. */
   const exportSave = () => {
-    const { company: c, operator: o, agents, tasks, decisions, threads, models } = useStore.getState();
-    const payload = { product: 'company.ai', version: 1, exportedAt: new Date().toISOString(), company: c, operator: o, agents, tasks, decisions, threads, models };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'company.ai-save.json';
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadSave();
     setSaveNote(t('exportSave', lang));
   };
   const importSave = (file: File) => {
     file.text()
       .then((text) => {
-        const data = JSON.parse(text) as Record<string, unknown>;
-        if (!data || typeof data !== 'object' || !('company' in data) || !Array.isArray((data as { agents?: unknown }).agents)) {
-          throw new Error('not a company.ai save');
-        }
-        useStore.getState().load(data);
+        useStore.getState().load(parseSave(text));
         setSaveNote(t('importSave', lang));
         location.reload();
       })
@@ -275,7 +271,7 @@ export function App() {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) importSave(f); e.target.value = ''; }}
                 />
               </label>
-              <button type="button" role="menuitem" onClick={() => { useStore.getState().reset(); setSaveNote(t('startOver', lang)); setMenuOpen(false); }}>
+              <button type="button" role="menuitem" onClick={() => { resetSave(); setSaveNote(t('startOver', lang)); setMenuOpen(false); }}>
                 {t('startOver', lang)}
               </button>
               {saveNote ? <p role="status" className="small muted">{saveNote}</p> : null}
@@ -366,7 +362,7 @@ export function App() {
           </div>
         </header>
 
-        <main className="main" id="main">
+        <main className="main" id="main" data-view={view}>
           <div className="view-anim" key={view}>
           {view === 'team' && <TeamView {...viewProps} />}
           {view === 'tasks' && <TasksView {...viewProps} />}
@@ -381,7 +377,7 @@ export function App() {
         {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 
         <footer className="statusbar">
-          <span><span className="dot" aria-hidden="true" />{health ? `${health.company ?? '—'} · ${t('online', lang)}` : t('loading', lang)}</span>
+          <span><span className="dot" aria-hidden="true" />{health ? `${company} · ${t('online', lang)}` : t('loading', lang)}</span>
           <span className="secondary">
             {`${people} ${t('footPeople', lang)} · ${openTasks} ${t('footOpen', lang)} · ${waiting} ${t('footWaiting', lang)}`}
             {savedAt ? ` · ${t('footSaved', lang)} ${new Date(savedAt).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}

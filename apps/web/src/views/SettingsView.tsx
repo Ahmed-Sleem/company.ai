@@ -6,17 +6,18 @@
  * design source's own colours first, each one working in dark and light. The chosen preset is a
  * preference, not data, so it is applied here and remembered locally — the same as the theme.
  */
-import { useEffect, useState, type CSSProperties } from 'react';
-import { api } from '../lib/api';
+import { useState, type CSSProperties } from 'react';
 import { t, type Lang } from '../lib/i18n';
 import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import {
-  applyPalette, paletteNameKey, readCustomAccent, readPalette, resolvedTheme, saveCustomAccent,
-  type PaletteChoice,
-  DEFAULT_CUSTOM_ACCENT,
+  applyPalette, applyTheme, paletteNameKey, readCustomAccent, readPalette, readTheme, resolvedTheme,
+  saveCustomAccent, type PaletteChoice, type Theme, DEFAULT_CUSTOM_ACCENT,
 } from '../lib/theme';
-import { readFx, readRail, setFx, setRail } from '../lib/prefs';
+import { readFx, readRail, setFx, setLangPref, setRail } from '../lib/prefs';
+import { downloadSave, parseSave, resetSave } from '../lib/savefile';
+import { useStore } from '../data/store';
+import { Icon } from '../components/Icon';
 import { applyCustomAccent, deriveAccent, validHex } from '../lib/accent';
 import { palettes } from '@company/tokens';
 
@@ -150,40 +151,169 @@ function SkinSetting({ lang }: { lang: Lang }) {
 }
 
 export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
-  const [models, setModels] = useState<Awaited<ReturnType<typeof api.models>>['models'] | null>(null);
-  const [company, setCompany] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const company = useStore((s) => s.company.name);
+  const operatorName = useStore((s) => s.operator.name);
+  const load = useStore((s) => s.load);
+  const [form, setForm] = useState({ company, operator: operatorName });
+  const [note, setNote] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (forcedState && forcedState !== 'default') return;
-    Promise.all([api.models(), api.company()])
-      .then(([m, c]) => {
-        setModels(m.models);
-        setCompany(c.company.name);
+  const state: DataStateKind = forcedState && forcedState !== 'default' ? forcedState : 'default';
+
+  const saveProfile = (event: React.FormEvent) => {
+    event.preventDefault();
+    load({ company: { name: form.company.trim() }, operator: { name: form.operator.trim(), role: 'owner' } });
+    setNote(t('saveChanges', lang));
+  };
+
+  const importFile = (file: File) => {
+    file.text()
+      .then((text) => {
+        load(parseSave(text));
+        setNote(t('importSave', lang));
+        location.reload();
       })
-      .catch(() => setError(true));
-  }, [forcedState]);
-
-  const state: DataStateKind = forcedState && forcedState !== 'default'
-    ? forcedState
-    : error ? 'error' : models ? 'default' : 'loading';
+      .catch(() => setNote('—'));
+  };
 
   return (
     <>
-    <ScreenHead
-      eyebrow={`${t('settings', lang)} / ${t('overview', lang)}`}
-      title={t('headSettings', lang)}
-      subtitle={t('settingsNote', lang)}
-    />
-    <div className="pagebody">
-      <DataState state={state} lang={lang} onRetry={() => location.reload()}>
-        <p><strong>{t('company', lang)}:</strong> {company}</p>
-      </DataState>
-      {/* Outside the data states on purpose: the palette is a local preference, so it must be
-          reachable even while the company and the model list are still loading or unreachable. */}
-      <PaletteSetting lang={lang} />
-      <SkinSetting lang={lang} />
-    </div>
+      <ScreenHead
+        eyebrow={`${t('settings', lang)} / ${t('overview', lang)}`}
+        title={t('headSettings', lang)}
+        subtitle={t('settingsNote', lang)}
+      />
+      <div className="pagebody">
+        {/* The state block sits above, never around: appearance is a local preference, so the
+            palette, the theme and the toggles stay reachable while a fetch fails or loads. */}
+        {state !== 'default' ? <DataState state={state} lang={lang} onRetry={() => location.reload()} /> : null}
+        <div className="settings-layout">
+            <div className="settings-main">
+              <section className="panel panel-pad settings-section">
+                <h2>{t('appearance', lang)}</h2>
+                <ThemeSetting lang={lang} />
+                <PaletteSetting lang={lang} />
+                <div className="setting">
+                  <div>
+                    <h3>{t('language', lang)}</h3>
+                    <p>{t('languageNote', lang)}</p>
+                  </div>
+                  <select
+                    aria-label={t('language', lang)}
+                    value={lang}
+                    onChange={(event) => setLangPref(event.target.value === 'ar' ? 'ar' : 'en')}
+                  >
+                    <option value="en">English · LTR</option>
+                    <option value="ar">العربية · RTL</option>
+                  </select>
+                </div>
+                <SkinSetting lang={lang} />
+              </section>
+
+              <section className="panel panel-pad settings-section">
+                <h2>{t('companyProfile', lang)}</h2>
+                <form className="form-grid" onSubmit={saveProfile}>
+                  <label className="field">
+                    {t('companyNameLabel', lang)}
+                    <input
+                      required maxLength={40} value={form.company}
+                      onChange={(event) => setForm((f) => ({ ...f, company: event.target.value }))}
+                    />
+                  </label>
+                  <label className="field">
+                    {t('yourNameLabel', lang)}
+                    <input
+                      required maxLength={40} value={form.operator}
+                      onChange={(event) => setForm((f) => ({ ...f, operator: event.target.value }))}
+                    />
+                  </label>
+                  <div className="full">
+                    <button className="btn" type="submit">{t('saveChanges', lang)}</button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="panel panel-pad settings-section">
+                <h2>{t('sessionTitle', lang)}</h2>
+                <div className="setting">
+                  <div>
+                    <h3>{t('exportTitle', lang)}</h3>
+                    <p>{t('exportNote', lang)}</p>
+                  </div>
+                  <button type="button" className="btn" onClick={() => { downloadSave(); setNote(t('exportSave', lang)); }}>
+                    <Icon name="file" />{t('exportSave', lang)}
+                  </button>
+                </div>
+                <div className="setting">
+                  <div>
+                    <h3>{t('importTitle', lang)}</h3>
+                    <p>{t('importNote', lang)}</p>
+                  </div>
+                  <label className="btn filebtn">
+                    <Icon name="attach" />{t('importSave', lang)}
+                    <input
+                      type="file" accept="application/json"
+                      onChange={(event) => {
+                        const f = event.target.files?.[0];
+                        if (f) importFile(f);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="setting">
+                  <div>
+                    <h3>{t('resetTitle', lang)}</h3>
+                    <p>{t('resetNote', lang)}</p>
+                  </div>
+                  <button type="button" className="btn danger" onClick={() => { resetSave(); setNote(t('startOver', lang)); }}>
+                    {t('reset', lang)}
+                  </button>
+                </div>
+                {note ? <p role="status" className="small muted">{note}</p> : null}
+              </section>
+            </div>
+
+            <aside className="stack">
+              <section className="panel panel-pad">
+                <span className="eyebrow">[ company.ai ]</span>
+                <h2 className="spaced">{t('philosophyHead', lang)}</h2>
+                <p className="small muted">{t('philosophyBody', lang)}</p>
+                <p className="small dim">{t('philosophyFoot', lang)}</p>
+              </section>
+              <section className="panel panel-pad">
+                <h3>{t('shortcutsTitle', lang)}</h3>
+                <div className="setting small"><span>{t('shortcutSearch', lang)}</span><kbd className="kbd">Ctrl / ⌘ K</kbd></div>
+                <div className="setting small"><span>{t('shortcutClose', lang)}</span><kbd className="kbd">Esc</kbd></div>
+                <div className="setting small"><span>{t('shortcutMove', lang)}</span><kbd className="kbd">Tab</kbd></div>
+              </section>
+            </aside>
+        </div>
+      </div>
     </>
+  );
+}
+
+/** The theme choice as three samples, like the prototype's — pressed state announced, not guessed. */
+function ThemeSetting({ lang }: { lang: Lang }) {
+  const [theme, setTheme] = useState<Theme>(readTheme);
+  return (
+    <div className="setting">
+      <div>
+        <h3>{t('themeTitle', lang)}</h3>
+        <p>{t('themeNote', lang)}</p>
+      </div>
+      <div className="theme-options" role="group" aria-label={t('themeTitle', lang)}>
+        {(['dark', 'light', 'system'] as Theme[]).map((mode) => (
+          <button
+            type="button" key={mode} className="theme-option"
+            aria-pressed={theme === mode}
+            onClick={() => { setTheme(mode); applyTheme(mode); }}
+          >
+            <span className="theme-sample" data-theme={mode} aria-hidden="true" />
+            {t(mode === 'dark' ? 'themeDark' : mode === 'light' ? 'themeLight' : 'themeSystem', lang)}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

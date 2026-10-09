@@ -9,6 +9,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import demo from './demo.json';
+import type { Plan as WorldPlan } from '../world/layout.data';
+
+export type { WorldPlan };
 
 export interface AgentRow {
   id: string;
@@ -57,11 +60,22 @@ export interface DecisionRow {
   audit: { raisedAt: string; decidedByLabel: string | null; decidedAt: string | null };
 }
 
+export interface MessageRow {
+  id: string;
+  /** 'you' is the owner; anything else is an agent id. */
+  from: string;
+  text: string;
+  at: string;
+}
+
 export interface ThreadRow {
   id: string;
   title: string;
   internal: boolean;
+  /** The teammate this thread is with, when it is a one-to-one chat. */
+  agentId: string | null;
   lastMessage: { text: string; authorKind: string } | null;
+  messages: MessageRow[];
 }
 
 export interface ModelRow {
@@ -82,12 +96,17 @@ interface SaveState {
   decisions: DecisionRow[];
   threads: ThreadRow[];
   models: ModelRow[];
+  /** The floor plan, once build mode has changed it. */
+  worldPlan: WorldPlan | null;
   /** Replace any collection (tests, import, the future wizard). */
   load: (data: Partial<Omit<SaveState, 'load' | 'reset'>>) => void;
   /** Back to the labelled demo company. */
   reset: () => void;
   patchTask: (id: string, patch: Partial<TaskRow>) => TaskRow | null;
   addTask: (task: TaskRow) => void;
+  addMessage: (threadId: string, from: string, text: string) => void;
+  startThread: (agentId: string, title: string) => void;
+  setWorldPlan: (plan: WorldPlan | null) => void;
   patchDecision: (id: string, patch: Partial<DecisionRow>) => DecisionRow | null;
 }
 
@@ -98,8 +117,9 @@ const fixture = () => ({
   agents: demo.agents.map((a) => ({ ...a })) as AgentRow[],
   tasks: demo.tasks.map((t) => ({ ...t })) as TaskRow[],
   decisions: demo.decisions.map((d) => ({ ...d })) as DecisionRow[],
-  threads: demo.threads.map((t) => ({ ...t })) as ThreadRow[],
+  threads: demo.threads.map((t) => ({ ...t, messages: t.messages.map((m) => ({ ...m })) })) as ThreadRow[],
   models: demo.models.map((m) => ({ ...m })) as ModelRow[],
+  worldPlan: null,
 });
 
 export const useStore = create<SaveState>()(
@@ -121,6 +141,32 @@ export const useStore = create<SaveState>()(
         return out;
       },
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
+      addMessage: (threadId, from, text) => set((state) => {
+        const at = new Date().toISOString();
+        const threadNow = state.threads.find((th) => th.id === threadId);
+        // The save is this app's database, so it numbers the message within its thread —
+        // no clock, no dice (namespace lock).
+        const message: MessageRow = { id: `msg-${threadId}-${(threadNow?.messages.length ?? 0) + 1}`, from, text, at };
+        return {
+          savedAt: at,
+          threads: state.threads.map((thread) => thread.id === threadId
+            ? { ...thread, messages: [...thread.messages, message], lastMessage: { text, authorKind: from === 'you' ? 'owner' : 'agent' } }
+            : thread),
+        };
+      }),
+      startThread: (agentId, title) => set((state) => {
+        // Numbered from the threads that exist, the way the save numbers everything else.
+        let max = 0;
+        for (const th of state.threads) {
+          const m = /^thr-(\d+)$/.exec(th.id);
+          if (m) max = Math.max(max, Number(m[1]));
+        }
+        const thread: ThreadRow = {
+          id: `thr-${max + 1}`, title, internal: true, agentId, lastMessage: null, messages: [],
+        };
+        return { savedAt: new Date().toISOString(), threads: [thread, ...state.threads] };
+      }),
+      setWorldPlan: (plan) => set({ worldPlan: plan, savedAt: new Date().toISOString() }),
       patchDecision: (id, patch) => {
         let out: DecisionRow | null = null;
         set((state) => ({
@@ -145,6 +191,7 @@ export const useStore = create<SaveState>()(
         tasks: state.tasks,
         decisions: state.decisions,
         threads: state.threads,
+        worldPlan: state.worldPlan,
         models: state.models,
       }),
     },

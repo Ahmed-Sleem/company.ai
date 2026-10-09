@@ -1071,3 +1071,33 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   statistics on top, and a profile window per person.
 - Validation: `bash scripts/verify.sh` → 10/10 green; web tests 87/87; smoke 68/68;
   screenshots design/screenshots/team-2026-10-09.png and team-profile-2026-10-09.png.
+
+## 2026-10-09 — Owner comments C9–C16: slide inbox, messenger, force graph, settings, world fit
+
+- **C9** — #inbox is a deck of slides: one pending decision at a time (ask, rule, change,
+  raised-by, risk), approve/reject slides it out and the next slides in, counter + arrows,
+  queue summary on top, the prototype's decision-history table below.
+- **C10** — #comms is a messenger: the whole team as contacts in the side rail, one-to-one
+  chats created on first use, bubbles + AI badge + composer per the prototype; threads gained
+  `messages` in the save and `startThread/addMessage` in the store; a sent message survives
+  a reload.
+- **C11** — #network is the Obsidian-style graph, ported from the prototype's graph.js into
+  `apps/web/src/lib/graph.ts` (same build, force maths and constants): settles, pointer-anchored
+  wheel zoom, drag to pan/move nodes, hover isolates a node's neighbourhood, Fit, list mode as
+  the accessible equivalent.
+- **C12** — #settings rebuilt on the prototype's layout: theme samples, palette grid + custom
+  accent, language select (flips the whole app), company profile form → save, session
+  export/import/reset (logic extracted to `lib/savefile.ts`, shared with the workspace menu),
+  shortcuts aside; the palette stays reachable behind data states.
+- **C13/C14** — #world fits the viewport exactly (flex stage; desktop 694=694, phone 748=748,
+  body overflow 0) and the useless hint line is gone (JSX + CSS + i18n key).
+- **C15** — build/place improved after re-reading the prototype: furniture palette from the
+  owner's sprite sheet, click-to-place snapped to the 16-unit grid with the grid shown while
+  building, Escape cancels; the floor plan now persists in the save (`store.worldPlan`); the
+  camera re-fits when the build bar resizes the stage.
+- **C16** — the world's smooth camera untouched; smoke: wheel 43% → 63%, pointer point held.
+- Smoke's `settled()` now waits on the canvas's `data-moving` instead of assuming a gesture
+  always moves the camera (a Fit on a fitted plan can never "move"); the old assumption hung.
+- Validation: `bash scripts/verify.sh` → 10/10 green; web 87/87; smoke 68/68; namespace lock
+  clean (ids numbered from the data, never clock/random). Screenshots:
+  design/screenshots/{inbox-slide,comms-messenger,network-graph,settings,world-fit,team}-2026-10-09.png.

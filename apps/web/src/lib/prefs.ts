@@ -85,3 +85,11 @@ export const readFx = () => read(FX, true);
 export const readRail = () => read(RAIL, true);
 export const setFx = (on: boolean) => saveAttr(FX, on);
 export const setRail = (on: boolean) => saveAttr(RAIL, on);
+
+/* The language lives here too, so the Settings screen can change it and the shell can listen. */
+export const LANG_KEY = 'company-os.lang';
+export const LANG_EVENT = 'company-os:lang';
+export const setLangPref = (lang: 'en' | 'ar') => {
+  safeSet(LANG_KEY, lang);
+  window.dispatchEvent(new CustomEvent(LANG_EVENT, { detail: lang }));
+};

@@ -27,7 +27,8 @@ import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
 import { seatAgents, type Seat } from '../world/seat';
-import { defaultPlan, sprite, type Desk, type Plan, type Room } from '../world/layout.data';
+import { defaultPlan, sprite, SPRITES, type Desk, type Plan, type Room } from '../world/layout.data';
+import { useStore } from '../data/store';
 import { WORLD, roomAt, shapeFor, snap } from '../world/plan';
 import {
   LADDER, cameraTransform, centreOn, clampCamera, clampCameraForZoom, ease, fitCamera, nextRung, panBy,
@@ -36,11 +37,37 @@ import {
 
 type AgentRow = Awaited<ReturnType<typeof api.agents>>['agents'][number];
 
+/** Placed furniture is numbered after the pieces already on the floor — never from the clock. */
+const nextPropId = (props: { id: string }[]) => {
+  let max = 0;
+  for (const prop of props) {
+    const m = /^p-new-(\d+)$/.exec(prop.id);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `p-new-${max + 1}`;
+};
+
 export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
   const [agents, setAgents] = useState<AgentRow[] | null>(null);
   const [tasks, setTasks] = useState<TaskRow[] | null>(null);
   const [error, setError] = useState(false);
-  const [plan, setPlan] = useState<Plan>(defaultPlan);
+  /** The floor lives in the save: build mode edits persist like every other row (REQ-11). */
+  const storedPlan = useStore((s) => s.worldPlan);
+  const setWorldPlan = useStore((s) => s.setWorldPlan);
+  const plan = useMemo<Plan>(() => storedPlan ?? defaultPlan(), [storedPlan]);
+  const setPlan = useCallback((next: Plan | ((cur: Plan) => Plan)) => {
+    setWorldPlan(typeof next === 'function' ? next(plan) : next);
+  }, [plan, setWorldPlan]);
+  const [placing, setPlacing] = useState<string | null>(null);
+  /** One palette chip per drawable shape, sized from the owner's own sprite sheet. */
+  const palette = useMemo(() => {
+    const seen = new Map<string, { shape: string; type: string; w: number; h: number; label: string }>();
+    for (const sp of SPRITES) {
+      const shape = shapeFor(sp.id);
+      if (!seen.has(shape)) seen.set(shape, { shape, type: sp.id, w: sp.w, h: sp.h, label: sp.l });
+    }
+    return [...seen.values()];
+  }, []);
   const [selected, setSelected] = useState<{ kind: 'agent' | 'prop' | 'desk'; id: string } | null>(null);
   const [camera, setCamera] = useState<Camera>({ scale: 1, x: 0, y: 0 });
   const [room, setRoom] = useState<string | null>(null);
@@ -48,6 +75,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [history, setHistory] = useState<Plan[]>([]);
 
   const viewport = useRef<HTMLDivElement | null>(null);
+  const canvasEl = useRef<HTMLDivElement | null>(null);
   const target = useRef<Camera>({ scale: 1, x: 0, y: 0 });
   const frame = useRef<number | null>(null);
   const panning = useRef<{ x: number; y: number; camera: Camera } | null>(null);
@@ -98,14 +126,20 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     return () => observer.disconnect();
   }, [state]);
 
-  /** The single frame loop: walk the camera to its target, then stop. */
+  /**
+   * The single frame loop: walk the camera to its target, then stop. While it runs, the canvas
+   * carries `data-moving` — the smoke test waits on the camera honestly instead of guessing
+   * whether a gesture had somewhere to go.
+   */
   const run = useCallback(() => {
     if (frame.current !== null) return;
+    if (canvasEl.current) canvasEl.current.dataset.moving = 'true';
     const step = () => {
       setCamera((now) => {
         const next = ease(now, target.current);
         if (next === target.current) {
           frame.current = null;
+          if (canvasEl.current) delete canvasEl.current.dataset.moving;
           return next;
         }
         frame.current = requestAnimationFrame(step);
@@ -115,6 +149,18 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     frame.current = requestAnimationFrame(step);
   }, []);
   useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
+
+  /**
+   * Opening the build bar changes the viewport's height, so the plan would sit cropped against
+   * the new box. Re-fit on the toggle instead, which also means "Fit" after the toggle is the
+   * same framing rather than a no-op that never settles.
+   */
+  useEffect(() => {
+    if (!building) return;
+    const box = boxOf();
+    target.current = fitCamera(box.width, box.height);
+    run();
+  }, [building, run]);
 
   const boxOf = () => viewport.current?.getBoundingClientRect() ?? { width: 960, height: 640, left: 0, top: 0 };
   const aim = useCallback((next: Camera) => {
@@ -156,6 +202,20 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       if (!item) return;
       setHistory((past) => [...past.slice(-19), plan]);
       dragging.current = { ...grabbed, dx: plan_.x - item.x, dy: plan_.y - item.y };
+      return;
+    }
+    if (building && placing) {
+      // Placing: the click drops the chosen furniture, centred on the pointer, snapped to the grid.
+      const spec = palette.find((p) => p.shape === placing);
+      if (spec) {
+        setHistory((past) => [...past.slice(-19), plan]);
+        const x = snap(plan_.x - spec.w / 2);
+        const y = snap(plan_.y - spec.h / 2);
+        setPlan((current) => ({
+          ...current,
+          props: [...current.props, { id: nextPropId(current.props), type: spec.type, x, y, w: spec.w, h: spec.h, label: spec.label }],
+        }));
+      }
       return;
     }
     panning.current = { x: event.clientX, y: event.clientY, camera: target.current };
@@ -216,7 +276,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       '0': () => jumpTo(null),
       Delete: () => deleteSelected(),
       Backspace: () => deleteSelected(),
-      Escape: () => setSelected(null),
+      Escape: () => { setPlacing(null); setSelected(null); },
     };
     const action = actions[event.key];
     if (action) {
@@ -320,6 +380,17 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                 {t('resetPlan', lang)}
               </button>
               <span className="muted" data-world="history">{`${history.length}`}</span>
+              <div className="world-palette" role="group" aria-label={t('placeTitle', lang)}>
+                {palette.map((chip) => (
+                  <button
+                    type="button" key={chip.shape} className="chipbtn" data-world={`place-${chip.shape}`}
+                    aria-pressed={placing === chip.shape} title={chip.label} aria-label={chip.label}
+                    onClick={() => setPlacing(placing === chip.shape ? null : chip.shape)}
+                  >
+                    <PropArt prop={{ id: 'preview', type: chip.type, x: 0, y: 0, w: chip.w, h: chip.h, label: chip.label }} />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -337,7 +408,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             onPointerCancel={onPointerUp}
             onKeyDown={onKeyDown}
           >
-            <div className="world-canvas" style={{ transform: cameraTransform(camera), width: WORLD.w, height: WORLD.h }}>
+            <div className="world-canvas" ref={canvasEl} style={{ transform: cameraTransform(camera), width: WORLD.w, height: WORLD.h }}>
               {plan.rooms.map((each) => (
                 <section
                   key={each.id}
@@ -455,7 +526,6 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
               <span className="stat"><span className="stat-label">{t('activeTasks', lang)}</span><span className="stat-value">{active}</span></span>
             </div>
           </div>
-          <p className="world-hint muted">{t('worldHint', lang)}</p>
         </div>
       </DataState>
     </div>

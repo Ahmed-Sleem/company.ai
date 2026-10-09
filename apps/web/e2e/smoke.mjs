@@ -338,15 +338,20 @@ try {
     // Comparing immediately against the previous gesture's value declared "arrived" before the
     // new move had started, which is how this check first passed-ish and then measured the wrong
     // frame. The `from` snapshot is what makes the wait honest.
-    const from = await page.evaluate(() =>
-      getComputedStyle(document.querySelector('.world-canvas')).transform);
-    await page.waitForFunction((startedAt) => {
-      const now = getComputedStyle(document.querySelector('.world-canvas')).transform;
-      if (now === startedAt) return false;
+    //
+    // "At least once" is only asked for when the camera really is moving: a Fit pressed on an
+    // already-fitted plan lands on the exact transform it started from, and demanding movement
+    // there would wait for a change that can never come. The app marks the canvas `data-moving`
+    // while its frame loop runs; two consecutive still reads while *not* moving is the arrival.
+    // (The loop may not have started on this function's very first evaluation — the gesture's
+    // handler and this poll race — so "moving" alone never counts as settled either way.)
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector('.world-canvas');
+      const now = getComputedStyle(canvas).transform;
       const previous = window.__lastTransform;
       window.__lastTransform = now;
-      return previous === now;
-    }, from, { timeout: 8_000, polling: 80 });
+      return canvas.dataset.moving !== 'true' && previous === now;
+    }, undefined, { timeout: 8_000, polling: 80 });
     return page.evaluate(() => {
       const matrix = new DOMMatrix(getComputedStyle(document.querySelector('.world-canvas')).transform);
       return { scale: matrix.a, x: matrix.e, y: matrix.f };
@@ -564,7 +569,7 @@ try {
   await page.goto(`http://127.0.0.1:${WEB_PORT}/#inbox`, { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });
   check('the inbox lists a decision from the database', true, 'Analytics read access');
-  const decisionText = await page.textContent('.decision');
+  const decisionText = await page.textContent('.decision-slide');
   check('the decision shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
   // 7 — hygiene
