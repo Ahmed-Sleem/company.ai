@@ -178,3 +178,6 @@ IDs are stable. The plan (`IMPLEMENTATION_PLAN.md`) and the tests refer back to 
   send control is a round button centred on the input's height.
 - REQ-48 A single Help window (Settings + topbar button): expandable sections that hold every
   explanation and shortcut — the graph's pointer language, the world's gestures, the keyboard.
+
+All six shipped the same night (see THINGS_DONE, round seven): gates verify 10/10, smoke
+93/93, web tests 107/107.

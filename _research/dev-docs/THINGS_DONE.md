@@ -1165,3 +1165,18 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   pinchCamera, glideStep, distanceBetween, midpoint — exported through world-lib), so both
   hosts move identically; the design gate (15) and its browser probe (11) are green on the
   rewired prototype.
+- 10 October 2026 (night, round seven) — seventh round (REQ-43..48) shipped, plus the three
+  bugs the owner hit. Fixes: the world's fling (the glide inherited the drag's TOTAL length as
+  release velocity — now one frame of travel), the network node drag (the hover pin fought the
+  hand each frame — the hand now outranks the pin while held), and the studio clock redrawn
+  with wrap-safe arc maths + shift-boundary ticks; the "Turn on Build…" hint text is gone.
+  REQ-43: the landing teaches in three interactive steps (Found it / Hire the team / Watch it
+  work) with small animated pixel scenes — screenshots deleted. REQ-44: the command palette —
+  ⌘K, commands first then people/tasks/threads, ↑↓ Enter Esc, in the task-dialog language.
+  REQ-45: the employee form joined the task dialog's form-grid — one form language. REQ-46:
+  the inbox is a mailbox (compact lines, read-more, MCQ options or free reply that posts back
+  into the asker's thread) and PROGRESS_CONTRACT grew the optional "ask" field, parsed
+  strictly and filed via raiseAsk. REQ-47: the messenger grows one→three lines then scrolls,
+  round send centred. REQ-48: one Help window (topbar '?', Settings row, palette command) with
+  four expandable sections holding every explanation and shortcut. Gates green: verify 10/10,
+  smoke 93/93, web tests 107/107.

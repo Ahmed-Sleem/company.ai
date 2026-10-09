@@ -64,6 +64,17 @@
   --app-clock:52px;
   --app-bubble-w:160px;
   --app-input-h:44px;
+  --app-palette-w:560px;
+  --app-palette-gap:2px;
+  --app-keycol:110px;
+  --lvis-h:92px;
+  --lvis-mate:36px;
+  --lvis-lift:6px;
+  --good:#9ece6a;
+  --mate-1:#7aa2f7;
+  --mate-2:#9ece6a;
+  --mate-3:#e0af68;
+  --mate-4:#bb9af7;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -164,11 +175,11 @@ body {
 /* REQ-44 (owner, seventh round): the command palette — one window, VS Code style, in the
    task-dialog language: centred, bordered, dark field on top. */
 .palette-backdrop { position: fixed; inset: 0; z-index: 60; background: var(--shadow); display: flex; justify-content: center; padding-block-start: 12vh; padding-inline: var(--s4); }
-.palette { align-self: start; inline-size: min(560px, 100%); max-block-size: 70vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--s2); padding: var(--s3); }
+.palette { align-self: start; inline-size: min(var(--app-palette-w), 100%); max-block-size: 70vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--s2); padding: var(--s3); }
 .palette-field { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); color: var(--dim); }
 .palette-field input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--base); }
 .palette-field input:focus { outline: none; }
-.palette-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: grid; gap: 2px; align-content: start; }
+.palette-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: grid; gap: var(--app-palette-gap); align-content: start; }
 .palette-list button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--sm); text-align: start; padding: var(--s2); cursor: pointer; }
 .palette-list button.is-on { background: var(--surface); box-shadow: inset 0 0 0 var(--app-hair) var(--line); }
 .palette-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -868,12 +879,12 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .landing-stepbody { display: grid; gap: var(--s4); }
 .landing-stepbody-text { margin: 0; font-size: var(--base); color: var(--fg); }
 /* The little teaching scenes — pure markup, animated on mount (remounts per step). */
-.lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: 92px; padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }
+.lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: var(--lvis-h); padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }
 .lvis-check { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); animation: lvis-pop .45s both; }
 .lvis-check:nth-child(1) { animation-delay: .05s; }
 .lvis-check:nth-child(2) { animation-delay: .35s; }
 .lvis-check:nth-child(3) { animation-delay: .65s; }
-.lvis-check i { inline-size: var(--app-badge); block-size: var(--app-badge); background: var(--good, #9ece6a); clip-path: polygon(14% 46%, 0 60%, 40% 100%, 100% 22%, 86% 8%, 38% 72%); }
+.lvis-check i { inline-size: var(--app-badge); block-size: var(--app-badge); background: var(--good); clip-path: polygon(14% 46%, 0 60%, 40% 100%, 100% 22%, 86% 8%, 38% 72%); }
 .lvis-check b { font-size: var(--sm); font-weight: 600; }
 .lvis-pill { margin-inline-start: auto; align-self: center; padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--accent); color: var(--accent); font-size: var(--sm); animation: lvis-pop .45s .95s both; }
 .lvis-mate { display: grid; justify-items: center; gap: var(--s1); animation: lvis-pop .45s both; }
@@ -881,7 +892,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .lvis-mate:nth-child(2) { animation-delay: .25s; }
 .lvis-mate:nth-child(3) { animation-delay: .45s; }
 .lvis-mate:nth-child(4) { animation-delay: .65s; }
-.lvis-mate span { inline-size: 36px; block-size: 36px; background: var(--a, var(--accent)); border: var(--app-hair) solid var(--line); }
+.lvis-mate.c1 { --a: var(--mate-1); }
+.lvis-mate.c2 { --a: var(--mate-2); }
+.lvis-mate.c3 { --a: var(--mate-3); }
+.lvis-mate.c4 { --a: var(--mate-4); }
+.lvis-mate span { inline-size: var(--lvis-mate); block-size: var(--lvis-mate); background: var(--a, var(--accent)); border: var(--app-hair) solid var(--line); }
 .lvis-mate.ai span { clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
 .lvis-mate small { font-size: var(--xs); color: var(--muted); }
 .lvis-task { flex: 1; align-self: center; display: grid; gap: var(--s1); }
@@ -891,7 +906,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .lvis-task em { inline-size: 40%; animation: lvis-grow .9s .6s both; }
 .lvis-bubble { padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); font-size: var(--sm); animation: lvis-pop .45s 1s both; }
 .lvis-bubble.right { margin-inline-start: auto; border-color: var(--accent); color: var(--accent); animation-delay: 1.4s; }
-@keyframes lvis-pop { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes lvis-pop { from { opacity: 0; transform: translateY(var(--lvis-lift)) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes lvis-grow { from { transform: scaleX(0); transform-origin: inline-start; } to { transform: scaleX(1); transform-origin: inline-start; } }
 @media (prefers-reduced-motion: reduce) {
   .lvis *, .lvis { animation: none; }
@@ -954,7 +969,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .help-section summary:hover { background: var(--raised); }
 .help-section p { margin: 0; padding: 0 var(--s4) var(--s4); font-size: var(--sm); color: var(--muted); line-height: 1.6; }
 .help-keys { margin: 0; padding: 0 var(--s4) var(--s4); display: grid; gap: var(--s2); }
-.help-keyrow { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: var(--s3); align-items: baseline; }
+.help-keyrow { display: grid; grid-template-columns: minmax(var(--app-keycol), auto) 1fr; gap: var(--s3); align-items: baseline; }
 .help-keyrow dt { margin: 0; }
 .help-keyrow dd { margin: 0; font-size: var(--sm); color: var(--muted); }
 .help-keys kbd { display: inline-block; padding: var(--s1) var(--s2); border: var(--app-hair) solid var(--line); background: var(--raised); color: var(--text); font: inherit; font-size: var(--xs); white-space: nowrap; }

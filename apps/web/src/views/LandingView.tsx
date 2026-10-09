@@ -97,10 +97,10 @@ export function LandingView({
             </div>
           ) : STEPS[step] === 'hire' ? (
             <div className="lvis" key="hire">
-              <div className="lvis-mate" style={{ '--a': '#7aa2f7' } as React.CSSProperties}><span /><small>{lang === 'ar' ? '\u062a\u0635\u0645\u064a\u0645' : 'Design'}</small></div>
-              <div className="lvis-mate" style={{ '--a': '#9ece6a' } as React.CSSProperties}><span /><small>{lang === 'ar' ? '\u0647\u0646\u062f\u0633\u0629' : 'Engineering'}</small></div>
-              <div className="lvis-mate" style={{ '--a': '#e0af68' } as React.CSSProperties}><span /><small>{lang === 'ar' ? '\u0645\u0628\u064a\u0639\u0627\u062a' : 'Sales'}</small></div>
-              <div className="lvis-mate ai" style={{ '--a': '#bb9af7' } as React.CSSProperties}><span /><small>AI</small></div>
+              <div className="lvis-mate c1"><span /><small>{lang === 'ar' ? '\u062a\u0635\u0645\u064a\u0645' : 'Design'}</small></div>
+              <div className="lvis-mate c2"><span /><small>{lang === 'ar' ? '\u0647\u0646\u062f\u0633\u0629' : 'Engineering'}</small></div>
+              <div className="lvis-mate c3"><span /><small>{lang === 'ar' ? '\u0645\u0628\u064a\u0639\u0627\u062a' : 'Sales'}</small></div>
+              <div className="lvis-mate ai c4"><span /><small>AI</small></div>
             </div>
           ) : (
             <div className="lvis" key="run">
