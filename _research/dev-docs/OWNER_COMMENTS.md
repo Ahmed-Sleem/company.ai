@@ -272,3 +272,26 @@ Comments (the work list):
   through the shared transition table, posts the model's own note in its thread; one format
   retry, then the local heartbeat, and a failing loop is the pause-and-ask case of REQ-35.
   8 new unit tests hold the parser and the cycle (101 total).
+
+## 2026-10-10 (night) — seventh round of comments
+
+- R7-1 landing: screenshots out; minimal, clear, to-the-point education instead, in interactive
+  pleasing visuals. → REQ-43
+- R7-2 search: opens a window again, but an improved interactive one — VS Code's command
+  palette: search AND commands. → REQ-44
+- R7-3 the task edit dialog is the design language for ALL forms (edit/create employee, etc.):
+  centred, borders, dark text boxes. → REQ-45
+- R7-4 inbox: a mailbox — small messages, "read more", reply OR choose one of the MCQ options;
+  the model's system prompt gains a structure for user-facing asks with MCQ options, parsed by
+  the system. → REQ-46
+- R7-5 inbox easier: smaller messages, read more. (same redesign) → REQ-46
+- R7-6 comms text box: finer like the task edit's; send button a centred circle the height of
+  the box; the box starts small and grows while typing to 2–3×, then stops and scrolls. → REQ-47
+- R7-7 network: drag of the nodes is broken (the rest works). → bug, fixed
+- R7-8 the studio clock is corrupted — redesign and fix. → bug + redesign
+- R7-9 the world drag is corrupted — it flings the view away without a reason. → bug (glide
+  inherited the whole drag as velocity), fixed
+- R7-10 remove the text "Turn on Build, then drag a room to move it…". → removed
+- R7-11 one Help window from Settings (and the top menu): expandable tabs with every
+  explanation and shortcut — graph double-click/drag, world gestures, keys — organised, all in
+  one place. → REQ-48

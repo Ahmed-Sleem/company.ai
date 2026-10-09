@@ -159,3 +159,22 @@ IDs are stable. The plan (`IMPLEMENTATION_PLAN.md`) and the tests refer back to 
   in the task's thread. A malformed answer gets one format-retry; a second failure falls back to
   the local heartbeat for that cycle and, if it persists, pauses the loop and asks (REQ-35).
   Agents without a provider keep the local heartbeat unchanged.
+
+## §13 · Seventh round (2026-10-10, night)
+
+- REQ-43 The landing educates instead of showing screenshots: minimal, clear, to-the-point
+  copy with small interactive visuals (a stepper the visitor clicks through), nothing more.
+- REQ-44 The search is a command palette (VS Code style): one window, one input; it lists
+  commands (go to any view, toggle theme/language/rail, open help…) alongside matching people,
+  tasks, threads; full keyboard control (↑↓ Enter Esc), ⌘K opens.
+- REQ-45 One form language everywhere: the task dialog's centred, bordered, dark-input style is
+  the style for the employee create/edit form and any future form.
+- REQ-46 The inbox is a mailbox: compact one-line messages with sender and time, "read more"
+  expands, each ask offers either MCQ option buttons or a free-text reply. The model's system
+  prompt carries one more contract: when a person needs the owner, it adds
+  `"ask": {"question": "...", "options": ["…"]}` to its report; the engine parses it and files
+  it as a pending message with those exact options.
+- REQ-47 The messenger input grows with the typing (one line → up to three), then scrolls; the
+  send control is a round button centred on the input's height.
+- REQ-48 A single Help window (Settings + topbar button): expandable sections that hold every
+  explanation and shortcut — the graph's pointer language, the world's gestures, the keyboard.

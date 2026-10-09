@@ -110,6 +110,11 @@ icon = favicon + brand + manifest; calm note removed (app + prototype patch); pr
 for the same cosmetics; world pinch/glide/dblclick/reduced-motion/resize-guard; graph engine
 extracted to the app and mounted on store data; OrgTree retires.
 
+*Seventh round (2026-10-10 night, REQ-43..48) folds into the tail of Phase G: landing
+education, command palette, one form language, the mailbox inbox with the parsed ask-contract,
+the growing messenger input, and the Help window — plus three bug fixes (node drag, world fling,
+studio clock).*
+
 *Phase G status (2026-10-10): done in the app — gestures.ts (glide/pinch/dblclick/reduced
 motion, unit-tested), the resize guard, hidden scrollbars, fixed de-demo footer, icon set +
 manifest (REQ-2, encoder + `--check` in the gate), OrgTree retired. Open remainder: rewire the
