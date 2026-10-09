@@ -30,6 +30,8 @@ export interface WorkReport {
   progress: number;
   stage: 'progress' | 'review' | 'done';
   note: string;
+  /** REQ-46: the optional letter to the owner — a question with two to five options. */
+  ask: { question: string; options: string[] } | null;
 }
 
 /**
@@ -56,7 +58,25 @@ export function parseReport(text: string): WorkReport | null {
     progress: Math.max(0, Math.min(100, Math.round(r.progress))),
     stage: r.stage,
     note: typeof r.note === 'string' ? r.note.trim() : '',
+    ask: parseAsk(r.ask),
   };
+}
+
+/**
+ * REQ-46: the ask is optional and strictly shaped — a question plus two to five short options.
+ * A malformed ask never fails the whole report; it is simply dropped, and the note still lands.
+ */
+function parseAsk(raw: unknown): { question: string; options: string[] } | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const a = raw as Record<string, unknown>;
+  if (typeof a.question !== 'string' || a.question.trim() === '') return null;
+  if (!Array.isArray(a.options)) return null;
+  const options = a.options
+    .filter((o): o is string => typeof o === 'string' && o.trim() !== '')
+    .map((o) => o.trim())
+    .slice(0, 5);
+  if (options.length < 2) return null;
+  return { question: a.question.trim(), options };
 }
 
 export function runTick(lang: Lang, manual = false): string | null {
@@ -145,6 +165,17 @@ function applyReport(taskId: string, report: WorkReport, lang: Lang): void {
       ? (stage === 'done' ? t('liveDone', lang) : t('liveSentReview', lang)).replace('{title}', title)
       : `${report.progress}%`;
   announce(task.ownerAgentId, words, lang);
+
+  // REQ-46: a report may carry a letter to the owner — file it in the mailbox.
+  if (report.ask) {
+    useStore.getState().raiseAsk({
+      agentId: task.ownerAgentId,
+      shortRef: task.shortRef,
+      title: report.ask.question,
+      body: report.note !== '' ? report.note : report.ask.question,
+      options: report.ask.options,
+    });
+  }
 }
 
 /** Say it in the person's thread — creating the thread the first time, as before. */

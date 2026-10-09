@@ -31,7 +31,13 @@ export const PROGRESS_CONTRACT = [
   'object and nothing else, exactly in this shape:',
   '{"progress": <integer 0-100, your honest estimate of how much of the task is done>,',
   ' "stage": "progress" | "review" | "done",',
-  ' "note": "<one short line: what you did this cycle, or what you need if you are blocked>"}',
-  'No markdown fences, no commentary around it. If you are blocked, keep your current progress',
-  'number, keep stage "progress", and say what you need in the note.',
+  ' "note": "<one short line: what you did this cycle, or what you need if you are blocked>",',
+  // REQ-46 (owner, seventh round): the user-facing ask — a letter to the owner's mailbox,
+  // answered with one of the offered options or with free text. Optional: most cycles have none.
+  ' "ask": { "question": "<one clear question for the owner>",',
+  '          "options": ["<short option>", "<short option>", ...] } }',
+  'The "ask" field is OPTIONAL — include it only when you need the owner to decide something',
+  'before you can continue; give two to five short options. No markdown fences, no commentary',
+  'around the object. If you are blocked, keep your current progress number, keep stage',
+  '"progress", explain in the note, and put the decision to the owner with an "ask".',
 ].join('\n');

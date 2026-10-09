@@ -1,10 +1,11 @@
 /**
- * Inbox — the decision queue as a deck of slides (owner 2026-10-09: "each decision like a slide").
+ * Inbox — the owner's mailbox (REQ-46, owner seventh round).
  *
- * One pending decision fills the screen at a time: the ask, the rule behind it, the change it
- * makes, who raised it. Approve or reject and the deck slides to the next one. Everything already
- * decided lives in the history table below, the way the prototype keeps its own history.
- * Deciding stays idempotent — the API refuses a second verdict and the queue just moves on.
+ * Every pending item is one compact line — sender, subject, time — the way a mailbox reads.
+ * "Read more" opens the letter: a rule decision shows its facts and takes Approve/Reject; a
+ * model's ask shows its question and is answered with one of its options or with the owner's
+ * own words, which travel back along the asker's thread. Everything already decided lives in
+ * the history table below. Deciding stays idempotent — the API refuses a second verdict.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
@@ -23,8 +24,9 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [decisions, setDecisions] = useState<Decision[] | null>(null);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [index, setIndex] = useState(0);
-  const [exiting, setExiting] = useState<'approve' | 'reject' | null>(null);
+  /** REQ-46: at most one letter is open at a time, and its reply draft lives beside it. */
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const agents = useStore((s) => s.agents);
 
   const load = useCallback(() => {
@@ -38,28 +40,34 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   const pending = decisions?.filter((d) => d.status === 'pending') ?? [];
   const history = decisions?.filter((d) => d.status !== 'pending') ?? [];
-  const slide = pending[Math.min(index, Math.max(pending.length - 1, 0))] ?? null;
 
   const agentOf = (d: Decision) => agents.find((a) => a.id === d.agentId) ?? null;
 
   const decide = (id: string, verdict: 'approve' | 'reject') => {
-    if (busy || exiting) return;
+    if (busy) return;
     setBusy(id);
-    setExiting(verdict);
     api.decide(id, verdict).catch(() => undefined).then(() => {
-      window.setTimeout(() => {
-        setExiting(null);
-        setBusy(null);
-        load();
-      }, 180);
+      setBusy(null);
+      setOpenId(null);
+      load();
+    });
+  };
+
+  /** REQ-46: answer a letter — with one of its options, or with the owner's own words. */
+  const answer = (id: string, text: string) => {
+    if (busy) return;
+    setBusy(id);
+    api.answerDecision(id, text).catch(() => undefined).then(() => {
+      setBusy(null);
+      setOpenId(null);
+      setReplyText('');
+      load();
     });
   };
 
   const state: DataStateKind = forcedState && forcedState !== 'default'
     ? forcedState
     : error ? 'error' : decisions ? 'default' : 'loading';
-
-  const by = slide ? agentOf(slide) : null;
 
   return (
     <>
@@ -80,58 +88,80 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
           {pending.length === 0 && decisions ? <DataState state="empty" lang={lang} /> : null}
 
-          {slide ? (
-            <article
-              className={`panel decision-slide${exiting ? ` out-${exiting}` : ''}`}
-              key={slide.id}
-              aria-label={`${t('inbox', lang)} ${index + 1}/${pending.length}`}
-            >
-              <header className="slide-head">
-                <p className="task-id">{slide.shortRef}</p>
-                <span className="grow" />
-                <span className="tag">{slide.kind}</span>
-                <Badge tone={toneOf(slide.risk)}>{slide.risk}</Badge>
-              </header>
-              <h3 className="slide-title">{localized(slide.title, slide.titleAr, lang)}</h3>
-              <p className="slide-ask">{localized(slide.diff.summary, slide.diff.summaryAr, lang)}</p>
-              <p className="slide-by">
-                {by ? <Avatar index={by.avatar} size="sm" /> : null}
-                <span className="grow">
-                  {by ? `${localized(by.name, by.nameAr, lang)} · ${localized(by.role, by.roleAr, lang)}` : t('teamNoManager', lang)}
-                </span>
-              </p>
-              <dl className="slide-facts">
-                <dt>{t('rule', lang)}</dt>
-                <dd>{`${slide.rule.id} · ${slide.rule.observed} / ${slide.rule.threshold} ${slide.rule.unit}`}</dd>
-                <dt>{t('change', lang)}</dt>
-                <dd>{`${slide.diff.before ?? '—'} → ${slide.diff.after ?? '—'}`}</dd>
-                <dt>{t('audit', lang)}</dt>
-                <dd>{dateTime(slide.audit.raisedAt, lang)}</dd>
-              </dl>
-              <div className="slide-foot">
-                <div className="actions">
-                  <button className="btn primary" type="button" disabled={busy !== null}
-                    onClick={() => decide(slide.id, 'approve')}>
-                    <Icon name="check" />{t('approve', lang)}
-                  </button>
-                  <button className="btn danger" type="button" disabled={busy !== null}
-                    onClick={() => decide(slide.id, 'reject')}>
-                    <Icon name="close" />{t('reject', lang)}
-                  </button>
-                </div>
-                <div className="deck-nav" role="group" aria-label={t('deckNav', lang)}>
-                  <button type="button" className="iconbtn ghost" aria-label={t('prev', lang)}
-                    disabled={index === 0} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
-                    <Icon name="arrow" className="flip" />
-                  </button>
-                  <span className="deck-count" aria-live="polite">{`${index + 1} / ${pending.length}`}</span>
-                  <button type="button" className="iconbtn ghost" aria-label={t('next', lang)}
-                    disabled={index >= pending.length - 1} onClick={() => setIndex((i) => Math.min(pending.length - 1, i + 1))}>
-                    <Icon name="arrow" />
-                  </button>
-                </div>
-              </div>
-            </article>
+          {/* REQ-46: the mailbox — compact one-line letters; "read more" opens one. */}
+          {pending.length > 0 ? (
+            <ul className="mailbox">
+              {pending.map((d) => {
+                const by = agentOf(d);
+                const open = openId === d.id;
+                const who = by ? localized(by.name, by.nameAr, lang) : t('inbox', lang);
+                return (
+                  <li key={d.id} className={`mail panel${open ? ' open' : ''}`} data-mail={d.id}>
+                    <button type="button" className="mail-row" aria-expanded={open}
+                      data-mail-toggle={d.id}
+                      onClick={() => { setOpenId(open ? null : d.id); setReplyText(''); }}>
+                      {by ? <Avatar index={by.avatar} size="sm" /> : <Icon name="inbox" />}
+                      <span className="mail-who">{who}</span>
+                      <span className="mail-subject">{localized(d.title, d.titleAr, lang)}</span>
+                      <span className="grow" />
+                      {d.kind === 'ask' ? <span className="tag">{t('mailAskTag', lang)}</span> : null}
+                      <time className="mail-time" dateTime={d.audit.raisedAt}>{dateTime(d.audit.raisedAt, lang)}</time>
+                    </button>
+                    {open ? (
+                      <div className="mail-body">
+                        {d.kind === 'ask' ? (
+                          <>
+                            <p className="mail-text">{d.body ?? localized(d.diff.summary, d.diff.summaryAr, lang)}</p>
+                            {d.options && d.options.length > 0 ? (
+                              <div className="mail-options" role="group" aria-label={t('mailOptionsAria', lang)}>
+                                {d.options.map((opt, i) => (
+                                  <button key={`${d.id}-opt-${i}`} type="button" className="btn"
+                                    data-mail-opt={i} disabled={busy !== null}
+                                    onClick={() => answer(d.id, opt)}>
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                            <form className="mail-reply"
+                              onSubmit={(e) => { e.preventDefault(); if (replyText.trim() !== '') answer(d.id, replyText.trim()); }}>
+                              <input value={replyText} data-mail-reply={d.id}
+                                placeholder={t('mailReplyPlaceholder', lang)} aria-label={t('mailReplyPlaceholder', lang)}
+                                onChange={(e) => setReplyText(e.target.value)} />
+                              <button type="submit" className="btn primary" disabled={busy !== null || replyText.trim() === ''}>
+                                {t('mailSend', lang)}
+                              </button>
+                            </form>
+                          </>
+                        ) : (
+                          <>
+                            <p className="mail-text">{localized(d.diff.summary, d.diff.summaryAr, lang)}</p>
+                            <dl className="mail-facts">
+                              <dt>{t('rule', lang)}</dt>
+                              <dd>{`${d.rule.id} · ${d.rule.observed} / ${d.rule.threshold} ${d.rule.unit}`}</dd>
+                              <dt>{t('change', lang)}</dt>
+                              <dd>{`${d.diff.before ?? '—'} → ${d.diff.after ?? '—'}`}</dd>
+                              <dt>{t('audit', lang)}</dt>
+                              <dd>{dateTime(d.audit.raisedAt, lang)}</dd>
+                            </dl>
+                            <div className="actions">
+                              <button className="btn primary" type="button" disabled={busy !== null}
+                                data-mail-decide="approve" onClick={() => decide(d.id, 'approve')}>
+                                <Icon name="check" />{t('approve', lang)}
+                              </button>
+                              <button className="btn danger" type="button" disabled={busy !== null}
+                                data-mail-decide="reject" onClick={() => decide(d.id, 'reject')}>
+                                <Icon name="close" />{t('reject', lang)}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           ) : null}
 
           {decisions ? (

@@ -945,24 +945,29 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   padding: var(--s4) var(--s5); margin-block-end: var(--s5);
   border: var(--app-hair) solid var(--line); background: var(--raised);
 }
-.decision-slide { padding: var(--s6); }
-@keyframes slide-in { from { opacity: 0; transform: translateX(var(--s4)); } to { opacity: 1; transform: none; } }
-@keyframes slide-out-up { to { opacity: 0; transform: translateY(calc(var(--s4) * -1)); } }
-@keyframes slide-out-down { to { opacity: 0; transform: translateY(var(--s4)); } }
-.decision-slide { animation: slide-in var(--anim-med) var(--anim-ease); }
-.decision-slide.out-approve { animation: slide-out-up var(--anim-fast) var(--anim-ease) forwards; }
-.decision-slide.out-reject { animation: slide-out-down var(--anim-fast) var(--anim-ease) forwards; }
-.slide-head { display: flex; align-items: center; gap: var(--s3); }
-.slide-title { margin: var(--s3) 0 0; font-size: var(--lg); }
-.slide-ask { margin: var(--s2) 0 var(--s4); color: var(--muted); }
-.slide-by { display: flex; align-items: center; gap: var(--s3); margin: 0 0 var(--s4); color: var(--muted); font-size: var(--sm); }
-.slide-facts { display: grid; grid-template-columns: auto 1fr; gap: var(--s1) var(--s4); margin: 0 0 var(--s5); font-size: var(--sm); }
-.slide-facts dt { color: var(--dim); }
-.slide-facts dd { margin: 0; }
-.slide-foot { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
-.slide-foot .actions { display: flex; gap: var(--s2); }
-.deck-nav { display: flex; align-items: center; gap: var(--s2); margin-inline-start: auto; }
-.deck-count { font: var(--xs) var(--font); color: var(--dim); min-inline-size: var(--sh-count); text-align: center; }
+/* REQ-46 (owner, seventh round): the inbox is a mailbox — compact one-line letters that open
+   on "read more" into their options or their facts. */
+.mailbox { list-style: none; margin: 0 0 var(--s6); padding: 0; display: grid; gap: var(--s2); }
+.mail { padding: 0; overflow: hidden; }
+.mail-row { display: flex; align-items: center; gap: var(--s3); inline-size: 100%; padding: var(--s3) var(--s4); background: none; border: 0; color: var(--text); font: inherit; font-size: var(--sm); text-align: start; cursor: pointer; }
+.mail-row:hover { background: var(--surface); }
+.mail.open .mail-row { border-block-end: var(--app-hair) solid var(--soft); }
+.mail-who { font-weight: 700; white-space: nowrap; }
+.mail-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.mail-time { font-size: var(--xs); color: var(--dim); white-space: nowrap; }
+.mail-body { padding: var(--s4); display: grid; gap: var(--s3); }
+.mail-text { margin: 0; color: var(--text); font-size: var(--sm); }
+.mail-options { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.mail-reply { display: flex; gap: var(--s2); }
+.mail-reply input { flex: 1; min-inline-size: 0; }
+.mail-facts { display: grid; grid-template-columns: auto 1fr; gap: var(--s1) var(--s4); margin: 0; font-size: var(--sm); }
+.mail-facts dt { color: var(--dim); }
+.mail-facts dd { margin: 0; }
+.mail-body .actions { display: flex; gap: var(--s2); }
+@media (prefers-reduced-motion: no-preference) {
+  .mail.open .mail-body { animation: mail-open var(--anim-fast) var(--anim-ease); }
+}
+@keyframes mail-open { from { opacity: 0; transform: translateY(calc(var(--s2) * -1)); } to { opacity: 1; transform: none; } }
 .btn.danger { color: var(--danger); border-color: var(--danger); }
 .btn.danger:hover { background: var(--danger); color: var(--surface); }
 .spaced { margin-block-start: var(--s6); }

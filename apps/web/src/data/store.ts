@@ -61,6 +61,14 @@ export interface DecisionRow {
   rule: { id: string; observed: number; threshold: number; unit: string };
   diff: { kind: string; summary: string; summaryAr?: string | null; before: string | null; after: string | null };
   audit: { raisedAt: string; decidedByLabel: string | null; decidedAt: string | null };
+  /**
+   * REQ-46 (owner, seventh round): a model's ask arrives as a letter in the mailbox. `body` is
+   * the full text behind "read more"; `options` are the MCQ buttons (null = free-text reply);
+   * `reply` is what the owner answered. Rule decisions simply leave all three empty.
+   */
+  body?: string | null;
+  options?: string[] | null;
+  reply?: string | null;
 }
 
 export interface MessageRow {
@@ -160,6 +168,8 @@ interface SaveState {
   startThread: (agentId: string, title: string) => void;
   setWorldPlan: (plan: WorldPlan | null) => void;
   patchDecision: (id: string, patch: Partial<DecisionRow>) => DecisionRow | null;
+  /** REQ-46: file a model's ask in the mailbox — numbered from the rows that exist, no dice. */
+  raiseAsk: (input: { agentId: string | null; shortRef: string; title: string; body: string; options: string[] | null }) => void;
   /** The wizard writes its draft here on every change; the save carries it across reloads. */
   setIntroDraft: (draft: IntroDraft | null) => void;
   /** Finish the intro: the draft becomes the company (REQ-14). Everything stays editable later. */
@@ -336,6 +346,31 @@ export const useStore = create<SaveState>()(
         return { savedAt: new Date().toISOString(), threads: [thread, ...state.threads] };
       }),
       setWorldPlan: (plan) => set({ worldPlan: plan, savedAt: new Date().toISOString() }),
+      raiseAsk: (input) => set((state) => {
+        // Numbered from the asks that exist, the way the save numbers everything else.
+        let max = 0;
+        for (const d of state.decisions) {
+          const m = /^ask-(\d+)$/.exec(d.id);
+          if (m) max = Math.max(max, Number(m[1]));
+        }
+        const row: DecisionRow = {
+          id: `ask-${max + 1}`,
+          shortRef: input.shortRef,
+          kind: 'ask',
+          status: 'pending',
+          risk: '',
+          agentId: input.agentId,
+          title: input.title,
+          titleAr: null,
+          rule: { id: 'ask', observed: 0, threshold: 0, unit: '' },
+          diff: { kind: 'ask', summary: input.body.slice(0, 140), summaryAr: null, before: null, after: null },
+          audit: { raisedAt: new Date().toISOString(), decidedByLabel: null, decidedAt: null },
+          body: input.body,
+          options: input.options,
+          reply: null,
+        };
+        return { savedAt: new Date().toISOString(), decisions: [row, ...state.decisions] };
+      }),
       patchDecision: (id, patch) => {
         let out: DecisionRow | null = null;
         set((state) => ({

@@ -695,8 +695,11 @@ try {
   await openDoor(`http://127.0.0.1:${WEB_PORT}/#inbox`);
   await page.waitForSelector('text=Analytics read access', { timeout: 10_000 });
   check('the inbox lists a decision from the database', true, 'Analytics read access');
-  const decisionText = await page.textContent('.decision-slide');
-  check('the decision shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
+  // REQ-46: the inbox is a mailbox — one compact line per letter; read-more opens the facts.
+  await page.click('.mail-row');
+  await page.waitForSelector('.mail.open .mail-facts', { timeout: 5_000 });
+  const decisionText = await page.textContent('.mail.open');
+  check('the opened letter shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
   // 7 — hygiene
   // 5h — a phone. The owner opened the live link on his and it was unusable: the sidebar kept its

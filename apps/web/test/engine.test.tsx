@@ -19,17 +19,32 @@ const reply = vi.mocked(chatCompletion);
 describe('parseReport — the contract, strictly', () => {
   it('reads the plain JSON object the contract asks for', () => {
     expect(parseReport('{"progress": 42, "stage": "progress", "note": "halfway"}'))
-      .toEqual({ progress: 42, stage: 'progress', note: 'halfway' });
+      .toEqual({ progress: 42, stage: 'progress', note: 'halfway', ask: null });
   });
 
   it('tolerates the markdown fences models love', () => {
     expect(parseReport('```json\n{"progress": 7, "stage": "review", "note": "checking"}\n```'))
-      .toEqual({ progress: 7, stage: 'review', note: 'checking' });
+      .toEqual({ progress: 7, stage: 'review', note: 'checking', ask: null });
   });
 
   it('clamps the number into 0..100', () => {
     expect(parseReport('{"progress": 150, "stage": "done", "note": ""}')?.progress).toBe(100);
     expect(parseReport('{"progress": -5, "stage": "progress", "note": ""}')?.progress).toBe(0);
+  });
+
+  it('reads the optional ask — the letter to the owner (REQ-46)', () => {
+    const report = parseReport('{"progress": 40, "stage": "progress", "note": "stuck on copy",'
+      + ' "ask": {"question": "Which tone?", "options": ["Formal", "Friendly", "Playful"]}}');
+    expect(report?.ask).toEqual({ question: 'Which tone?', options: ['Formal', 'Friendly', 'Playful'] });
+  });
+
+  it('drops a malformed ask without failing the report itself', () => {
+    // one option is not a choice; an empty question asks nothing — the note still lands
+    expect(parseReport('{"progress": 10, "stage": "progress", "note": "n",'
+      + ' "ask": {"question": "Q?", "options": ["only one"]}}')?.ask).toBeNull();
+    expect(parseReport('{"progress": 10, "stage": "progress", "note": "n",'
+      + ' "ask": {"question": "", "options": ["a", "b"]}}')?.ask).toBeNull();
+    expect(parseReport('{"progress": 10, "stage": "progress", "note": "n", "ask": "help"}')?.note).toBe('n');
   });
 
   it('rejects malformed answers — they earn the retry, not the store', () => {

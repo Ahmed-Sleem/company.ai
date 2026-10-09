@@ -27,6 +27,11 @@ export const STRINGS = {
   palEmpty: { en: 'Nothing matches', ar: 'لا شيء يطابق' },
   palFoot: { en: '↑↓ move · Enter run · Esc close', ar: '↑↓ تحرك · Enter نفّذ · Esc أغلق' },
   helpOpen: { en: 'Help', ar: 'مساعدة' },
+  /* REQ-46: the mailbox's own words. */
+  mailAskTag: { en: 'ask', ar: 'طلب' },
+  mailOptionsAria: { en: 'Answer with one of these', ar: 'أجب بأحد هذه' },
+  mailReplyPlaceholder: { en: 'Write your answer…', ar: 'اكتب ردك…' },
+  mailSend: { en: 'Send', ar: 'أرسل' },
   searchTitle: { en: 'Search', ar: 'بحث' },
   notifications: { en: 'Notifications', ar: 'الإشعارات' },
   openNav: { en: 'Open navigation', ar: 'افتح التنقل' },

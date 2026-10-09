@@ -115,6 +115,34 @@ export const api = {
     const all = useStore.getState().decisions;
     return next({ decisions: status ? all.filter((d) => d.status === status) : all });
   },
+  /**
+   * REQ-46: answer a letter in the mailbox — one of its options, or the owner's own words.
+   * The answer is stored on the row, posted back into the asker's thread, and the letter closes.
+   */
+  answerDecision: (decisionId: string, answer: string) => {
+    const state = useStore.getState();
+    const existing = state.decisions.find((d) => d.id === decisionId);
+    if (!existing) fail('not_found', 'No such message.');
+    if (existing!.status !== 'pending') fail('already_decided', 'This message was already answered.');
+    state.patchDecision(decisionId, {
+      status: 'answered',
+      reply: answer,
+      audit: { raisedAt: existing!.audit.raisedAt, decidedByLabel: `${state.operator.name} (owner)`, decidedAt: new Date().toISOString() },
+    });
+    // The answer travels back along the same wire the question came in on.
+    if (existing!.agentId) {
+      let thread = state.threads.find((th) => th.agentId === existing!.agentId);
+      if (!thread) {
+        const asker = state.agents.find((a) => a.id === existing!.agentId);
+        if (asker) {
+          state.startThread(asker.id, asker.name);
+          thread = useStore.getState().threads.find((th) => th.agentId === asker.id);
+        }
+      }
+      if (thread) useStore.getState().addMessage(thread.id, 'you', answer);
+    }
+    return next({ ok: true });
+  },
   decide: (decisionId: string, verdict: 'approve' | 'reject') => {
     const state = useStore.getState();
     const existing = state.decisions.find((d) => d.id === decisionId);

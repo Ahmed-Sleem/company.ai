@@ -6,7 +6,7 @@
  * switches, and every view renders its four data states.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { VIEWS } from '@company/contracts';
 import { App } from '../src/App';
 import { DataState } from '../src/components/DataState';
@@ -92,7 +92,9 @@ describe('the shell matches the locked design', () => {
   it('shows a decision with its rule, its change and an approve button', async () => {
     location.hash = '#inbox';
     render(<App />);
+    // REQ-46: the mailbox shows one compact line per letter — opening it reveals the facts.
     expect(await screen.findByText('Analytics read access')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Analytics read access/ }));
     expect(screen.getAllByText(/access\.analytics\.read/).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /Approve/ }).length).toBeGreaterThan(0);
   });
