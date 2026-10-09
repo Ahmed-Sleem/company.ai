@@ -842,8 +842,12 @@ try {
   {
     await page.reload({ waitUntil: 'networkidle' }); // 5i just cleared the save
     await page.waitForSelector('.landing');
-    check('the landing explains the product with screenshots of itself',
-      (await page.locator('.landing-shot img').count()) === 3);
+    // REQ-43 (seventh round): the landing teaches in three interactive steps — no screenshots.
+    const stepCount = await page.locator('.landing-step').count();
+    await page.click('[data-landing-step="hire"]');
+    await page.waitForSelector('.landing-stepbody[data-landing-visual="hire"]', { timeout: 5_000 });
+    const visuals = (await page.locator('.lvis-mate').count()) === 4;
+    check('the landing teaches the product in three interactive steps', stepCount === 3 && visuals);
     await page.click('[data-landing=start]');
     await page.waitForSelector('.intro-main');
     await page.click('[data-intro=next]');

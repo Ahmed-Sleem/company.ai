@@ -244,7 +244,7 @@ function AgentEditor({ lang, open, agent, onClose }: {
       {/* While closed the window stays in the tree (so closing is animated by the native dialog)
           but holds no content — its manager list must not leak names into the page for tests
           or assistive tech to find behind a closed window. */}
-      {open ? <div className="team-form" key={seed}>
+      {open ? <div className="team-form form-grid" key={seed}>
         <label className="field">{t('teamNameLabel', lang)}
           <input value={name} data-team="name" onChange={(e) => setName(e.target.value)} />
         </label>
@@ -257,10 +257,10 @@ function AgentEditor({ lang, open, agent, onClose }: {
         <label className="field">{t('teamRoleArLabel', lang)}
           <input value={roleAr} dir="rtl" onChange={(e) => setRoleAr(e.target.value)} />
         </label>
-        <label className="field">{t('teamDetailsLabel', lang)}
+        <label className="field full">{t('teamDetailsLabel', lang)}
           <textarea value={focus} rows={2} onChange={(e) => setFocus(e.target.value)} />
         </label>
-        <div className="field">
+        <div className="field full">
           <span>{t('teamPortraitLabel', lang)}</span>
           <div className="portrait-grid" role="group" aria-label={t('teamPortraitLabel', lang)}>
             {PORTRAITS.map((_, i) => (
@@ -280,7 +280,7 @@ function AgentEditor({ lang, open, agent, onClose }: {
             ))}
           </select>
         </label>
-        <div className="field">
+        <div className="field full">
           <span>{t('modelTitle', lang)}</span>
           <div className="answer-row">
             <label className="field">
@@ -326,7 +326,7 @@ function AgentEditor({ lang, open, agent, onClose }: {
           </div>
           <span className="small dim">{t('modelNote', lang)}</span>
         </div>
-        {error ? <p className="field-error" data-team="error" role="alert">{error}</p> : null}
+        {error ? <p className="field-error full" data-team="error" role="alert">{error}</p> : null}
       </div> : null}
     </Dialog>
   );

@@ -911,7 +911,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   .intro-main { padding: var(--s4); }
   .answer-row { flex-direction: column; align-items: stretch; }
 }
-.team-form { display: flex; flex-direction: column; gap: var(--s4); }
+/* REQ-45 (owner, seventh round): the employee form is the task dialog's form language —
+   it carries .form-grid too, so its fields are the same dark boxes on the same grid. */
+.team-form.form-grid { align-items: start; }
 .team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
 .portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-portrait-cell), 1fr)); gap: var(--s2); max-block-size: var(--app-portrait-max); overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
 .portrait-grid button { background: var(--surface); border: var(--app-hair) solid var(--soft); padding: var(--app-portrait-pad); display: flex; align-items: center; justify-content: center; }
