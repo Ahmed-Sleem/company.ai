@@ -218,17 +218,20 @@ function AgentEditor({ lang, open, agent, onClose }: {
     <Dialog
       open={open}
       onClose={onClose}
-      title={agent ? t('teamEditTitle', lang) : t('teamAddTitle', lang)}
-      eyebrow={t('team', lang)}
+      title={open ? (agent ? t('teamEditTitle', lang) : t('teamAddTitle', lang)) : ''}
+      eyebrow={open ? t('team', lang) : ''}
       lang={lang}
-      actions={(
+      actions={open ? (
         <>
           <button type="button" className="btn" onClick={onClose}>{t('cancel', lang)}</button>
           <button type="button" className="btn primary" data-team="save" onClick={save}>{t('saveChanges', lang)}</button>
         </>
-      )}
+      ) : null}
     >
-      <div className="team-form" key={seed}>
+      {/* While closed the window stays in the tree (so closing is animated by the native dialog)
+          but holds no content — its manager list must not leak names into the page for tests
+          or assistive tech to find behind a closed window. */}
+      {open ? <div className="team-form" key={seed}>
         <label className="field">{t('teamNameLabel', lang)}
           <input value={name} data-team="name" onChange={(e) => setName(e.target.value)} />
         </label>
@@ -265,7 +268,7 @@ function AgentEditor({ lang, open, agent, onClose }: {
           </select>
         </label>
         {error ? <p className="field-error" data-team="error" role="alert">{error}</p> : null}
-      </div>
+      </div> : null}
     </Dialog>
   );
 }

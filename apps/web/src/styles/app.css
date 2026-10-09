@@ -56,6 +56,9 @@
   --app-worldmenu-w:240px;
   --app-graphwin-w:200px;
   --app-nodewin-w:280px;
+  --app-portrait-cell:38px;
+  --app-portrait-max:150px;
+  --app-portrait-pad:2px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -778,8 +781,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .team-actions { display: flex; justify-content: flex-end; margin-block: var(--s4) 0; }
 .team-form { display: flex; flex-direction: column; gap: var(--s4); }
 .team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
-.portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: var(--s2); max-block-size: 150px; overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
-.portrait-grid button { background: var(--surface); border: var(--app-hair) solid var(--soft); padding: 2px; display: flex; align-items: center; justify-content: center; }
+.portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-portrait-cell), 1fr)); gap: var(--s2); max-block-size: var(--app-portrait-max); overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
+.portrait-grid button { background: var(--surface); border: var(--app-hair) solid var(--soft); padding: var(--app-portrait-pad); display: flex; align-items: center; justify-content: center; }
 .portrait-grid button:hover { border-color: var(--accent); }
 .portrait-grid button[aria-pressed='true'] { border: var(--app-stroke) solid var(--accent); background: var(--accent-bg); }
 .team-roster { gap: var(--s6); }
