@@ -1135,3 +1135,10 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - C33 (`28b5085`): Settings door back to the landing; wizard edit mode preserves all work.
 - Phase E: per-employee model connection (provider/model/key/custom base URL) + real
   test-connection button reporting the provider's own error; save schema v3.
+- 10 October 2026 — owner round five (C34–C41) + engine phase F: infinite studio grid, live seats
+  (status bubbles, studio clock, delivery walker), network never freezes (pin-on-hover, always
+  drifting, collision), no [a] brandmark, no page head blocks (screen-reader only) with the view
+  name in the topbar, World Map under Network, lifted inspector surfaces; work hours in prefs,
+  the work loop (progress → review → done + thread announcements), provider or local replies in
+  Comms, compiled system prompts. Gates green: verify 10/10, smoke 83/83, web tests 87/87.
+  Commit `362d13a`.
