@@ -126,6 +126,8 @@ export const STRINGS = {
   wizardNoEmployees: { en: 'No employees yet — you can finish now and add them later.', ar: 'لا موظفين بعد — يمكنك الإنهاء الآن وإضافتهم لاحقًا.' },
   wizardOptionsNote: { en: 'You can change all of this any time in Settings.', ar: 'يمكنك تغيير كل هذا في أي وقت من الإعدادات.' },
   companyProfileNote: { en: 'The name, the description and your answers — the team reads these to understand the company.', ar: 'الاسم والوصف وإجاباتك — يقرؤها الفريق ليفهم الشركة.' },
+  reopenIntro: { en: 'Open the intro again', ar: 'افتح المقدمة من جديد' },
+  reopenIntroNote: { en: 'See the landing page and walk the wizard over your current company — nothing is lost.', ar: 'شاهد صفحة الهبوط ومرّ بالمعالج فوق شركتك الحالية — لن يضيع شيء.' },
   reset: { en: 'Reset', ar: 'إعادة التعيين' },
   placeTitle: { en: 'Place furniture', ar: 'أضف أثاثاً' },
   controls: { en: 'Controls', ar: 'أدوات التحكم' },

@@ -97,6 +97,9 @@ export interface CompanyProfile {
 export interface DraftEmployee {
   /** Draft ids number from the draft's own rows: `d-N`. Real ids arrive at finish. */
   id: string;
+  /** The agent this draft row edits, when it edits one — finish keeps their id so the work
+      they own stays theirs. New people arrive with `null` and get save-numbered ids. */
+  sourceId?: string | null;
   name: string;
   nameAr: string | null;
   role: string;
@@ -109,6 +112,8 @@ export interface DraftEmployee {
 
 /** The intro wizard's draft — it lives in the save, so closing the tab loses nothing (REQ-15). */
 export interface IntroDraft {
+  /** 'fresh' starts a company from scratch; 'edit' reopens the wizard over the current one. */
+  mode: 'fresh' | 'edit';
   step: number;
   operatorName: string;
   company: CompanyProfile;
@@ -153,6 +158,9 @@ interface SaveState {
   finishIntro: () => void;
   /** Skip the intro with the labelled demo company (the landing page's second door). */
   chooseDemo: () => void;
+  /** Settings' door back to the front door (owner C33): the wizard reopens OVER the current
+      company in edit mode, so the owner can see — and redo — the intro without losing work. */
+  reopenIntro: () => void;
 }
 
 const fixture = () => ({
@@ -234,6 +242,28 @@ export const useStore = create<SaveState>()(
           avatar: e.avatar, status: 'idle', capabilities: [],
           managerId: e.managerId ? realId.get(e.managerId) ?? null : null,
         }));
+        if (draft.mode === 'edit') {
+          // Reopened over an existing company (REQ-15): people keep their ids, and everything
+          // the company already has — tasks, decisions, threads, the floor plan — stays put.
+          const agents: AgentRow[] = draft.employees.map((e) => {
+            const base = e.sourceId ? state.agents.find((a) => a.id === e.sourceId) : null;
+            return {
+              ...(base ?? { status: 'idle', capabilities: [], department: null, focusAr: null }),
+              id: e.sourceId ?? realId.get(e.id) ?? e.id,
+              name: e.name, nameAr: e.nameAr, role: e.role, roleAr: e.roleAr,
+              focus: e.focus, avatar: e.avatar,
+              managerId: e.managerId ? realId.get(e.managerId) ?? e.managerId : null,
+            };
+          });
+          return {
+            savedAt: new Date().toISOString(),
+            company: draft.company,
+            operator: { name: draft.operatorName.trim() === '' ? state.operator.name : draft.operatorName.trim(), role: state.operator.role },
+            agents,
+            introDone: true,
+            introDraft: null,
+          };
+        }
         return {
           savedAt: new Date().toISOString(),
           company: draft.company,
@@ -246,6 +276,27 @@ export const useStore = create<SaveState>()(
         };
       }),
       chooseDemo: () => set((state) => ({ ...state, introDone: true, introDraft: null, savedAt: new Date().toISOString() })),
+      reopenIntro: () => set((state) => {
+        const draftId = new Map<string, string>();
+        state.agents.forEach((a, i) => draftId.set(a.id, `d-${i + 1}`));
+        return {
+          introDone: false,
+          introDraft: {
+            mode: 'edit',
+            step: 0,
+            operatorName: state.operator.name,
+            company: { ...state.company, answers: state.company.answers.map((a) => ({ ...a })) },
+            employees: state.agents.map((a, i) => ({
+              id: draftId.get(a.id) ?? `d-${i + 1}`,
+              sourceId: a.id,
+              name: a.name, nameAr: a.nameAr, role: a.role, roleAr: a.roleAr,
+              focus: a.focus, avatar: a.avatar ?? 0,
+              managerId: a.managerId ? draftId.get(a.managerId) ?? null : null,
+            })),
+            options: { theme: 'dark', fx: true },
+          },
+        };
+      }),
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
       addMessage: (threadId, from, text) => set((state) => {
         const at = new Date().toISOString();

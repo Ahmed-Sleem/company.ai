@@ -154,6 +154,7 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
   const company = useStore((s) => s.company);
   const operatorName = useStore((s) => s.operator.name);
   const load = useStore((s) => s.load);
+  const reopenIntro = useStore((s) => s.reopenIntro);
   const [form, setForm] = useState({
     company: company.name,
     description: company.description,
@@ -287,6 +288,17 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
 
               <section className="panel panel-pad settings-section">
                 <h2>{t('sessionTitle', lang)}</h2>
+                {/* the owner's door back to the front door (C33): the wizard reopens over the
+                    current company in edit mode — nothing is lost, everything is re-editable */}
+                <div className="setting">
+                  <div>
+                    <h3>{t('reopenIntro', lang)}</h3>
+                    <p>{t('reopenIntroNote', lang)}</p>
+                  </div>
+                  <button type="button" className="btn" data-settings="reopen-intro" onClick={reopenIntro}>
+                    <Icon name="play" />{t('reopenIntro', lang)}
+                  </button>
+                </div>
                 <div className="setting">
                   <div>
                     <h3>{t('exportTitle', lang)}</h3>

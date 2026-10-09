@@ -19,6 +19,7 @@ import { saveAttr, FX } from '../lib/prefs';
 import { applyTheme, type Theme } from '../lib/theme';
 
 const blankDraft = (): IntroDraft => ({
+  mode: 'fresh',
   step: 0,
   operatorName: '',
   company: { name: '', description: '', answers: [] },
