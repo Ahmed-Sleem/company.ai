@@ -116,3 +116,16 @@ Comments (the work list):
   Aria edited to "Aria Zahra"; 3 new smoke checks (74/74), gate 10/10.
 - C24 Complete the next phase in the plan → Phase D: landing page + intro wizard
   (REQ-33/14/15/16), resumable, everything editable later.
+
+## 2026-10-09 (late evening) — third round of comments
+
+- C25 #world: the controls window needs a redesign, and it overlaps the people inspector —
+  move it to the left side.
+- C26 #network: the graph is perfect, but the inspector and controls are corrupted — some
+  icons are very big; audit them. The same inspector must be shared with the world view.
+- C27 #team: the "Add a teammate" button needs space under it so it does not stick to
+  other things.
+- C28 everywhere: reduce the titles' space (e.g. "The whole studio at once." + its line)
+  to give more space to the pages.
+- C24 stands: on opening, there is no landing page or intro yet, and the data is the
+  hard-coded demo — not the owner's own, not from scratch. → Phase D next.

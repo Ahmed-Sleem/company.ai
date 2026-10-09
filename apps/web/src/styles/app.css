@@ -270,8 +270,9 @@ body {
 .statusbar .dot { display: inline-block; inline-size: var(--sh-unread); block-size: var(--sh-unread); margin-inline-end: var(--sh-dotgap); color: var(--accent); background: currentColor; }
 
 .iconbtn { inline-size: var(--control); block-size: var(--control); padding: 0; display: inline-grid; place-items: center; }
+.iconbtn .icon { inline-size: var(--sh-icon); block-size: var(--sh-icon); }
 .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
-.icon-btn:hover { background: var(--hover); }
+.iconbtn:hover { background: var(--hover); }
 
 .group { display: flex; gap: var(--s2); flex-wrap: wrap; }
 svg.tree { inline-size: 100%; block-size: var(--app-tree-h); background: var(--raised); border: var(--app-hair) solid var(--soft); }
@@ -439,9 +440,10 @@ h1 { font-size: var(--title); line-height: 1.25; }
 h2 { font-size: var(--lg); }
 h3 { font-size: var(--base); }
 
-.pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s8); }
-.pagehead .eyebrow { margin-block-end: var(--s3); }
-.pagehead p { color: var(--muted); font-size: var(--base); margin-block-start: var(--s2); }
+.pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s5); }
+.pagehead .eyebrow { margin-block-end: var(--s1); }
+.pagehead h1 { margin-block: 0; font-size: var(--xl); }
+.pagehead p { color: var(--muted); font-size: var(--sm); margin-block-start: var(--s1); margin-block-end: 0; }
 .eyebrow { font-size: var(--xs); letter-spacing: var(--track-eyebrow); color: var(--dim); text-transform: uppercase; }
 
 /* The demo tightens its headlines in latin script only; Arabic keeps its own shaping. */
@@ -450,7 +452,7 @@ h3 { font-size: var(--base); }
 [dir='rtl'] .eyebrow { letter-spacing: 0; }
 
 @media (max-width: 800px) {
-  .pagehead { margin-block-end: var(--s6); }
+  .pagehead { margin-block-end: var(--s3); }
 }
 @media (max-width: 540px) {
   .pagehead { flex-wrap: wrap; }
@@ -582,12 +584,18 @@ h3 { font-size: var(--base); }
 .world-scale { position: absolute; inset-block-end: var(--s2); inset-inline-end: var(--s2); z-index: 5; min-inline-size: var(--s8); text-align: center; color: var(--muted); font-size: var(--sm); background: var(--raised); border: var(--app-hair) solid var(--soft); padding-inline: var(--s2); pointer-events: none; }
 
 /* ── the one controls menu (owner C19): floats over the floor, closed by default ─────────── */
-.world-controls { position: absolute; inset-block-start: var(--s2); inset-inline-end: var(--s2); z-index: 6; display: flex; flex-direction: column; align-items: flex-end; gap: var(--s2); }
-.world-menu { background: var(--surface); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); inline-size: var(--app-worldmenu-w); max-block-size: calc(100% - var(--s10)); overflow-y: auto; animation: pop-in var(--anim-fast) var(--anim-ease); }
-.world-menu .menu-label { margin: 0; font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; color: var(--dim); }
+.world-controls { position: absolute; inset-block-start: var(--s2); inset-inline-start: var(--s2); z-index: 6; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); }
+.world-menu { background: var(--surface); padding: 0; display: flex; flex-direction: column; inline-size: var(--app-worldmenu-w); max-block-size: calc(100% - var(--s10)); overflow-y: auto; animation: pop-in var(--anim-fast) var(--anim-ease); }
+.menu-block { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3); border-block-end: var(--app-hair) solid var(--soft); }
+.menu-head { flex-direction: row; align-items: center; justify-content: space-between; }
+.menu-block:last-child { border-block-end: 0; }
+.menu-block > .btn, .menu-rooms > .btn, .menu-row > .btn { justify-content: flex-start; text-align: start; }
+.menu-label { margin: 0; font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; color: var(--dim); }
 .world-menu .menu-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .world-menu .menu-rooms { display: flex; flex-direction: column; gap: var(--s1); align-items: stretch; }
 .world-menu .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.menu-zoom { display: flex; align-items: center; gap: var(--s1); }
+.menu-zoom .grow { text-align: center; font-size: var(--sm); color: var(--muted); }
 .menu-room-edit { display: flex; flex-direction: column; gap: var(--s3); }
 .world-viewport {
   position: relative;
@@ -681,7 +689,7 @@ h3 { font-size: var(--base); }
 .drawer-head { display: flex; align-items: flex-start; gap: var(--s3); }
 .drawer-head h3 { margin: 0; font-size: var(--base); }
 .drawer-head p { margin: 0; font-size: var(--sm); }
-.drawer-head .icon-btn { margin-inline-start: auto; }
+.drawer-head .iconbtn { margin-inline-start: auto; }
 .drawer-facts { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
 .drawer-facts div { display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--sm); }
 .drawer-facts dt { color: var(--muted); }
@@ -778,7 +786,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 }
 
 /* ── team roster: cards are the people themselves (owner C8) ──────────────────────────────── */
-.team-actions { display: flex; justify-content: flex-end; margin-block: var(--s4) 0; }
+.team-actions { display: flex; justify-content: flex-end; margin-block: var(--s4) var(--s5); }
 .team-form { display: flex; flex-direction: column; gap: var(--s4); }
 .team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
 .portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-portrait-cell), 1fr)); gap: var(--s2); max-block-size: var(--app-portrait-max); overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
@@ -879,7 +887,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 /* ── the network graph (owner C11) ───────────────────────────────────────────────────────── */
 .graph-controls { display: flex; align-items: center; gap: var(--s2); margin-block-end: var(--s3); flex-wrap: wrap; }
 .graph-stage { position: relative; border: var(--app-hair) solid var(--soft); background: var(--raised); block-size: var(--app-world-h); }
-.graph-stage svg { display: block; inline-size: 100%; block-size: 100%; touch-action: none; cursor: grab; }
+.graph-stage > svg.graph-canvas { display: block; inline-size: 100%; block-size: 100%; touch-action: none; cursor: grab; }
 .graph-stage svg:focus-visible { outline: var(--app-stroke) solid var(--accent); outline-offset: calc(var(--app-stroke) * -1); }
 .gnode circle { fill: var(--surface); stroke: var(--muted); stroke-width: var(--app-stroke); }
 .gnode.person circle { stroke: var(--accent); }

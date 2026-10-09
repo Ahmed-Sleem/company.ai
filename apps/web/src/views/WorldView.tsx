@@ -23,6 +23,7 @@ import { t, type Lang } from '../lib/i18n';
 import { localized } from '../lib/format';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
+import { AgentInspector } from '../components/AgentInspector';
 import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
@@ -403,54 +404,72 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             </button>
             {menuOpen ? (
               <div className="world-menu panel" data-world="build-bar">
-                <p className="menu-label">{t('wholePlan', lang)}</p>
-                <div className="menu-rooms">
-                  <button type="button" className="btn small" data-world="fit" onClick={() => jumpTo(null)}>
-                    <Icon name="grid" /> {t('wholePlan', lang)}
+                <div className="menu-head">
+                  <p className="menu-label">{t('controls', lang)}</p>
+                  <button type="button" className="btn small iconbtn" data-world="close-menu"
+                    aria-label={t('close', lang)} onClick={() => setMenuOpen(false)}>
+                    <Icon name="close" />
                   </button>
-                  {plan.rooms.map((each) => (
+                </div>
+
+                <div className="menu-block">
+                  <p className="menu-label">{t('wholePlan', lang)}</p>
+                  <div className="menu-rooms">
+                    <button type="button" className="btn small" data-world="fit" onClick={() => jumpTo(null)}>
+                      <Icon name="grid" /> {t('wholePlan', lang)}
+                    </button>
+                    {plan.rooms.map((each) => (
+                      <button
+                        key={each.id}
+                        type="button"
+                        className="btn small"
+                        data-room={each.id}
+                        aria-pressed={room === each.id}
+                        onClick={() => jumpTo(each)}
+                      >
+                        {OWNER_ROOMS.has(each.id) ? t(roomKey(each.id), lang) : each.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="menu-block">
+                  <p className="menu-label">{t('zoomLabel', lang)}</p>
+                  <div className="menu-row menu-zoom">
+                    <button type="button" className="btn small iconbtn" data-world="zoom-out" aria-label={t('zoomOut', lang)} onClick={() => zoom(0.5)}>
+                      <span aria-hidden="true">−</span>
+                    </button>
+                    <span className="grow" data-world="scale">{`${Math.round(camera.scale * 100)}%`}</span>
+                    <button type="button" className="btn small iconbtn" data-world="zoom-in" aria-label={t('zoomIn', lang)} onClick={() => zoom(2)}>
+                      <Icon name="plus" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="menu-block">
+                  <p className="menu-label">{t('build', lang)}</p>
+                  <div className="menu-row">
                     <button
-                      key={each.id}
                       type="button"
                       className="btn small"
-                      data-room={each.id}
-                      aria-pressed={room === each.id}
-                      onClick={() => jumpTo(each)}
+                      data-world="build"
+                      aria-pressed={building}
+                      onClick={() => { setBuilding((on) => !on); setSelected(null); }}
                     >
-                      {OWNER_ROOMS.has(each.id) ? t(roomKey(each.id), lang) : each.name}
+                      {t('build', lang)}
                     </button>
-                  ))}
+                    <button type="button" className="btn small" data-world="undo" onClick={undo} disabled={history.length === 0}>
+                      {t('undo', lang)}
+                    </button>
+                    <button type="button" className="btn small" data-world="reset" onClick={reset}>
+                      {t('resetPlan', lang)}
+                    </button>
+                    <span className="muted" data-world="history">{`${history.length}`}</span>
+                  </div>
                 </div>
-                <p className="menu-label">{t('zoomIn', lang)}</p>
-                <div className="menu-row">
-                  <button type="button" className="btn small icon-btn" data-world="zoom-out" aria-label={t('zoomOut', lang)} onClick={() => zoom(0.5)}>
-                    <span aria-hidden="true">−</span>
-                  </button>
-                  <button type="button" className="btn small icon-btn" data-world="zoom-in" aria-label={t('zoomIn', lang)} onClick={() => zoom(2)}>
-                    <Icon name="plus" />
-                  </button>
-                </div>
-                <p className="menu-label">{t('build', lang)}</p>
-                <div className="menu-row">
-                  <button
-                    type="button"
-                    className="btn small"
-                    data-world="build"
-                    aria-pressed={building}
-                    onClick={() => { setBuilding((on) => !on); setSelected(null); }}
-                  >
-                    {t('build', lang)}
-                  </button>
-                  <button type="button" className="btn small" data-world="undo" onClick={undo} disabled={history.length === 0}>
-                    {t('undo', lang)}
-                  </button>
-                  <button type="button" className="btn small" data-world="reset" onClick={reset}>
-                    {t('resetPlan', lang)}
-                  </button>
-                  <span className="muted" data-world="history">{`${history.length}`}</span>
-                </div>
+
                 {building ? (
-                  <>
+                  <div className="menu-block">
                     <p className="menu-label">{t('placeTitle', lang)}</p>
                     <div className="world-palette" role="group" aria-label={t('placeTitle', lang)}>
                       {palette.map((chip) => (
@@ -507,7 +526,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                     ) : (
                       <p className="small dim">{t('roomEditHint', lang)}</p>
                     )}
-                  </>
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -616,37 +635,19 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
             {chosenAgent?.agent && (
               <aside className="world-drawer panel" data-world="drawer" aria-label={t('deskDetail', lang)}>
-                <div className="drawer-head">
-                  <Avatar index={chosenAgent.agent.avatar ?? undefined} />
-                  <div>
-                    <h3>{localized(chosenAgent.agent.name, chosenAgent.agent.nameAr, lang)}</h3>
-                    <p className="muted">
-                      {localized(chosenAgent.agent.role, chosenAgent.agent.roleAr, lang)}
-                      {chosenAgent.agent.department ? ` · ${chosenAgent.agent.department}` : ''}
-                    </p>
-                  </div>
-                  <button type="button" className="btn small icon-btn" data-world="close-drawer" onClick={() => setSelected(null)} aria-label={t('close', lang)}>
-                    <Icon name="close" />
-                  </button>
-                </div>
-                <dl className="drawer-facts">
-                  <div><dt>{t('status', lang)}</dt><dd>{t(seatStatusKey(chosenAgent.agent.status), lang)}</dd></div>
-                  <div><dt>{t('sitsIn', lang)}</dt><dd>{roomNameAt(plan, chosenAgent.desk, lang)}</dd></div>
-                </dl>
-                <h4>{t('tasks', lang)}</h4>
-                {chosenAgent.tasks.length === 0 ? (
-                  <p className="muted">{t('noTasksFor', lang)}</p>
-                ) : (
-                  <ul className="drawer-tasks">
-                    {chosenAgent.tasks.map((task) => (
-                      <li key={task.id}>
-                        <span className="task-id">{task.shortRef}</span>
-                        <span>{localized(task.title, task.titleAr, lang)}</span>
-                        <meter className="progress" value={task.progress} min={0} max={100} aria-label={`${t('progress', lang)} ${task.progress}%`} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {/* The shared inspector (owner, third round): the same person window the network
+                    opens, with the one fact only the floor knows — which room the desk sits in. */}
+                <AgentInspector
+                  agent={chosenAgent.agent}
+                  tasks={chosenAgent.tasks}
+                  lang={lang}
+                  onClose={() => setSelected(null)}
+                  closeAttrs={{ 'data-world': 'close-drawer' }}
+                >
+                  <dl className="drawer-facts">
+                    <div><dt>{t('sitsIn', lang)}</dt><dd>{roomNameAt(plan, chosenAgent.desk, lang)}</dd></div>
+                  </dl>
+                </AgentInspector>
               </aside>
             )}
 
@@ -676,9 +677,6 @@ function roomKey(id: string) {
   const keys = { exec: 'roomExec', eng: 'roomEng', board: 'roomBoard', design: 'roomDesign', ops: 'roomOps', lounge: 'roomLounge' } as const;
   return keys[id as keyof typeof keys] ?? 'world';
 }
-
-const seatStatusKey = (status: string) =>
-  status === 'working' ? 'statusWorking' : status === 'blocked' ? 'statusBlocked' : 'statusIdle';
 
 function roomNameAt(plan: Plan, desk: Desk, lang: Lang) {
   const found = roomAt(plan, desk.x + desk.w / 2, desk.y + desk.h / 2);

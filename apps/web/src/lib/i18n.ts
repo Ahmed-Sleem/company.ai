@@ -214,6 +214,7 @@ export const STRINGS = {
   wholePlan: { en: 'Whole plan', ar: 'المخطط كامل' },
   worldCanvas: { en: 'Studio floor plan', ar: 'مخطط أرضية الاستوديو' },
   zoomIn: { en: 'Zoom in', ar: 'تقريب' },
+  zoomLabel: { en: 'Zoom', ar: 'التكبير' },
   zoomOut: { en: 'Zoom out', ar: 'تبعيد' },
   deskDetail: { en: 'Desk detail', ar: 'تفاصيل المكتب' },
   emptyDesk: { en: 'Empty desk', ar: 'مكتب فارغ' },

@@ -4,6 +4,7 @@
  * any of it. What a dialog contains is the caller's business.
  */
 import { useEffect, useRef } from 'react';
+import { Icon } from './Icon';
 
 export function Dialog({
   open, onClose, title, eyebrow, children, actions, lang,
@@ -63,7 +64,7 @@ export function Dialog({
           {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
           <h2>{title}</h2>
         </div>
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
+        <button type="button" className="btn ghost iconbtn" onClick={onClose} aria-label="Close"><Icon name="close" /></button>
       </header>
       <div className="dialog-body">{children}</div>
       {actions ? <footer className="dialog-actions">{actions}</footer> : null}

@@ -18,8 +18,8 @@ import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { Badge, toneOf } from '../components/Badge';
 import { Icon } from '../components/Icon';
-import { Avatar } from '../components/Avatar';
-import { localized, STATUS_KEY } from '../lib/format';
+import { AgentInspector } from '../components/AgentInspector';
+import { localized } from '../lib/format';
 import { buildGraph, layoutStep, fitView, G, type Graph, type GraphNode } from '../lib/graph';
 import { TASK_TRANSITIONS, STAGE_LABELS, TASK_PRIORITIES, PRIORITY_LABELS, type TaskStage } from '@company/contracts';
 
@@ -36,7 +36,6 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
   const threads = useStore((s) => s.threads);
   const operator = useStore((s) => s.operator);
   const patchTask = useStore((s) => s.patchTask);
-  const patchAgent = useStore((s) => s.patchAgent);
 
   const local = useMemo(() => (en: string, ar: string | null) => localized(en, ar, lang), [lang]);
 
@@ -257,6 +256,7 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
           ) : (
             <div className="graph-stage" ref={stageRef} data-hover={hover ? 'true' : undefined}>
               <svg
+                className="graph-canvas"
                 role="img"
                 aria-label={t('headNetwork', lang)}
                 tabIndex={0}
@@ -312,8 +312,8 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
                 </div>
                 <div className="menu-row">
                   <button type="button" className="btn small" onClick={fit}>{t('graphFit', lang)}</button>
-                  <button type="button" className="btn small icon-btn" aria-label={t('zoomOut', lang)} onClick={() => zoomAt(1 / 1.4)}>−</button>
-                  <button type="button" className="btn small icon-btn" aria-label={t('zoomIn', lang)} onClick={() => zoomAt(1.4)}>+</button>
+                  <button type="button" className="btn small iconbtn" aria-label={t('zoomOut', lang)} onClick={() => zoomAt(1 / 1.4)}>−</button>
+                  <button type="button" className="btn small iconbtn" aria-label={t('zoomIn', lang)} onClick={() => zoomAt(1.4)}>+</button>
                   <button type="button" className="btn small ghost" onClick={() => setListing(true)}>
                     <Icon name="list" />{t('graphList', lang)}
                   </button>
@@ -322,7 +322,7 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
 
               {selectedNode ? (
                 <NodeWindow node={selectedNode} graph={graph} lang={lang} onClose={() => setSelected(null)}
-                  patchTask={patchTask} patchAgent={patchAgent} agents={agents} tasks={tasks} />
+                  patchTask={patchTask} agents={agents} tasks={tasks} />
               ) : null}
 
               <p className="graph-legend" aria-hidden="true">
@@ -343,13 +343,12 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
  * status is changed here; a task moves along the shared transition table (the same one the
  * board obeys, so the graph can never make an illegal move); a conversation opens in comms.
  */
-function NodeWindow({ node, graph, lang, onClose, patchTask, patchAgent, agents, tasks }: {
+function NodeWindow({ node, graph, lang, onClose, patchTask, agents, tasks }: {
   node: GraphNode;
   graph: Graph;
   lang: Lang;
   onClose: () => void;
   patchTask: ReturnType<typeof useStore.getState>['patchTask'];
-  patchAgent: ReturnType<typeof useStore.getState>['patchAgent'];
   agents: ReturnType<typeof useStore.getState>['agents'];
   tasks: ReturnType<typeof useStore.getState>['tasks'];
 }) {
@@ -357,35 +356,10 @@ function NodeWindow({ node, graph, lang, onClose, patchTask, patchAgent, agents,
     const agent = agents.find((a) => a.id === node.refId);
     if (!agent) return null;
     const openTasks = tasks.filter((task) => task.ownerAgentId === agent.id && task.stage !== 'done');
+    // The shared inspector (owner, third round): exactly the window the world's drawer opens.
     return (
       <aside className="node-window panel" aria-label={node.label}>
-        <header className="node-head">
-          <Avatar index={agent.avatar} size="sm" />
-          <span className="grow">
-            <strong>{node.label}</strong>
-            <span className="small dim" style={{ display: 'block' }}>{node.sub}</span>
-          </span>
-          <button type="button" className="btn small icon-btn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
-        </header>
-        <label className="field">
-          {t('status', lang)}
-          <select value={agent.status} onChange={(event) => patchAgent(agent.id, { status: event.target.value })}>
-            {['working', 'idle', 'error', 'paused'].map((s) => (
-              <option key={s} value={s}>{t(STATUS_KEY[s] ?? 'statusIdle', lang)}</option>
-            ))}
-          </select>
-        </label>
-        <p className="sectionhead-mini">{`${t('teamNow', lang)} · ${openTasks.length}`}</p>
-        {openTasks.length === 0 ? <p className="small dim">{t('teamNoTasks', lang)}</p> : (
-          <ul className="node-tasks">
-            {openTasks.slice(0, 4).map((task) => (
-              <li key={task.id}>
-                <span className="task-id">{task.shortRef}</span>
-                <span className="grow">{localized(task.title, task.titleAr, lang)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <AgentInspector agent={agent} tasks={openTasks} lang={lang} onClose={onClose} />
       </aside>
     );
   }
@@ -401,7 +375,7 @@ function NodeWindow({ node, graph, lang, onClose, patchTask, patchAgent, agents,
             <strong>{node.label}</strong>
             <span className="small dim" style={{ display: 'block' }}>{task.shortRef}</span>
           </span>
-          <button type="button" className="btn small icon-btn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
+          <button type="button" className="btn small iconbtn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
         </header>
         <p className="node-row"><Badge tone={toneOf(task.stage)}>{STAGE_LABELS[task.stage][lang]}</Badge></p>
         {next.length > 0 ? (
@@ -432,7 +406,7 @@ function NodeWindow({ node, graph, lang, onClose, patchTask, patchAgent, agents,
             <strong>{node.label}</strong>
             <span className="small dim" style={{ display: 'block' }}>{node.sub}</span>
           </span>
-          <button type="button" className="btn small icon-btn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
+          <button type="button" className="btn small iconbtn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
         </header>
         <p className="small dim">{`${degree} ${t('graphLinks', lang)}`}</p>
         <button type="button" className="btn primary small" onClick={() => { location.hash = 'comms'; }}>
@@ -447,7 +421,7 @@ function NodeWindow({ node, graph, lang, onClose, patchTask, patchAgent, agents,
     <aside className="node-window panel" aria-label={node.label}>
       <header className="node-head">
         <span className="grow"><strong>{node.label}</strong></span>
-        <button type="button" className="btn small icon-btn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
+        <button type="button" className="btn small iconbtn" aria-label={t('close', lang)} onClick={onClose}><Icon name="close" /></button>
       </header>
       <p className="small dim">{t('graphYouNote', lang)}</p>
     </aside>
