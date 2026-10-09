@@ -69,6 +69,7 @@ run "1/9 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
 run "2/10 generated files in sync (tokens · the owner's data · the prototype's world code)" bash -c '
   node packages/tokens/src/generate.mjs --check || exit 1
   node scripts/gen-owner-data.mjs --check || exit 1
+  node scripts/gen-icons.mjs --check || exit 1
   node scripts/build-world-lib.mjs --check'
 run "3/10 lint" npx oxlint
 run "4/10 database, gateway, API and contract tests" npx vitest run

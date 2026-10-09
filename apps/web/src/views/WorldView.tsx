@@ -32,6 +32,7 @@ import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
 import { seatAgents, type Seat } from '../world/seat';
 import { boardRoom, centreOf, loungeRoom, placeAgents, spotInRoom, type Place } from '../world/placement';
+import { doubleClickZoom, distanceBetween, glideStep, midpoint, pinchCamera, type PinchStart } from '../world/gestures';
 import { defaultPlan, sprite, ROOM_THEMES, SPRITES, type Desk, type Plan, type Room } from '../world/layout.data';
 import { useStore } from '../data/store';
 import { WORLD, roomAt, shapeFor, snap } from '../world/plan';
@@ -110,6 +111,12 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const target = useRef<Camera>({ scale: 1, x: 0, y: 0 });
   const frame = useRef<number | null>(null);
   const panning = useRef<{ x: number; y: number; camera: Camera } | null>(null);
+  /** Phase G gestures (PORT_AUDIT): multi-touch state, the glide left in the fingers, and
+      whether the view is still the "whole plan" — only then may a resize re-fit it. */
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<PinchStart | null>(null);
+  const glide = useRef({ vx: 0, vy: 0, on: false });
+  const fitted = useRef(true);
   const dragging = useRef<{ kind: 'prop' | 'desk' | 'room'; id: string; dx: number; dy: number } | null>(null);
   const resizing = useRef<{ id: string; px: number; py: number; w: number; h: number } | null>(null);
 
@@ -267,13 +274,16 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     const fit = () => {
       const box = node.getBoundingClientRect();
       if (box.width < 2 || box.height < 2) return;
-      const fitted = fitCamera(box.width, box.height);
-      target.current = fitted;
-      setCamera(fitted);
+      const whole = fitCamera(box.width, box.height);
+      target.current = whole;
+      setCamera(whole);
+      fitted.current = true;
     };
     fit();
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(fit);
+    // The resize guard (PORT_AUDIT): a window change re-fits ONLY while the view still is the
+    // whole plan — a zoomed-in owner keeps the framing they chose.
+    const observer = new ResizeObserver(() => { if (fitted.current) fit(); });
     observer.observe(node);
     return () => observer.disconnect();
   }, [state]);
@@ -287,8 +297,20 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     if (frame.current !== null) return;
     if (canvasEl.current) canvasEl.current.dataset.moving = 'true';
     const step = () => {
+      if (glide.current.on) {
+        const box = boxOf();
+        target.current = clampCamera({
+          ...target.current,
+          x: target.current.x + glide.current.vx,
+          y: target.current.y + glide.current.vy,
+        }, box.width, box.height);
+        const vx = glideStep(glide.current.vx);
+        const vy = glideStep(glide.current.vy);
+        glide.current = { vx, vy, on: vx !== 0 || vy !== 0 };
+      }
       setCamera((now) => {
-        const next = ease(now, target.current);
+        // Reduced motion: controls work, nothing glides — the camera arrives at once.
+        const next = reduced ? target.current : ease(now, target.current);
         if (next === target.current) {
           frame.current = null;
           if (canvasEl.current) delete canvasEl.current.dataset.moving;
@@ -317,12 +339,14 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const boxOf = () => viewport.current?.getBoundingClientRect() ?? { width: 960, height: 640, left: 0, top: 0 };
   const aim = useCallback((next: Camera) => {
     const box = boxOf();
+    fitted.current = false;
     target.current = clampCamera(next, box.width, box.height);
     run();
   }, [run]);
   /** A zoom keeps the point under the pointer: the looser bound is what lets it. */
   const aimZoom = useCallback((next: Camera) => {
     const box = boxOf();
+    fitted.current = false;
     target.current = clampCameraForZoom(next, box.width, box.height);
     run();
   }, [run]);
@@ -331,6 +355,13 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     const box = boxOf();
     const factor = wheelFactor(event.deltaY, event.deltaMode, event.ctrlKey);
     aimZoom(zoomBy(target.current, factor, event.clientX - box.left, event.clientY - box.top));
+  };
+
+  /** Double-click zooms 1.6× at the pointer, Shift reverses — the map idiom (PORT_AUDIT). */
+  const onDoubleClick = (event: React.MouseEvent) => {
+    if ((event.target as Element).closest?.('.desk, .prop')) return;
+    const box = boxOf();
+    aimZoom(doubleClickZoom(target.current, event.clientX - box.left, event.clientY - box.top, event.shiftKey));
   };
 
   /**
@@ -342,10 +373,23 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
    * then in the smoke test: pointerdown on the desk, pointerup on the viewport).
    */
   const onPointerDown = (event: React.PointerEvent, grabbed?: { kind: 'prop' | 'desk'; id: string }) => {
+    const box = boxOf();
+    const atScreen = { x: event.clientX - box.left, y: event.clientY - box.top };
+    pointers.current.set(event.pointerId, atScreen);
+    glide.current = { vx: 0, vy: 0, on: false };
+    if (pointers.current.size === 2) {
+      // Two fingers: the pinch owns the gesture from here.
+      const pts = [...pointers.current.values()];
+      const a = pts[0]!;
+      const b = pts[1]!;
+      pinch.current = { distance: distanceBetween(a, b), mid: midpoint(a, b), camera: target.current };
+      panning.current = null;
+      dragging.current = null;
+      return;
+    }
     const startedOnFurniture = (event.target as Element).closest?.('.desk, .prop');
     if (startedOnFurniture && !grabbed) return;
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
-    const box = boxOf();
     const plan_ = toPlan(target.current, event.clientX - box.left, event.clientY - box.top);
     if (grabbed && building) {
       const item = grabbed.kind === 'prop'
@@ -375,6 +419,17 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   const onPointerMove = (event: React.PointerEvent) => {
     const box = boxOf();
+    if (pointers.current.has(event.pointerId)) {
+      pointers.current.set(event.pointerId, { x: event.clientX - box.left, y: event.clientY - box.top });
+    }
+    const start = pinch.current;
+    if (start && pointers.current.size >= 2) {
+      const pts = [...pointers.current.values()];
+      const a = pts[0]!;
+      const b = pts[1]!;
+      aimZoom(pinchCamera(start, distanceBetween(a, b), midpoint(a, b)));
+      return;
+    }
     const size = resizing.current;
     if (size) {
       const at = toPlan(target.current, event.clientX - box.left, event.clientY - box.top);
@@ -400,6 +455,8 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     }
     const pan = panning.current;
     if (!pan) return;
+    // The frame-to-frame travel is the velocity the glide will inherit on release.
+    glide.current = { vx: event.clientX - pan.x, vy: event.clientY - pan.y, on: false };
     aim(panBy(pan.camera, event.clientX - pan.x, event.clientY - pan.y));
   };
 
@@ -412,6 +469,15 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     roomPress.current = null;
     if (press && !building && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 5) {
       setSelected((now) => (now?.kind === 'room' && now.id === press.id ? null : { kind: 'room', id: press.id }));
+    }
+    pointers.current.delete(event.pointerId);
+    pinch.current = null;
+    if (panning.current && !reduced) {
+      const { vx, vy } = glide.current;
+      if (Math.abs(vx) > 1 || Math.abs(vy) > 1) {
+        glide.current = { vx, vy, on: true };
+        run();
+      }
     }
     panning.current = null;
     dragging.current = null;
@@ -468,7 +534,9 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     const box = boxOf();
     if (!next) {
       target.current = fitCamera(box.width, box.height);
+      fitted.current = true; // "Whole plan" is the state a resize may re-fit
     } else {
+      fitted.current = false;
       const scale = Math.min(2, Math.max(1, Math.min(box.width / (next.w * 1.4), box.height / (next.h * 1.4))));
       target.current = centreOn({ scale, x: 0, y: 0 }, next.x + next.w / 2, next.y + next.h / 2, box.width, box.height);
     }
@@ -716,6 +784,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
+            onDoubleClick={onDoubleClick}
             onKeyDown={onKeyDown}
           >
             <div className="world-canvas" ref={canvasEl} style={{ transform: cameraTransform(camera), width: WORLD.w, height: WORLD.h }}>

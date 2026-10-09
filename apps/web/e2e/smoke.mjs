@@ -441,6 +441,34 @@ try {
     rooms === 6 && desks === 16 && props === 21, `${rooms} rooms · ${desks} desks · ${props} props`);
   check('the company is sitting at the desks it has', staffed === 8, `${staffed} desks staffed`);
 
+  // Phase G: double-click zooms at the pointer (Shift reverses), and a resize keeps a zoomed
+  // view where the owner left it — re-fit only while "Whole plan" is the current framing.
+  {
+    const scaleOf = () => page.$eval('[data-world=scale]', (n) => n.textContent?.trim() ?? '');
+    const vb = await page.locator('[data-world=viewport]').boundingBox();
+    const s0 = await scaleOf();
+    await page.dblclick('[data-world=viewport]', { position: { x: vb.width - 30, y: 30 } }); // clear floor, away from controls
+    await page.waitForFunction((s) => (document.querySelector('[data-world=scale]')?.textContent ?? '').trim() !== s, s0, { timeout: 5_000 });
+    await page.waitForSelector('.world-canvas:not([data-moving])'); // let the ease land before measuring
+    const s1 = await scaleOf();
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.waitForTimeout(600);
+    const s2 = await scaleOf();
+    check('double-click zooms, and a resize keeps the zoomed framing (resize guard)',
+      s1 !== s0 && s2 === s1, `${s0} → ${s1} → ${s2}`);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.click('[data-world=controls]');
+    await page.click('[data-world=fit]');
+    await page.waitForFunction((s) => (document.querySelector('[data-world=scale]')?.textContent ?? '').trim() !== s, s1, { timeout: 5_000 });
+    await page.waitForSelector('.world-canvas:not([data-moving])'); // hand the next check a settled camera
+    await page.click('[data-world=controls]'); // and the floor, not the menu, to the next gesture
+  }
+
+  // REQ-2: the app ships a real icon set and a manifest — favicon sizes, touch icon, installable.
+  check('the build carries the pixel icon set and the manifest (REQ-2)',
+    (await page.$$eval('link[rel=manifest], link[rel=icon][type="image/png"], link[rel=apple-touch-icon]', (n) => n.length)) >= 4
+    && (await page.evaluate(() => fetch('./manifest.webmanifest').then((r) => r.status))) === 200);
+
   // C42 (owner): free agents gather in the break room during work hours — and only then.
   {
     const hour = new Date().getHours();

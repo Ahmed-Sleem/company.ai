@@ -313,3 +313,43 @@ describe('placement (owner C42)', () => {
     expect(far.y).toBeGreaterThan(third.y);
   });
 });
+
+/* ── Phase G gestures: glide, pinch, double-click — pure maths, no DOM ── */
+import { DOUBLE_CLICK_FACTOR, doubleClickZoom, distanceBetween, glideDistance, glideStep, midpoint, pinchCamera } from '../src/world/gestures';
+
+describe('gestures (Phase G)', () => {
+  it('the glide decays by the demo’s friction and stops under the threshold', () => {
+    expect(glideStep(10)).toBeCloseTo(9.2, 10);
+    expect(glideStep(0.05)).toBe(0); // below the stop line: arrived
+    const total = glideDistance(20);
+    expect(total).toBeGreaterThan(100); // a real flick carries
+    expect(total).toBeLessThan(400); // …and it does end
+  });
+
+  it('the pinch keeps the plan point under the opening midpoint under the current one', () => {
+    const camera = { scale: 1, x: 0, y: 0 };
+    const start = { distance: 100, mid: { x: 50, y: 0 }, camera };
+    const anchor = toPlan(camera, 50, 0);
+    const next = pinchCamera(start, 200, { x: 60, y: 10 });
+    expect(next.scale).toBeCloseTo(2, 10);
+    const after = toPlan(next, 60, 10);
+    expect(Math.abs(after.x - anchor.x)).toBeLessThan(0.001);
+    expect(Math.abs(after.y - anchor.y)).toBeLessThan(0.001);
+  });
+
+  it('double-click zooms 1.6× at the pointer, and Shift reverses', () => {
+    const camera = { scale: 1, x: 0, y: 0 };
+    const anchor = toPlan(camera, 120, 90);
+    const zoomed = doubleClickZoom(camera, 120, 90);
+    expect(zoomed.scale).toBeCloseTo(DOUBLE_CLICK_FACTOR, 10);
+    const held = toPlan(zoomed, 120, 90);
+    expect(Math.abs(held.x - anchor.x)).toBeLessThan(0.001);
+    const back = doubleClickZoom(zoomed, 120, 90, true);
+    expect(back.scale).toBeCloseTo(1, 10);
+  });
+
+  it('the little helpers agree', () => {
+    expect(distanceBetween({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
+    expect(midpoint({ x: 0, y: 0 }, { x: 10, y: 20 })).toEqual({ x: 5, y: 10 });
+  });
+});

@@ -1154,3 +1154,12 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   to real states (OrgTree deleted), landing as the true front door with one-click resume, and
   structured model progress reports (contract in the prompt, strict parser, retry, heartbeat
   fallback). Gates green: verify 10/10, smoke 90/90 (5 new checks), web tests 101/101.
+- 10 October 2026 (night) — Phase G completed: the gesture layer is now shared pure code
+  (`world/gestures.ts`) — inertial glide (0.92 friction, 0.05 stop), two-finger pinch about the
+  opening midpoint, double-click zoom 1.6× (Shift reverses), reduced motion arrives instantly,
+  and the resize guard re-fits only while "Whole plan" is the framing. REQ-2 done too: the pixel
+  mark is rasterised by a dependency-free PNG encoder (scripts/gen-icons.mjs, --check in the
+  gate) into favicon sizes, the apple touch icon and the manifest, all linked from index.html.
+  OrgTree already retired with round six. Gates green: verify 10/10 (icon sync added), smoke
+  92/92, web tests 105/105. Open remainder, honestly logged: the prototype's world.js still
+  carries its own copy of the gesture code; rewiring it onto world-lib is the next small task.

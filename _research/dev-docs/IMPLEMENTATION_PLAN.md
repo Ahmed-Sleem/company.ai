@@ -110,6 +110,11 @@ icon = favicon + brand + manifest; calm note removed (app + prototype patch); pr
 for the same cosmetics; world pinch/glide/dblclick/reduced-motion/resize-guard; graph engine
 extracted to the app and mounted on store data; OrgTree retires.
 
+*Phase G status (2026-10-10): done in the app — gestures.ts (glide/pinch/dblclick/reduced
+motion, unit-tested), the resize guard, hidden scrollbars, fixed de-demo footer, icon set +
+manifest (REQ-2, encoder + `--check` in the gate), OrgTree retired. Open remainder: rewire the
+prototype's `world.js` onto `world-lib.js`'s gestures so both hosts share one movement.*
+
 ### Phase H — licences & gates
 THIRD_PARTY.md complete for the new deps; CI gate extended; npm audit clean.
 
