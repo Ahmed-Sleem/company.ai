@@ -94,9 +94,6 @@ export const STRINGS = {
     en: 'A labelled sample studio with work already in motion. Your own company waits behind the other door.',
     ar: 'استوديو نموذجي معلَّم بمهام قيد العمل بالفعل. شركتك الخاصة تنتظرك خلف الباب الآخر.',
   },
-  shotBoard: { en: 'The board — work moving through its stages', ar: 'اللوحة — المهام تتحرك بين مراحلها' },
-  shotWorld: { en: 'The world map — the studio floor at once', ar: 'خريطة العالم — أرض الاستوديو كاملة' },
-  shotNetwork: { en: 'The network — who reports to whom, live', ar: 'الشبكة — من يتبع لمن، مباشرة' },
   wizardTitle: { en: 'Set up your company', ar: 'أنشئ شركتك' },
   wizardNote: { en: 'Three short steps. Everything stays editable later, and nothing is lost if you close the tab.', ar: 'ثلاث خطوات قصيرة. كل شيء يبقى قابلاً للتعديل لاحقًا، ولا يضيع شيء إن أغلقت التبويب.' },
   stepCompany: { en: 'Company', ar: 'الشركة' },
@@ -146,6 +143,14 @@ export const STRINGS = {
   /* ── fifth round, C42: the owner's rule — work at the desk, free in the break room, talk in
      the meeting room. Nothing more. ── */
   landingOpen: { en: 'Open {company}', ar: 'افتح {company}' },
+  /* REQ-43: the landing teaches in three small steps — minimal, clear, to the point. */
+  landingHow: { en: 'How it works', ar: 'كيف يعمل' },
+  stepFound: { en: 'Found it', ar: 'أنشئها' },
+  stepFoundBody: { en: 'Answer a few questions — your company exists.', ar: 'أجب عن أسئلة قليلة — شركتك تصبح موجودة.' },
+  stepHire: { en: 'Hire the team', ar: 'وظّف الفريق' },
+  stepHireBody: { en: 'People and AI employees, each with a role and a focus.', ar: 'موظفون وموظفو ذكاء اصطناعي، لكلّ دورٌ وتركيز.' },
+  stepRun: { en: 'Watch it work', ar: 'راقبها تعمل' },
+  stepRunBody: { en: 'Tasks move, people talk, you approve from the inbox.', ar: 'المهام تتقدم، والناس يتحدثون، وأنت تقرّ من الصندوق.' },
   liveOnBreak: { en: 'on break', ar: 'في الاستراحة' },
   liveInMeeting: { en: 'talking with {name}', ar: 'يتحدّث مع {name}' },
   roomLoungeNote: { en: 'Free during work hours', ar: 'متاحون في ساعات العمل' },

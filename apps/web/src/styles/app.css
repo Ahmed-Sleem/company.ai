@@ -64,8 +64,7 @@
   --app-landing-title:34px;
   --app-clock:52px;
   --app-bubble-w:160px;
-  --app-composer-h:96px;
-  --app-send:44px;
+  --app-input-h:44px;
   --sh-search-sm:150px;
   --anim-fast:120ms;
   --anim-med:220ms;
@@ -853,10 +852,45 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .landing-body { margin: 0; color: var(--muted); font-size: var(--lg); max-inline-size: 62ch; }
 .landing-actions { gap: var(--s3); flex-wrap: wrap; }
 .landing-demo-note { margin: 0; max-inline-size: 62ch; }
-.landing-shots { inline-size: 100%; max-inline-size: var(--app-intro-w); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--app-shot-w)), 1fr)); gap: var(--s4); margin-block-start: var(--s10); }
-.landing-shot { margin: 0; padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
-.landing-shot img { inline-size: 100%; block-size: auto; display: block; border: var(--app-hair) solid var(--line); background: var(--raised); }
-.landing-shot figcaption { font-size: var(--sm); color: var(--muted); }
+/* REQ-43 (owner, seventh round): the landing teaches in three interactive steps with small
+   animated visuals — screenshots are gone. Minimal, clear, to the point. */
+.landing-steps { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s10); padding: var(--s5); display: grid; gap: var(--s4); }
+.landing-stepbar { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.landing-step { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); color: var(--muted); font-size: var(--sm); }
+.landing-step.is-on { color: var(--fg); border-color: var(--accent); background: var(--accent-soft, var(--raised)); }
+.landing-step-n { display: inline-flex; align-items: center; justify-content: center; inline-size: var(--app-badge); block-size: var(--app-badge); border-radius: 50%; background: var(--line); color: var(--fg); font-size: var(--xs); }
+.landing-step.is-on .landing-step-n { background: var(--accent); color: var(--surface); }
+.landing-stepbody { display: grid; gap: var(--s4); }
+.landing-stepbody-text { margin: 0; font-size: var(--base); color: var(--fg); }
+/* The little teaching scenes — pure markup, animated on mount (remounts per step). */
+.lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: 92px; padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }
+.lvis-check { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); animation: lvis-pop .45s both; }
+.lvis-check:nth-child(1) { animation-delay: .05s; }
+.lvis-check:nth-child(2) { animation-delay: .35s; }
+.lvis-check:nth-child(3) { animation-delay: .65s; }
+.lvis-check i { inline-size: var(--app-badge); block-size: var(--app-badge); background: var(--good, #9ece6a); clip-path: polygon(14% 46%, 0 60%, 40% 100%, 100% 22%, 86% 8%, 38% 72%); }
+.lvis-check b { font-size: var(--sm); font-weight: 600; }
+.lvis-pill { margin-inline-start: auto; align-self: center; padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--accent); color: var(--accent); font-size: var(--sm); animation: lvis-pop .45s .95s both; }
+.lvis-mate { display: grid; justify-items: center; gap: var(--s1); animation: lvis-pop .45s both; }
+.lvis-mate:nth-child(1) { animation-delay: .05s; }
+.lvis-mate:nth-child(2) { animation-delay: .25s; }
+.lvis-mate:nth-child(3) { animation-delay: .45s; }
+.lvis-mate:nth-child(4) { animation-delay: .65s; }
+.lvis-mate span { inline-size: 36px; block-size: 36px; background: var(--a, var(--accent)); border: var(--app-hair) solid var(--line); }
+.lvis-mate.ai span { clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.lvis-mate small { font-size: var(--xs); color: var(--muted); }
+.lvis-task { flex: 1; align-self: center; display: grid; gap: var(--s1); }
+.lvis-task b, .lvis-task u, .lvis-task em { display: block; block-size: var(--s2); text-decoration: none; font-style: normal; background: var(--line); }
+.lvis-task b { inline-size: 100%; background: var(--accent); animation: lvis-grow .9s both; }
+.lvis-task u { inline-size: 72%; animation: lvis-grow .9s .3s both; }
+.lvis-task em { inline-size: 40%; animation: lvis-grow .9s .6s both; }
+.lvis-bubble { padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); font-size: var(--sm); animation: lvis-pop .45s 1s both; }
+.lvis-bubble.right { margin-inline-start: auto; border-color: var(--accent); color: var(--accent); animation-delay: 1.4s; }
+@keyframes lvis-pop { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes lvis-grow { from { transform: scaleX(0); transform-origin: inline-start; } to { transform: scaleX(1); transform-origin: inline-start; } }
+@media (prefers-reduced-motion: reduce) {
+  .lvis *, .lvis { animation: none; }
+}
 .intro-main { inline-size: 100%; max-inline-size: var(--app-intro-w); padding: var(--s6); display: flex; flex-direction: column; gap: var(--s5); }
 .intro-main h1 { margin: 0; font-size: var(--xl); }
 .intro-steps { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; border-block: var(--app-hair) solid var(--soft); padding-block: var(--s3); }
@@ -959,9 +993,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .chat-start { display: flex; flex-direction: column; align-items: center; gap: var(--s3); padding: var(--s8) 0; text-align: center; }
 /* REQ-36 (owner, sixth round): the composer is one calm unit — a fixed-size box that scrolls
    inside itself and a send button. No hint text, no side column, no chrome between you and it. */
-.composer { display: flex; gap: var(--s2); padding: var(--s3); border-block-start: var(--app-hair) solid var(--soft); align-items: flex-end; background: var(--raised); }
-.composer textarea { flex: 1; resize: none; block-size: var(--app-composer-h); overflow-y: auto; background: var(--surface); margin: 0; }
-.composer-send { block-size: var(--app-send); inline-size: var(--app-send); flex: none; }
+/* REQ-47 (owner, seventh round): the messenger box is one line, grows with the typing to
+   three, then scrolls; the send control is a round button centred on the box. */
+.composer { display: flex; gap: var(--s2); padding: var(--s3); border-block-start: var(--app-hair) solid var(--soft); align-items: center; background: var(--raised); }
+.composer textarea { flex: 1; resize: none; min-block-size: var(--app-input-h); max-block-size: calc(var(--app-input-h) * 3); overflow-y: auto; background: var(--surface); margin: 0; font-size: var(--sm); line-height: 1.5; }
+.composer-send { block-size: var(--app-input-h); inline-size: var(--app-input-h); border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
 @media (max-width: 800px) {
   .chat-layout { grid-template-columns: 1fr; }
   .threads { flex-direction: row; overflow-x: auto; max-block-size: none; padding: var(--s2); }

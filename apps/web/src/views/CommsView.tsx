@@ -61,6 +61,13 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     startThread(agent.id, localized(agent.name, agent.nameAr, lang));
   };
 
+  /** After a send the draft empties without an input event — the box returns to one line. */
+  useEffect(() => {
+    if (draft !== '') return;
+    const el = document.getElementById('composer-input');
+    if (el instanceof HTMLTextAreaElement) el.style.blockSize = 'auto';
+  }, [draft]);
+
   const send = (event: React.FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
@@ -175,9 +182,16 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   {thread ? (
                     <form className="composer" onSubmit={send}>
                       <label className="visually-hidden" htmlFor="composer-input">{t('chatPlaceholder', lang)}</label>
-                      <textarea id="composer-input" value={draft}
+                      {/* REQ-47: one line at first, grows with the typing to three, then
+                          scrolls — and the round send button sits centred on it. */}
+                      <textarea id="composer-input" rows={1} value={draft}
                         placeholder={t('chatPlaceholder', lang)}
                         onChange={(e) => setDraft(e.target.value)}
+                        onInput={(e) => {
+                          const el = e.currentTarget;
+                          el.style.blockSize = 'auto';
+                          el.style.blockSize = `${el.scrollHeight}px`;
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
