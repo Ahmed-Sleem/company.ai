@@ -53,3 +53,14 @@ Comments (the work list):
 - C14 remove the useless hint text ("Drag to move · wheel to zoom · arrows to pan · …"). → DONE 2026-10-09 — the hint line is deleted (JSX, CSS and the i18n key with it); grep for worldHint/world-hint is empty..
 - C15 the world build/place needs rethink and improvement; re-read the prototype's world. → DONE 2026-10-09 — build/place reworked after re-reading the prototype (its world.js is draw+gestures; build is ours): a furniture palette from the owner’s own sprite sheet (one chip per drawable shape), click the floor to place, snapped to the 16-unit grid, grid lines visible while building, Escape cancels; and the floor plan now lives in the save (store.worldPlan) so edits persist — verified: placed a plant, reloaded, still there. The camera re-fits when the build bar changes the stage height..
 - C16 keep the zoom smooth. → keep-list K2. KEPT 2026-10-09 — the world camera is untouched (target + eased frame loop, pointer-anchored wheel); smoke's zoom checks pass: wheel 43% → 63%, the point under the pointer moved 0.67 plan units. The new graph uses the same easing approach.
+
+## Tracked follow-ups (found while doing C1–C16, not forgotten)
+
+- F1 — the prototype's inbox has an "Ask a question" action on a decision. The app's decision
+  schema has no `question` status (contracts: pending/approved/rejected/expired), so the slide
+  deck ships without it rather than faking a status. Needs a schema decision before it is built.
+- F2 — the prototype's graph has department hulls and a rings layout on top of the force layout.
+  The port ships the force layout (the Obsidian look the owner asked for); hulls/rings can follow
+  on top of the same engine if wanted.
+- F3 — the prototype's settings has a "Demo states" inspector. The app has its own `?state=`
+  mechanism and tests for the four states, so the inspector was not duplicated into the product.
