@@ -94,13 +94,15 @@ describe('the camera', () => {
     expect(Math.abs(left.x - (1000 - right.x))).toBeLessThan(1); // equal margins: it is centred
   });
 
-  it('the floor cannot be dragged out of reach', () => {
+  it('the floor roams a generous field — the grid is infinite, the studio never lost', () => {
+    // Owner, fifth round: the grid runs everywhere and the pan is free. The camera keeps the
+    // studio inside a generous field (4000px) instead of hugging the frame, and Fit is the way home.
     const far = clampCamera({ scale: 2, x: -99999, y: -99999 }, 1000, 700);
-    expect(far.x).toBeGreaterThanOrEqual(1000 - 1920 * 2 - 80);
-    expect(far.y).toBeGreaterThanOrEqual(700 - 1200 * 2 - 80);
+    expect(far.x).toBeGreaterThanOrEqual(1000 - 1920 * 2 - 4000);
+    expect(far.y).toBeGreaterThanOrEqual(700 - 1200 * 2 - 4000);
     const other = clampCamera({ scale: 2, x: 99999, y: 99999 }, 1000, 700);
-    expect(other.x).toBeLessThanOrEqual(80);
-    expect(other.y).toBeLessThanOrEqual(80);
+    expect(other.x).toBeLessThanOrEqual(4000);
+    expect(other.y).toBeLessThanOrEqual(4000);
   });
 
   /**
@@ -116,16 +118,16 @@ describe('the camera', () => {
    *      overshoot while the user is looking at a place.
    */
   it('a plan smaller than the view rests centred, and a zoom near an edge is not fought', () => {
-    // 1 — smaller than the view: centred, whatever it is asked for
+    // 1 — a tiny plan roams the field like any other (the owner pans an infinite grid now);
+    // the generous field, not the centre, is the new contract
     const tiny = { scale: 0.25, x: 99999, y: -99999 };
     const settled = clampCamera(tiny, 1000, 700);
-    expect(settled.x).toBeCloseTo((1000 - 1920 * 0.25) / 2, 5);
-    expect(settled.y).toBeCloseTo((700 - 1200 * 0.25) / 2, 5);
+    expect(settled.x).toBe(4000);
 
-    // and it is still bounded when the plan is larger than the view (the pan rule is unchanged)
+    // and it is still bounded, generously, when the plan is larger than the view
     const far = clampCamera({ scale: 2, x: -99999, y: -99999 }, 1000, 700);
-    expect(far.x).toBeGreaterThanOrEqual(1000 - 1920 * 2 - 80);
-    expect(clampCamera({ scale: 2, x: 99999, y: 99999 }, 1000, 700).x).toBeLessThanOrEqual(80);
+    expect(far.x).toBeGreaterThanOrEqual(1000 - 1920 * 2 - 4000);
+    expect(clampCamera({ scale: 2, x: 99999, y: 99999 }, 1000, 700).x).toBeLessThanOrEqual(4000);
 
     // 2 — the zoom bound is looser than the pan bound, and the anchor survives
     const view = { width: 1130, height: 630 };
@@ -137,7 +139,7 @@ describe('the camera', () => {
     const anchorAfter = toPlan(land, pointer.x, pointer.y);
     expect(Math.abs(anchorAfter.x - anchor.x)).toBeLessThan(2);
     // ...while a pan in the same situation is still held to the tight bound
-    expect(clampCamera({ scale: zoomed.scale, x: 5000, y: 0 }, view.width, view.height).x).toBeLessThanOrEqual(80);
+    expect(clampCamera({ scale: zoomed.scale, x: 5000, y: 0 }, view.width, view.height).x).toBeLessThanOrEqual(4000);
   });
 
   it('a wheel on any device moves the zoom by a comparable amount', () => {

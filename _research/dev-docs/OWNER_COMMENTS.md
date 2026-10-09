@@ -180,3 +180,21 @@ Comments (the work list):
   10 tasks / 3 threads before and after).
 - Continue the next phase (Phase E: per-employee providers, REQ-18/19).
   **DONE 2026-10-10** — see Phase E entry below.
+
+## 2026-10-10 (later) — fifth round of comments
+
+- C34 #network: the canvas shows a blue "selected" border — remove it.
+- C35 inspectors (network + world): the card lacks contrast with what is underneath — improve.
+- C36 sidebar: move World Map directly under Network.
+- C37 remove the "World Map / Overview / title / subtitle" head block; instead improve the
+  topbar: drop "Acme Studio/", emphasise the view name (World Map, …).
+- C38 remove the [a] logo from the top menu.
+- C39 #world: the grid must be infinite, not only inside the floor rectangle.
+- C40 a LIVE toggle in world + network: bubbles over people (working on what, thinking,
+  sleeping > 2h), agents walk to deliver to their counterpart and back; a circular clock with
+  work/off hours in two colours and the current position.
+- C41 #network: nodes must collide, never overlap; always in motion, never freeze.
+- C42 furniture/world audit: gamify properly, room-type behaviours, mandatory rest room, no
+  gaps in the logic — ASK THE OWNER with recommendations, he chooses.
+- C43 commits must read like a professional team's history — full detail per commit.
+- Continue the next phase (Phase F — the engine).

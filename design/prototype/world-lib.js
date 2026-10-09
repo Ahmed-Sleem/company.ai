@@ -895,7 +895,7 @@ var WORLD_LIB = (() => {
     if (content + slack * 2 <= view) return (view - content) / 2;
     return Math.min(slack, Math.max(view - content - slack, position));
   }
-  function clampCamera(camera, width, height, slack = 80) {
+  function clampCamera(camera, width, height, slack = 4e3) {
     const w = WORLD.w * camera.scale;
     const h = WORLD.h * camera.scale;
     return {

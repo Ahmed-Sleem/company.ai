@@ -30,7 +30,9 @@ describe('the shell matches the locked design', () => {
     render(<App />);
     const nav = await screen.findAllByRole('button');
     const ids = nav.map((b) => b.getAttribute('data-nav')).filter(Boolean);
-    expect(ids).toEqual(VIEWS.map((v) => v.id));
+    // Owner, fifth round: the World Map sits directly under the Network, Settings last.
+    expect(ids).toEqual(['team', 'tasks', 'inbox', 'comms', 'network', 'world', 'settings']);
+    expect(ids).toHaveLength(VIEWS.length);
   });
 
   it('switches to Arabic and flips the document to rtl', async () => {

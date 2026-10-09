@@ -15,6 +15,8 @@ import {
   saveCustomAccent, type PaletteChoice, type Theme, DEFAULT_CUSTOM_ACCENT,
 } from '../lib/theme';
 import { readFx, readRail, setFx, setLangPref, setRail } from '../lib/prefs';
+import { readWorkHours, saveWorkHours } from '../lib/schedule';
+import { runTick } from '../lib/engine';
 import { downloadSave, parseSave, resetSave } from '../lib/savefile';
 import { useStore } from '../data/store';
 import { Icon } from '../components/Icon';
@@ -147,6 +149,33 @@ function SkinSetting({ lang }: { lang: Lang }) {
         </span>
       </label>
     </section>
+  );
+}
+
+function ScheduleSetting({ lang }: { lang: Lang }) {
+  const [hours, setHours] = useState(readWorkHours);
+  const change = (patch: Partial<{ start: number; end: number }>) => {
+    const next = { ...hours, ...patch };
+    setHours(next);
+    saveWorkHours(next);
+  };
+  const hourOptions = Array.from({ length: 24 }, (_, h) => h);
+  return (
+    <div className="setting">
+      <div>
+        <h3>{t('workStart', lang)} / {t('workEnd', lang)}</h3>
+      </div>
+      <span className="row">
+        <select data-settings="work-start" value={hours.start} aria-label={t('workStart', lang)}
+          onChange={(e) => change({ start: Number(e.target.value) })}>
+          {hourOptions.map((h) => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+        </select>
+        <select data-settings="work-end" value={hours.end} aria-label={t('workEnd', lang)}
+          onChange={(e) => change({ end: Number(e.target.value) })}>
+          {hourOptions.map((h) => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+        </select>
+      </span>
+    </div>
   );
 }
 
@@ -284,6 +313,22 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
                     <button className="btn" type="submit">{t('saveChanges', lang)}</button>
                   </div>
                 </form>
+              </section>
+
+              <section className="panel panel-pad settings-section">
+                <h2>{t('scheduleTitle', lang)}</h2>
+                <p className="small dim">{t('scheduleNote', lang)}</p>
+                <ScheduleSetting lang={lang} />
+                <div className="setting">
+                  <div>
+                    <h3>{t('tickTitle', lang)}</h3>
+                    <p>{t('tickNote', lang)}</p>
+                  </div>
+                  <button type="button" className="btn" data-settings="tick"
+                    onClick={() => setNote(runTick(lang, true) ?? t('liveIdle', lang))}>
+                    <Icon name="play" />{t('tickTitle', lang)}
+                  </button>
+                </div>
               </section>
 
               <section className="panel panel-pad settings-section">

@@ -41,6 +41,62 @@ const errorOf = async (response: Response): Promise<string> => {
   }
 };
 
+/** One chat turn against the person's own provider, carrying the company's system prompt
+    (REQ-16). Returns the assistant's words, or throws — the caller falls back to the local
+    teammate voice when the provider cannot be reached. */
+export async function chatCompletion(conn: ModelConnection, system: string, user: string): Promise<string> {
+  if (conn.provider === 'anthropic') {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': conn.key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ model: conn.model, max_tokens: 300, system, messages: [{ role: 'user', content: user }] }),
+    });
+    if (!response.ok) throw new Error(await errorOf(response));
+    const body = (await response.json()) as { content?: { type: string; text?: string }[] };
+    const text = (body.content ?? []).map((part) => part.text ?? '').join('');
+    if (text === '') throw new Error('empty response');
+    return text;
+  }
+  if (conn.provider === 'gemini') {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(conn.model)}:generateContent?key=${encodeURIComponent(conn.key)}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ parts: [{ text: user }] }],
+        }),
+      },
+    );
+    if (!response.ok) throw new Error(await errorOf(response));
+    const body = (await response.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const text = (body.candidates?.[0]?.content?.parts ?? []).map((part) => part.text ?? '').join('');
+    if (text === '') throw new Error('empty response');
+    return text;
+  }
+  const base = conn.provider === 'custom' ? (conn.baseUrl ?? '').replace(/\/+$/, '') : 'https://api.openai.com/v1';
+  const response = await fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: `Bearer ${conn.key}` },
+    body: JSON.stringify({
+      model: conn.model,
+      max_tokens: 300,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    }),
+  });
+  if (!response.ok) throw new Error(await errorOf(response));
+  const body = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = body.choices?.[0]?.message?.content ?? '';
+  if (text === '') throw new Error('empty response');
+  return text;
+}
+
 export async function testConnection(conn: ModelConnection): Promise<TestResult> {
   try {
     let response: Response;

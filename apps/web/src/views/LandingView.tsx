@@ -32,7 +32,6 @@ export function LandingView({
     <div className="landing">
       <header className="landing-top">
         <div className="brand">
-          <span className="brandmark" aria-hidden="true">[a]</span>
           <span>{t('brand', lang)}<small>{t('brandSub', lang)}</small></span>
         </div>
         <button type="button" className="btn ghost" data-landing="language"

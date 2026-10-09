@@ -114,7 +114,7 @@ function clampAxis(view: number, content: number, position: number, slack: numbe
  * Keep the plan within reach: after a pan or a zoom-out, the floor is never dragged off-screen.
  * Allowed to go 80 px past either edge, which is enough to park a wall against the side of the view.
  */
-export function clampCamera(camera: Camera, width: number, height: number, slack = 80): Camera {
+export function clampCamera(camera: Camera, width: number, height: number, slack = 4000): Camera {
   const w = WORLD.w * camera.scale;
   const h = WORLD.h * camera.scale;
   return {

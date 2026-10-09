@@ -129,7 +129,6 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
     <div className="intro">
       <header className="intro-top">
         <div className="brand">
-          <span className="brandmark" aria-hidden="true">[a]</span>
           <span>{t('brand', lang)}<small>{t('brandSub', lang)}</small></span>
         </div>
         <button type="button" className="btn ghost" data-intro="language"

@@ -24,6 +24,9 @@ import { localized } from '../lib/format';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { AgentInspector } from '../components/AgentInspector';
+import { StudioClock } from '../components/StudioClock';
+import { isWorkTime } from '../lib/schedule';
+import { runTick } from '../lib/engine';
 import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
@@ -78,6 +81,17 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   /** The menu pages (owner C30): the floor's height is fixed, so a long menu would scroll the
       wrong thing. View holds the rooms, Build holds the tools; the camera strip is always on. */
   const [menuPage, setMenuPage] = useState<'view' | 'build'>('view');
+  /** LIVE (owner, fifth round): bubbles over desks, a walker delivering work, the engine
+      ticking on the studio schedule. Reduced motion keeps the studio still. */
+  const [live, setLive] = useState(true);
+  const reduced = useMemo(() =>
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches, []);
+  const liveOn = live && !reduced;
+  const [walk, setWalk] = useState<{
+    agentId: string; avatar: number | null; managerName: string;
+    from: { x: number; y: number }; to: { x: number; y: number };
+    pos: 'from' | 'to' | 'back';
+  } | null>(null);
 
   const viewport = useRef<HTMLDivElement | null>(null);
   const canvasEl = useRef<HTMLDivElement | null>(null);
@@ -105,6 +119,29 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     () => (agents && tasks ? seatAgents(plan, agents, tasks) : []),
     [plan, agents, tasks],
   );
+
+  useEffect(() => {
+    if (!liveOn) { setWalk(null); return; }
+    const tick = setInterval(() => runTick(lang), 20_000);
+    const walker = setInterval(() => {
+      const candidates = seats.filter((seat) => seat.agent && seat.agent.status === 'working' && seat.agent.managerId);
+      const picked = candidates[Math.floor(Math.random() * candidates.length)];
+      const managerSeat = picked?.agent
+        ? seats.find((seat) => seat.agent?.id === picked.agent?.managerId)
+        : undefined;
+      if (!picked?.agent || !managerSeat?.agent) return;
+      const centre = (d: { x: number; y: number; w: number; h: number }) => ({ x: d.x + d.w / 2, y: d.y + d.h / 2 });
+      setWalk({
+        agentId: picked.agent.id,
+        avatar: picked.agent.avatar, managerName: localized(managerSeat.agent.name, managerSeat.agent.nameAr, lang),
+        from: centre(picked.desk), to: centre(managerSeat.desk), pos: 'from',
+      });
+      setTimeout(() => setWalk((w) => (w ? { ...w, pos: 'to' } : w)), 60);
+      setTimeout(() => setWalk((w) => (w ? { ...w, pos: 'back' } : w)), 4_300);
+      setTimeout(() => setWalk(null), 8_600);
+    }, 14_000);
+    return () => { clearInterval(tick); clearInterval(walker); };
+  }, [liveOn, seats, lang]);
 
   /**
    * Fit the whole plan the moment the plan exists, and keep it fitted while the viewport resizes.
@@ -546,10 +583,21 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
             ) : null}
           </div>
 
+          <div className="world-chips">
+            <button type="button" className={`btn small world-live${liveOn ? ' on' : ''}`}
+              data-world="live" aria-pressed={liveOn} onClick={() => setLive((on) => !on)}>
+              <span className="live-dot" aria-hidden="true" />{t('live', lang)}
+            </button>
+            <StudioClock label={t('clockLabel', lang)} />
+          </div>
           <span className="world-scale" data-world="scale">{`${Math.round(camera.scale * 100)}%`}</span>
           <div
             className={`world-viewport${building ? ' world-building' : ''}`}
             ref={viewport}
+            style={{
+              backgroundSize: `calc(var(--s8) * ${camera.scale}) calc(var(--s8) * ${camera.scale})`,
+              backgroundPosition: `${camera.x}px ${camera.y}px`,
+            }}
             tabIndex={0}
             role="application"
             aria-label={t('worldCanvas', lang)}
@@ -633,6 +681,13 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                           {seat.tasks.length}
                         </span>
                       )}
+                      {liveOn && seat.agent ? (
+                        <span className="desk-bubble" data-world="bubble">
+                          {walk && walk.agentId === seat.agent.id && walk.pos !== 'from'
+                            ? t('liveDelivering', lang).replace('{name}', walk.managerName)
+                            : seatBubble(seat.agent.status, seat.tasks.map((task) => localized(task.title, task.titleAr, lang)), lang)}
+                        </span>
+                      ) : null}
                     </>
                   ) : (
                     <span className="desk-name muted">{t('emptyDesk', lang)}</span>
@@ -642,6 +697,19 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
               {/* Where people are, said out loud: the plan is a picture, so a screen reader gets the
                   same facts from one sentence instead of sixteen buttons. */}
+              {liveOn && walk ? (
+                <span
+                  className="walker"
+                  aria-hidden="true"
+                  style={{
+                    insetInlineStart: walk.pos === 'to' ? walk.to.x : walk.from.x,
+                    insetBlockStart: walk.pos === 'to' ? walk.to.y : walk.from.y,
+                  }}
+                >
+                  <Avatar index={walk.avatar ?? undefined} size="sm" />
+                </span>
+              ) : null}
+
               <p className="visually-hidden" data-world="summary">
                 {t('worldSummary', lang)
                   .replace('{people}', String(seats.filter((seat) => seat.agent).length))
@@ -697,6 +765,15 @@ function roomKey(id: string) {
   const keys = { exec: 'roomExec', eng: 'roomEng', board: 'roomBoard', design: 'roomDesign', ops: 'roomOps', lounge: 'roomLounge' } as const;
   return keys[id as keyof typeof keys] ?? 'world';
 }
+
+/** What the live bubble says over a desk (owner, fifth round): the open task when working,
+    sleep outside the workday, and the honest words for blocked, paused and idle. */
+const seatBubble = (status: string, openTitles: string[], lang: Lang) => {
+  if (status === 'error') return t('liveBlocked', lang);
+  if (status === 'paused') return t('livePaused', lang);
+  if (status === 'working') return openTitles[0] ?? t('liveThinking', lang);
+  return isWorkTime() ? t('liveIdle', lang) : t('liveSleeping', lang);
+};
 
 function roomNameAt(plan: Plan, desk: Desk, lang: Lang) {
   const found = roomAt(plan, desk.x + desk.w / 2, desk.y + desk.h / 2);

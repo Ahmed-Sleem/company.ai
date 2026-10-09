@@ -21,11 +21,13 @@ import { Icon } from '../components/Icon';
 import { AgentInspector } from '../components/AgentInspector';
 import { localized } from '../lib/format';
 import { buildGraph, layoutStep, fitView, G, type Graph, type GraphNode } from '../lib/graph';
+import { isWorkTime } from '../lib/schedule';
 import { TASK_TRANSITIONS, STAGE_LABELS, TASK_PRIORITIES, PRIORITY_LABELS, type TaskStage } from '@company/contracts';
 
 interface View { x: number; y: number; k: number }
 
-const EASE = 0.18; // the same gentle approach the world's camera uses — zoom stays smooth
+const EASE = 0.18;
+ // the same gentle approach the world's camera uses — zoom stays smooth
 const LIVE_ALPHA = 0.012; // the floor the simulation cools to: a slow Obsidian-like drift
 
 type GraphMode = 'all' | 'people' | 'tasks' | 'threads';
@@ -38,6 +40,19 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
   const patchTask = useStore((s) => s.patchTask);
 
   const local = useMemo(() => (en: string, ar: string | null) => localized(en, ar, lang), [lang]);
+
+  /** The live word under a person node — the same logic the floor's bubbles speak. */
+  const personActivity = (id: string) => {
+    const agent = agents.find((a) => a.id === id);
+    if (!agent) return '';
+    if (agent.status === 'error') return t('liveBlocked', lang);
+    if (agent.status === 'paused') return t('livePaused', lang);
+    if (agent.status === 'working') {
+      const task = tasks.find((x) => x.ownerAgentId === id && x.stage !== 'done');
+      return task ? local(task.title, task.titleAr ?? null) : t('liveThinking', lang);
+    }
+    return isWorkTime() ? t('liveIdle', lang) : t('liveSleeping', lang);
+  };
 
   const [mode, setMode] = useState<GraphMode>('all');
 
@@ -67,9 +82,11 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
   const running = useRef(false);
   const dragNode = useRef<string | null>(null);
   const panning = useRef<{ x: number; y: number } | null>(null);
-  /** The drift pauses while the pointer is over the canvas — you cannot click a moving target,
-      and neither Obsidian nor a person wants to. */
-  const pointerIn = useRef(false);
+  /** The node under the cursor holds still (you cannot click a moving target) while the rest
+      of the graph keeps breathing — owner, fifth round: never freeze, always in motion. */
+  const pin = useRef<{ id: string; x: number; y: number } | null>(null);
+  /** LIVE: person nodes wear what they are doing right now, the same words the floor bubbles. */
+  const [live, setLive] = useState(true);
 
   const state: DataStateKind = forcedState && forcedState !== 'default' ? forcedState : 'default';
 
@@ -79,7 +96,12 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     if (running.current) return;
     running.current = true;
     const loop = () => {
-      const mv = pointerIn.current ? 0 : layoutStep(graph, alpha.current);
+      const mv = layoutStep(graph, alpha.current);
+      const held = pin.current;
+      if (held) {
+        const pn = graph.byId[held.id];
+        if (pn) { pn.x = held.x; pn.y = held.y; }
+      }
       // Cool toward the live floor instead of to zero: the picture keeps breathing.
       alpha.current = Math.max(alpha.current * G.decay, reduced ? 0 : LIVE_ALPHA);
       const v = view.current;
@@ -89,7 +111,7 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
       v.k += (tg.k - v.k) * EASE;
       setTick((n) => n + 1);
       const viewMoving = Math.abs(tg.x - v.x) > 0.4 || Math.abs(tg.y - v.y) > 0.4 || Math.abs(tg.k - v.k) > 0.002;
-      const alive = !reduced && (alpha.current > 0 || pointerIn.current);
+      const alive = !reduced && alpha.current > 0;
       if (mv > 0.05 || viewMoving || alive) {
         requestAnimationFrame(loop);
       } else {
@@ -260,8 +282,7 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
                 role="img"
                 aria-label={t('headNetwork', lang)}
                 tabIndex={0}
-                onMouseEnter={() => { pointerIn.current = true; }}
-                onMouseLeave={() => { pointerIn.current = false; kick(); }}
+
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -287,12 +308,15 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
                         className={`gnode ${n.kind}${n.refId === 'you' ? ' you' : ''}${hi ? ' hi' : ''}${selected === n.id ? ' sel' : ''}`}
                         transform={`translate(${n.x} ${n.y})`}
                         onPointerDown={onNodePointerDown(n.id)}
-                        onMouseEnter={() => setHover(n.id)}
-                        onMouseLeave={() => setHover(null)}
+                        onMouseEnter={() => { setHover(n.id); pin.current = { id: n.id, x: n.x, y: n.y }; }}
+                        onMouseLeave={() => { setHover(null); pin.current = null; }}
                         onClick={() => setSelected(n.id)}
                       >
                         <circle r={n.radius} />
                         <text y={n.radius + G.labelGap}>{n.label}</text>
+                        {live && n.kind === 'person' && n.refId !== 'you' ? (
+                          <text className="sub" y={n.radius + G.labelGap + 12}>{personActivity(n.refId)}</text>
+                        ) : null}
                       </g>
                     );
                   })}
@@ -314,6 +338,10 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
                   <button type="button" className="btn small" onClick={fit}>{t('graphFit', lang)}</button>
                   <button type="button" className="btn small iconbtn" aria-label={t('zoomOut', lang)} onClick={() => zoomAt(1 / 1.4)}>−</button>
                   <button type="button" className="btn small iconbtn" aria-label={t('zoomIn', lang)} onClick={() => zoomAt(1.4)}>+</button>
+                  <button type="button" className={`btn small${live ? ' primary' : ''}`} data-graph-live
+                    aria-pressed={live} onClick={() => setLive((on) => !on)}>
+                    <span className="live-dot" aria-hidden="true" />{t('live', lang)}
+                  </button>
                   <button type="button" className="btn small ghost" onClick={() => setListing(true)}>
                     <Icon name="list" />{t('graphList', lang)}
                   </button>

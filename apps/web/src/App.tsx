@@ -259,7 +259,6 @@ export function App() {
       <aside className="sidebar" id="sidebar" aria-label={t('brand', lang)}>
         <div className="row">
           <div className="brand grow">
-            <span className="brandmark" aria-hidden="true">[a]</span>
             <span>{t('brand', lang)}<small>{t('brandSub', lang)}</small></span>
           </div>
           <button type="button" className="btn ghost iconbtn nav-close" aria-label={t('closeNav', lang)} onClick={() => setNavOpen(false)}>
@@ -307,11 +306,11 @@ export function App() {
           {VIEWS.slice(0, 4).map(navButton)}
           <div className="navgap" aria-hidden="true" />
           {navButton(VIEWS[4]!)}
+          {navButton(VIEWS[6]!)}
         </nav>
 
         <div className="sidebar-bottom">
           {navButton(VIEWS[5]!)}
-          {navButton(VIEWS[6]!)}
         </div>
       </aside>
 
@@ -342,9 +341,7 @@ export function App() {
               <Icon name="menu" />
             </button>
             <div className="breadcrumb">
-              <span>{company}</span>
-              <span aria-hidden="true">/</span>
-              <strong>{viewLabel(view)}</strong>
+              <strong className="crumb-title">{viewLabel(view)}</strong>
             </div>
           </div>
           <div className="top-actions">

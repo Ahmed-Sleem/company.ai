@@ -104,8 +104,8 @@ try {
 
   // 1 — shell
   const navIds = await page.$$eval('[data-nav]', (nodes) => nodes.map((n) => n.getAttribute('data-nav')));
-  check('the shell renders the six designer views plus the owner’s World Map',
-    navIds.length === 7 && navIds[6] === 'world', navIds.join(', '));
+  check('the shell renders the six designer views plus the owner’s World Map — team, tasks, inbox, comms, network, world, settings',
+    navIds.join(', ') === 'team, tasks, inbox, comms, network, world, settings', navIds.join(', '));
   // the icons the owner borrowed: every nav item draws one, and it is a filled path
   const navIcons = await page.$$eval('[data-nav]', (nodes) =>
     nodes.map((n) => n.querySelector('svg.pixel-icon path')?.getAttribute('d')?.length ?? 0));
@@ -762,7 +762,7 @@ try {
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForSelector('.sidebar');
     check('and my own company is what opens from now on',
-      (await page.textContent('.breadcrumb'))?.includes('Nile Pixels') ?? false);
+      (await page.textContent('.workspace'))?.includes('Nile Pixels') ?? false);
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));

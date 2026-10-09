@@ -23,12 +23,14 @@ export function ScreenHead({
 }) {
   return (
     <header className="pagehead">
-      <div>
+      {/* The owner (fifth round) handed the visible space back to the page: the words live on
+          for screen readers and the focus ritual, while the topbar now carries the name. */}
+      <div className="visually-hidden">
         <div className="eyebrow">{eyebrow}</div>
         <h1 id="page-title" tabIndex={-1}>{title}</h1>
         <p>{subtitle}</p>
       </div>
-      {action ? <div className="row">{action}</div> : null}
+      {action ? <div className="row pagehead-action">{action}</div> : null}
     </header>
   );
 }
