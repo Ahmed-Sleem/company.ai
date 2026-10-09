@@ -31,7 +31,10 @@ var WORLD_LIB = (() => {
   var demo_entry_exports = {};
   __export(demo_entry_exports, {
     DEFAULT_LAYOUT: () => DEFAULT_LAYOUT,
+    DOUBLE_CLICK_FACTOR: () => DOUBLE_CLICK_FACTOR,
     EASE: () => EASE,
+    GLIDE_FRICTION: () => GLIDE_FRICTION,
+    GLIDE_STOP: () => GLIDE_STOP,
     LADDER: () => LADDER,
     MAX_SCALE: () => MAX_SCALE,
     MIN_SCALE: () => MIN_SCALE,
@@ -46,10 +49,16 @@ var WORLD_LIB = (() => {
     clampScale: () => clampScale,
     defaultPlan: () => defaultPlan,
     desksOf: () => desksOf,
+    distanceBetween: () => distanceBetween,
+    doubleClickZoom: () => doubleClickZoom,
     ease: () => ease,
     fitCamera: () => fitCamera,
+    glideDistance: () => glideDistance,
+    glideStep: () => glideStep,
+    midpoint: () => midpoint,
     nextRung: () => nextRung,
     panBy: () => panBy,
+    pinchCamera: () => pinchCamera,
     roomAt: () => roomAt,
     seatAgents: () => seatAgents,
     shapeFor: () => shapeFor,
@@ -1002,6 +1011,37 @@ var WORLD_LIB = (() => {
       const mine = agent ? tasks.filter((task) => task.ownerAgentId === agent.id) : [];
       return { desk, agent, tasks: mine, working: mine.some((task) => task.stage === "progress") };
     });
+  }
+
+  // apps/web/src/world/gestures.ts
+  var GLIDE_FRICTION = 0.92;
+  var GLIDE_STOP = 0.05;
+  function glideStep(velocity) {
+    const next = velocity * GLIDE_FRICTION;
+    return Math.abs(next) < GLIDE_STOP ? 0 : next;
+  }
+  function glideDistance(velocity) {
+    let v = velocity;
+    let total = 0;
+    for (let i = 0; i < 600 && v !== 0; i += 1) {
+      total += v;
+      v = glideStep(v);
+    }
+    return total;
+  }
+  var distanceBetween = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  var midpoint = (a, b) => ({
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2
+  });
+  function pinchCamera(start, distance, mid) {
+    if (start.distance <= 0) return start.camera;
+    const zoomed = zoomBy(start.camera, distance / start.distance, start.mid.x, start.mid.y);
+    return { ...zoomed, x: zoomed.x + (mid.x - start.mid.x), y: zoomed.y + (mid.y - start.mid.y) };
+  }
+  var DOUBLE_CLICK_FACTOR = 1.6;
+  function doubleClickZoom(camera, px, py, invert = false) {
+    return zoomBy(camera, invert ? 1 / DOUBLE_CLICK_FACTOR : DOUBLE_CLICK_FACTOR, px, py);
   }
   return __toCommonJS(demo_entry_exports);
 })();

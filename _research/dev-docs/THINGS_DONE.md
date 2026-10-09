@@ -1161,5 +1161,7 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   mark is rasterised by a dependency-free PNG encoder (scripts/gen-icons.mjs, --check in the
   gate) into favicon sizes, the apple touch icon and the manifest, all linked from index.html.
   OrgTree already retired with round six. Gates green: verify 10/10 (icon sync added), smoke
-  92/92, web tests 105/105. Open remainder, honestly logged: the prototype's world.js still
-  carries its own copy of the gesture code; rewiring it onto world-lib is the next small task.
+  92/92, web tests 105/105. The prototype's world.js now calls the SAME shared gestures (doubleClickZoom,
+  pinchCamera, glideStep, distanceBetween, midpoint — exported through world-lib), so both
+  hosts move identically; the design gate (15) and its browser probe (11) are green on the
+  rewired prototype.

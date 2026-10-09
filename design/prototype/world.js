@@ -269,9 +269,8 @@
       var before = V.camera;
       V.camera = L().clampCamera(next, b.width, b.height);
       V.target = V.camera;
-      inertia.vx *= 0.92; inertia.vy *= 0.92;
-      if (Math.abs(inertia.vx) < 0.05) inertia.vx = 0;
-      if (Math.abs(inertia.vy) < 0.05) inertia.vy = 0;
+      inertia.vx = L().glideStep(inertia.vx);
+      inertia.vy = L().glideStep(inertia.vy);
       if (V.camera.x === before.x && V.camera.y === before.y) { inertia.vx = 0; inertia.vy = 0; }  /* hit the edge */
       moving = true;
     }
@@ -370,9 +369,9 @@
     }, { passive: false });
 
     el.addEventListener('dblclick', function (ev) {
+      /* the shared gesture layer (world/gestures.ts): same factor, same anchor, both hosts */
       var b = box();
-      var factor = ev.shiftKey ? 1 / 1.6 : 1.6;
-      aim(L().zoomBy(V.target, factor, ev.clientX - b.left, ev.clientY - b.top));
+      aim(L().doubleClickZoom(V.target, ev.clientX - b.left, ev.clientY - b.top, ev.shiftKey));
     });
 
     el.addEventListener('pointerdown', function (ev) {
@@ -385,8 +384,8 @@
       if (ids.length === 2) {
         var a = pointers[ids[0]], b2 = pointers[ids[1]];
         pinching = {
-          dist: Math.max(1, Math.hypot(b2.x - a.x, b2.y - a.y)),
-          mid: { x: (a.x + b2.x) / 2, y: (a.y + b2.y) / 2 },
+          distance: Math.max(1, L().distanceBetween(a, b2)),
+          mid: L().midpoint(a, b2),
           camera: { scale: V.camera.scale, x: V.camera.x, y: V.camera.y },
         };
         panning = null;
@@ -407,10 +406,9 @@
       if (pinching && Object.keys(pointers).length >= 2) {
         var ids = Object.keys(pointers);
         var a = pointers[ids[0]], b2 = pointers[ids[1]];
-        var dist = Math.max(1, Math.hypot(b2.x - a.x, b2.y - a.y));
-        var mid = { x: (a.x + b2.x) / 2, y: (a.y + b2.y) / 2 };
-        var scaled = L().zoomAbout(pinching.camera, pinching.camera.scale * (dist / pinching.dist), mid.x - b.left, mid.y - b.top);
-        place(L().panBy(scaled, mid.x - pinching.mid.x, mid.y - pinching.mid.y));
+        /* the shared pinch: scale by the distance ratio, the opening midpoint stays under the
+           current one — identical to the app's world (world/gestures.ts). */
+        place(L().pinchCamera(pinching, Math.max(1, L().distanceBetween(a, b2)), L().midpoint(a, b2)));
         return;
       }
 

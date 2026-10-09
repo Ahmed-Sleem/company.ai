@@ -29,4 +29,8 @@ export { PROP_PATHS, PROP_GRID, shapeFor } from './prop-paths';
 
 /* Who sits where. */
 export { seatAgents } from './seat';
+export {
+  DOUBLE_CLICK_FACTOR, GLIDE_FRICTION, GLIDE_STOP,
+  distanceBetween, doubleClickZoom, glideDistance, glideStep, midpoint, pinchCamera,
+} from './gestures';
 export type { Seat, SeatableAgent, SeatTask } from './seat';
