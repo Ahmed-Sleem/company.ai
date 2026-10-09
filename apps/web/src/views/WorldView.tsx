@@ -116,6 +116,9 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<PinchStart | null>(null);
   const glide = useRef({ vx: 0, vy: 0, on: false });
+  /** The previous pointer position — glide inherits a FRAME of travel, never the whole drag.
+      (Round seven bug: velocity read the drag's total length, so letting go flung the view.) */
+  const panLast = useRef<{ x: number; y: number } | null>(null);
   const fitted = useRef(true);
   const dragging = useRef<{ kind: 'prop' | 'desk' | 'room'; id: string; dx: number; dy: number } | null>(null);
   const resizing = useRef<{ id: string; px: number; py: number; w: number; h: number } | null>(null);
@@ -387,6 +390,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       dragging.current = null;
       return;
     }
+    panLast.current = { x: event.clientX, y: event.clientY };
     const startedOnFurniture = (event.target as Element).closest?.('.desk, .prop');
     if (startedOnFurniture && !grabbed) return;
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
@@ -455,8 +459,11 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     }
     const pan = panning.current;
     if (!pan) return;
-    // The frame-to-frame travel is the velocity the glide will inherit on release.
-    glide.current = { vx: event.clientX - pan.x, vy: event.clientY - pan.y, on: false };
+    // The frame-to-frame travel is the velocity the glide will inherit on release — never the
+    // drag's total length, or letting go would fling the studio across the grid.
+    const last = panLast.current ?? { x: event.clientX, y: event.clientY };
+    glide.current = { vx: event.clientX - last.x, vy: event.clientY - last.y, on: false };
+    panLast.current = { x: event.clientX, y: event.clientY };
     aim(panBy(pan.camera, event.clientX - pan.x, event.clientY - pan.y));
   };
 
@@ -735,9 +742,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                               {t('deleteRoom', lang)}
                             </button>
                           </div>
-                        ) : (
-                          <p className="small dim">{t('roomEditHint', lang)}</p>
-                        )}
+                        ) : null}
                       </>
                     ) : null}
                   </div>

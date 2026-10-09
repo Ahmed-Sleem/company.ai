@@ -172,7 +172,6 @@ export const STRINGS = {
   roomNameLabel: { en: 'Room name', ar: 'اسم الغرفة' },
   roomThemeLabel: { en: 'Room style', ar: 'نمط الغرفة' },
   deleteRoom: { en: 'Remove room', ar: 'احذف الغرفة' },
-  roomEditHint: { en: 'Turn on Build, then drag a room to move it, its corner to resize, or pick it to rename.', ar: 'شغّل وضع التحرير، ثم اسحب الغرفة لتحريكها، أو زاويتها لتغيير حجمها، أو اخترها لإعادة تسميتها.' },
   themeTitle: { en: 'Theme', ar: 'السمة' },
   themeNote: { en: 'Dark, light, or follow your device.', ar: 'داكن أو فاتح أو حسب جهازك.' },
   themeDark: { en: 'Dark', ar: 'داكن' },
@@ -332,7 +331,6 @@ export const STRINGS = {
   taskCount: { en: '{n} tasks', ar: '{n} مهام' },
   // Build mode, inside the world.
   build: { en: 'Build', ar: 'التحرير' },
-  buildHint: { en: 'Build mode: drag furniture or a desk, arrows nudge nothing yet, Delete removes. Snaps to the 16-unit grid.', ar: 'وضع التحرير: اسحب الأثاث أو المكتب، وزر الحذف يزيله. يلتصق بشبكة 16.' },
   undo: { en: 'Undo', ar: 'تراجع' },
   resetPlan: { en: 'Start again', ar: 'ابدأ من جديد' },
   buildMoved: { en: 'Moved.', ar: 'تم النقل.' },

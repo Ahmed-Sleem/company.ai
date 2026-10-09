@@ -605,9 +605,10 @@ h3 { font-size: var(--base); }
 .studio-clock { display: inline-flex; flex-direction: column; align-items: center; gap: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--line); padding: var(--s1) var(--s2); }
 .studio-clock svg { inline-size: var(--app-clock); block-size: var(--app-clock); display: block; }
 .studio-clock small { font-size: var(--sh-fine); color: var(--muted); }
-.clock-work { stroke: var(--accent); stroke-width: 6; stroke-linecap: butt; }
-.clock-off { stroke: var(--soft); stroke-width: 6; }
-.clock-hand { stroke: var(--text); stroke-width: 2; }
+.clock-work { stroke: var(--accent); stroke-width: 5; }
+.clock-off { stroke: var(--soft); stroke-width: 5; }
+.clock-tick { stroke: var(--dim); stroke-width: 2; }
+.clock-hand { stroke: var(--text); stroke-width: 2; stroke-linecap: round; }
 .clock-pin { fill: var(--text); }
 .desk-bubble { position: absolute; inset-block-end: calc(100% + var(--s1)); inset-inline-start: 50%; transform: translateX(-50%); background: var(--raised); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); color: var(--text); font-size: var(--sh-fine); padding: var(--s1) var(--s2); white-space: nowrap; max-inline-size: var(--app-bubble-w); overflow: hidden; text-overflow: ellipsis; z-index: 3; }
 [dir='rtl'] .desk-bubble { transform: translateX(50%); }

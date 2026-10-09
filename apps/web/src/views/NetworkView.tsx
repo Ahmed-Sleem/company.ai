@@ -188,6 +188,9 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     (event.target as Element).setPointerCapture?.(event.pointerId);
     dragNode.current = id;
     graph.byId[id]!.fixed = true;
+    // Round seven bug: the hover pin held the grabbed node at its hover spot every frame, so
+    // the drag was a tug-of-war the pointer lost. While a node is held, the hand outranks the pin.
+    pin.current = null;
     alpha.current = Math.max(alpha.current, 0.25); // a grabbed node wakes the graph up
     // REQ-38: grabbing is not inspecting. The drag moves the node; the inspector waits for
     // the double-click (or the accessible list beside the toggle).
@@ -216,8 +219,10 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
 
   const onPointerUp = () => {
     if (dragNode.current) {
+      const held = graph.byId[dragNode.current];
       graph.byId[dragNode.current]!.fixed = false;
       dragNode.current = null;
+      if (held && hover === held.id) pin.current = { id: held.id, x: held.x, y: held.y };
     }
     panning.current = null;
   };
