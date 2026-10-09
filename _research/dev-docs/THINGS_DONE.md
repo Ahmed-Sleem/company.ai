@@ -1101,3 +1101,15 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - Validation: `bash scripts/verify.sh` → 10/10 green; web 87/87; smoke 68/68; namespace lock
   clean (ids numbered from the data, never clock/random). Screenshots:
   design/screenshots/{inbox-slide,comms-messenger,network-graph,settings,world-fit,team}-2026-10-09.png.
+
+## 2026-10-09 — C21/C22/C23 (second-round comments)
+
+- C21 #network (`16e4d6c`): graph chooser window (everything/people/tasks/conversations);
+  node windows with real controls — legal task-stage transitions, priority, person status,
+  jump to the conversation; the layout keeps an alpha floor so it always gently drifts,
+  pauses under the cursor, and honours reduced-motion.
+- C22 #comms (`de1147c`): rail and log own their scroll; messages from the same sender group;
+  pixel name + status dot in the head; raised composer with a two-row box and send hint.
+- C23 #team (`346c7cf`, fix `a9fb00e`): teammates are typed in and edited — name, role,
+  details, pixel portrait from the sprite set, reports-to placement; store gained `addAgent`
+  (`p-new-N` ids); validation errors are user-facing; smoke 74/74, gate 10/10.

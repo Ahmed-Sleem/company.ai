@@ -81,16 +81,38 @@ Comments (the work list):
 ## 2026-10-09 (evening) — second round of comments
 
 - C18 #comms and #network must fit the viewport, page not scrollable (like the world fix).
+  **DONE 2026-10-09** — commit `8fda913`: the fit chain covers world/comms/network; verified
+  page scrollHeight == clientHeight on all three, zero page overflow at 1280×800.
 - C19 #world: remove the staff/working/tasks stats; all controls collapse into one menu that
   opens/closes, giving the space to the viewer itself; rooms become customisable/buildable.
+  **DONE 2026-10-09** — commit `f8ff746`: stats strip gone, one floating menu carries every
+  control, rooms are buildable (drag a rectangle, resize handle, rename, theme, delete, undo),
+  everything persists in the save; browser-verified a new "Sound Booth" room end to end.
 - C20 #settings: remove the "[ company.ai ] Designed to stay focused…" panel and the keyboard
   shortcuts panel (the whole aside).
+  **DONE 2026-10-09** — commit `3c14f39`: the aside, its strings and its CSS are deleted; the
+  settings screen is a single column of the real controls.
 - C21 #network: a controls window to choose which graph to see (tasks, people, …); clicking a
   node opens its details with options to control that task/employee; the graph is dynamic,
   always gently moving, smooth like Obsidian.
+  **DONE 2026-10-09** — commit `16e4d6c`: the graph window picks Everything / People / Tasks /
+  Conversations; a node click opens its window — a task moves stage (only legal transitions) and
+  priority, a person's status changes, a conversation jumps to #comms; the layout never fully
+  settles (alpha floor 0.012) so it breathes like Obsidian's, pauses under the cursor, and
+  freezes entirely with reduced-motion. Verified: drift observed between frames, stage move and
+  status change persisted, 0 page errors.
 - C22 #comms: the Teammates list scrolls by itself (not the whole page); the chat interface —
   details and the text box — redesigned to be more pleasing.
+  **DONE 2026-10-09** — commit `de1147c`: the rail and the log each own their scroll (page does
+  not move); consecutive messages from one sender group under a single name line, the header
+  gets a pixel name and status dot, and the composer is a calmer raised strip with a two-row
+  box and an Enter/Shift+Enter hint.
 - C23 #team: people must be editable (change their info), exactly per the main plan and the
   requirements (REQ-17: user-typed name, role, details; pixel portrait; place in the hierarchy).
+  **DONE 2026-10-09** — commits `346c7cf` + `a9fb00e`: one editor window adds a teammate and
+  edits an existing one — typed name/role (en+ar), details, a portrait picked from the 66-sprite
+  set, and "reports to" placing them in the hierarchy; validation speaks to the user; the save
+  numbers new people `p-new-N`. Verified: empty name refused, Nour added + survived reload,
+  Aria edited to "Aria Zahra"; 3 new smoke checks (74/74), gate 10/10.
 - C24 Complete the next phase in the plan → Phase D: landing page + intro wizard
   (REQ-33/14/15/16), resumable, everything editable later.
