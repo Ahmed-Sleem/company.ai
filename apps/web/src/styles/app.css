@@ -775,6 +775,13 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 }
 
 /* ── team roster: cards are the people themselves (owner C8) ──────────────────────────────── */
+.team-actions { display: flex; justify-content: flex-end; margin-block: var(--s4) 0; }
+.team-form { display: flex; flex-direction: column; gap: var(--s4); }
+.team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
+.portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: var(--s2); max-block-size: 150px; overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
+.portrait-grid button { background: var(--surface); border: var(--app-hair) solid var(--soft); padding: 2px; display: flex; align-items: center; justify-content: center; }
+.portrait-grid button:hover { border-color: var(--accent); }
+.portrait-grid button[aria-pressed='true'] { border: var(--app-stroke) solid var(--accent); background: var(--accent-bg); }
 .team-roster { gap: var(--s6); }
 .team-card {
   inline-size: 100%; text-align: start; font: inherit; color: inherit; cursor: pointer;

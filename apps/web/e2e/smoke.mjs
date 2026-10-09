@@ -647,6 +647,47 @@ try {
     check('and the assets it points at are really there', asset?.status === 200, `${assetPath} → ${asset?.status}`);
   }
 
+  // 5i — the team editor (owner C23 / REQ-17): people are typed in by the owner, given a pixel
+  // portrait from the sprite set and a place in the hierarchy — and it all survives a reload.
+  {
+    await page.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.team-card');
+    const before = await page.locator('.team-card').count();
+    await page.click('[data-team=add]');
+    await page.waitForSelector('.team-form');
+    await page.click('[data-team=save]');
+    check('the teammate editor refuses a nameless person with a message the owner reads',
+      (await page.textContent('[data-team=error]'))?.includes('name') ?? false);
+    await page.fill('[data-team=name]', 'Nour');
+    await page.fill('[data-team=role]', 'Quality engineer');
+    await page.click('[data-portrait="12"]');
+    await page.click('[data-team=save]');
+    await page.waitForFunction((n) => document.querySelectorAll('.team-card').length === n, before + 1);
+    const added = await page.evaluate(() => {
+      const a = JSON.parse(localStorage.getItem('company.ai.save.v1')).state.agents;
+      return a[a.length - 1];
+    });
+    check('a typed-in teammate joins the roster with the picked portrait and a save-given id',
+      added.name === 'Nour' && added.role === 'Quality engineer' && added.avatar === 12 && added.id === 'p-new-1',
+      `${added.id} ${added.name} avatar ${added.avatar}`);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.team-card');
+    check('the typed-in teammate survives a reload',
+      (await page.textContent('.roster'))?.includes('Nour') ?? false);
+    // an existing teammate opens the same editor, pre-filled, and the change lands in the save
+    await page.locator('.team-card').first().click();
+    await page.waitForSelector('[data-team=edit]');
+    await page.click('[data-team=edit]');
+    await page.waitForSelector('.team-form');
+    const prefilled = await page.inputValue('[data-team=name]');
+    await page.fill('[data-team=name]', 'Aria Zahra');
+    await page.click('[data-team=save]');
+    await page.waitForFunction(() => (document.querySelector('.roster')?.textContent ?? '').includes('Aria Zahra'));
+    check('an existing teammate is editable — same window, pre-filled, saved', prefilled === 'Aria');
+    // hand the next run a clean save
+    await page.evaluate(() => localStorage.removeItem('company.ai.save.v1'));
+  }
+
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
   check('no failed requests', badRequests.length === 0, badRequests.join(', ').slice(0, 200));
 

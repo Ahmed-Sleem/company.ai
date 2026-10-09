@@ -8,11 +8,13 @@
  */
 import { useState } from 'react';
 import { useStore, type AgentRow } from '../data/store';
+import { PORTRAITS } from '../lib/avatars.data';
 import { t, type Lang } from '../lib/i18n';
 import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { localized, STATUS_KEY } from '../lib/format';
 import { Avatar } from '../components/Avatar';
+import { Icon } from '../components/Icon';
 import { Badge, toneOf } from '../components/Badge';
 import { Dialog } from '../components/Dialog';
 import { STAGE_LABELS } from '@company/contracts';
@@ -24,6 +26,8 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
   const agents = useStore((s) => s.agents);
   const tasks = useStore((s) => s.tasks);
   const [openId, setOpenId] = useState<string | null>(null);
+  /** 'add' opens a blank editor; an agent id opens it pre-filled (owner C23 / REQ-17). */
+  const [editing, setEditing] = useState<'add' | string | null>(null);
 
   const state: DataStateKind = forcedState && forcedState !== 'default' ? forcedState : 'default';
 
@@ -55,6 +59,11 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
               <div className="stat"><span className="stat-label">{t('teamOpen', lang)}</span><span className="stat-value">{open}</span></div>
             </div>
           ) : null}
+          <div className="team-actions">
+            <button type="button" className="btn primary" data-team="add" onClick={() => setEditing('add')}>
+              <Icon name="plus" />{t('teamAdd', lang)}
+            </button>
+          </div>
           <div className="roster team-roster">
             {agents.map((agent) => {
               const theirs = openTasksOf(agent);
@@ -105,6 +114,12 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
         title={profile ? name(profile) : ''}
         eyebrow={t('team', lang)}
         lang={lang}
+        actions={profile ? (
+          <button type="button" className="btn" data-team="edit"
+            onClick={() => { const id = profile.id; setOpenId(null); setEditing(id); }}>
+            <Icon name="settings" />{t('teamEditBtn', lang)}
+          </button>
+        ) : null}
       >
         {profile ? (
           <div className="team-profile">
@@ -137,6 +152,120 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
           </div>
         ) : null}
       </Dialog>
+
+      <AgentEditor
+        lang={lang}
+        open={editing !== null}
+        agent={editing !== null && editing !== 'add' ? agents.find((a) => a.id === editing) ?? null : null}
+        onClose={() => setEditing(null)}
+      />
     </>
+  );
+}
+
+/**
+ * The teammate editor (owner C23 / REQ-17): everything about a person is something the owner
+ * types — the name, the role, the details — plus a pixel portrait picked from the sprite set
+ * and a place in the hierarchy. The same window adds a new teammate and edits an existing one;
+ * both write straight into the save, so the roster, the org chart and the network see it at once.
+ */
+function AgentEditor({ lang, open, agent, onClose }: {
+  lang: Lang;
+  open: boolean;
+  /** null = adding someone new. */
+  agent: AgentRow | null;
+  onClose: () => void;
+}) {
+  const agents = useStore((s) => s.agents);
+  const patchAgent = useStore((s) => s.patchAgent);
+  const addAgent = useStore((s) => s.addAgent);
+  const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
+  const [role, setRole] = useState('');
+  const [roleAr, setRoleAr] = useState('');
+  const [focus, setFocus] = useState('');
+  const [avatar, setAvatar] = useState(0);
+  const [managerId, setManagerId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  /** Bumped every time the window opens so the form starts from the row it edits. */
+  const [seed, setSeed] = useState(0);
+  const [lastOpen, setLastOpen] = useState(false);
+  if (open !== lastOpen) {
+    setLastOpen(open);
+    if (open) {
+      setName(agent?.name ?? ''); setNameAr(agent?.nameAr ?? '');
+      setRole(agent?.role ?? ''); setRoleAr(agent?.roleAr ?? '');
+      setFocus(agent?.focus ?? ''); setAvatar(agent?.avatar ?? 0);
+      setManagerId(agent?.managerId ?? ''); setError(null);
+      setSeed(seed + 1);
+    }
+  }
+
+  const save = () => {
+    if (name.trim() === '') { setError(t('teamErrName', lang)); return; }
+    if (role.trim() === '') { setError(t('teamErrRole', lang)); return; }
+    const fields = {
+      name: name.trim(), nameAr: nameAr.trim() === '' ? null : nameAr.trim(),
+      role: role.trim(), roleAr: roleAr.trim() === '' ? null : roleAr.trim(),
+      focus: focus.trim() === '' ? null : focus.trim(), focusAr: null,
+      avatar, managerId: managerId === '' ? null : managerId,
+    };
+    if (agent) patchAgent(agent.id, fields); else addAgent(fields);
+    onClose();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={agent ? t('teamEditTitle', lang) : t('teamAddTitle', lang)}
+      eyebrow={t('team', lang)}
+      lang={lang}
+      actions={(
+        <>
+          <button type="button" className="btn" onClick={onClose}>{t('cancel', lang)}</button>
+          <button type="button" className="btn primary" data-team="save" onClick={save}>{t('saveChanges', lang)}</button>
+        </>
+      )}
+    >
+      <div className="team-form" key={seed}>
+        <label className="field">{t('teamNameLabel', lang)}
+          <input value={name} data-team="name" onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label className="field">{t('teamNameArLabel', lang)}
+          <input value={nameAr} dir="rtl" onChange={(e) => setNameAr(e.target.value)} />
+        </label>
+        <label className="field">{t('teamRoleLabel', lang)}
+          <input value={role} data-team="role" onChange={(e) => setRole(e.target.value)} />
+        </label>
+        <label className="field">{t('teamRoleArLabel', lang)}
+          <input value={roleAr} dir="rtl" onChange={(e) => setRoleAr(e.target.value)} />
+        </label>
+        <label className="field">{t('teamDetailsLabel', lang)}
+          <textarea value={focus} rows={2} onChange={(e) => setFocus(e.target.value)} />
+        </label>
+        <div className="field">
+          <span>{t('teamPortraitLabel', lang)}</span>
+          <div className="portrait-grid" role="group" aria-label={t('teamPortraitLabel', lang)}>
+            {PORTRAITS.map((_, i) => (
+              <button type="button" key={i} data-portrait={i} aria-pressed={i === avatar}
+                aria-label={`${t('teamPortraitLabel', lang)} ${i + 1}`}
+                onClick={() => setAvatar(i)}>
+                <Avatar index={i} size="sm" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="field">{t('teamManagerLabel', lang)}
+          <select value={managerId} data-team="manager" onChange={(e) => setManagerId(e.target.value)}>
+            <option value="">{t('teamManagerYou', lang)}</option>
+            {agents.filter((a) => a.id !== agent?.id).map((a) => (
+              <option key={a.id} value={a.id}>{localized(a.name, a.nameAr, lang)}</option>
+            ))}
+          </select>
+        </label>
+        {error ? <p className="field-error" data-team="error" role="alert">{error}</p> : null}
+      </div>
+    </Dialog>
   );
 }

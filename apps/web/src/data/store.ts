@@ -104,6 +104,11 @@ interface SaveState {
   reset: () => void;
   patchTask: (id: string, patch: Partial<TaskRow>) => TaskRow | null;
   patchAgent: (id: string, patch: Partial<AgentRow>) => AgentRow | null;
+  /** A person the owner typed in themselves (REQ-17). The save numbers them: `p-new-N`. */
+  addAgent: (input: {
+    name: string; nameAr: string | null; role: string; roleAr: string | null;
+    focus: string | null; focusAr: string | null; avatar: number; managerId: string | null;
+  }) => AgentRow;
   addTask: (task: TaskRow) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
   startThread: (agentId: string, title: string) => void;
@@ -125,7 +130,7 @@ const fixture = () => ({
 
 export const useStore = create<SaveState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...fixture(),
       load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
       reset: () => set(() => ({ ...fixture(), savedAt: new Date().toISOString() })),
@@ -152,6 +157,22 @@ export const useStore = create<SaveState>()(
           }),
         }));
         return out;
+      },
+      addAgent: (input) => {
+        // The save is the database, so it numbers the person from what it already holds —
+        // no clock, no dice (namespace lock).
+        const max = get().agents.reduce((m, a) => {
+          const n = a.id.startsWith('p-new-') ? Number(a.id.slice(6)) : 0;
+          return Number.isFinite(n) && n > m ? n : m;
+        }, 0);
+        const row: AgentRow = {
+          id: `p-new-${max + 1}`,
+          name: input.name, nameAr: input.nameAr, role: input.role, roleAr: input.roleAr,
+          department: null, focus: input.focus, focusAr: input.focusAr,
+          avatar: input.avatar, status: 'idle', capabilities: [], managerId: input.managerId,
+        };
+        set((state) => ({ savedAt: new Date().toISOString(), agents: [...state.agents, row] }));
+        return row;
       },
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
       addMessage: (threadId, from, text) => set((state) => {
