@@ -64,3 +64,16 @@ Comments (the work list):
   on top of the same engine if wanted.
 - F3 — the prototype's settings has a "Demo states" inspector. The app has its own `?state=`
   mechanism and tests for the four states, so the inspector was not duplicated into the product.
+
+## 2026-10-09 (later) — push discipline + the style extraction
+
+- M4 Push every step directly, immediately: the sandbox can reset and nothing may be lost.
+  → standing rule from now on: commit + push right after each working step, no batching.
+- C17 Write an md file like the rule files holding every visual detail of the current project's
+  pixel style, fully general (not tied to this system), no layout/structure — only the visuals:
+  pixels, sizes, colours, shadows, everything. → DONE 2026-10-09 —
+  `_research/rules/PIXEL_VISUAL_STYLE.md`: 13 sections covering the measurement system (every
+  named raw value), the full colour system (dark, light, 4 palettes × both themes, custom-accent
+  mechanics), typography, the shadow/frame language (incl. the stepped-corner recipe), component
+  visual recipes, icon and portrait pixel rules, motion tokens and keyframes, the CRT overlay,
+  accessibility, and a copy-paste token block. Pushed as 897b45f.
