@@ -68,6 +68,7 @@ export const STRINGS = {
   graphLinks: { en: 'links', ar: 'روابط' },
   graphOpenChat: { en: 'Open the conversation', ar: 'افتح المحادثة' },
   graphYouNote: { en: 'That is you — the whole company reports here.', ar: 'هذا أنت — الشركة كلها تتبعك.' },
+  composerHint: { en: 'Enter sends · Shift+Enter adds a line', ar: 'Enter للإرسال · Shift+Enter لسطر جديد' },
   reset: { en: 'Reset', ar: 'إعادة التعيين' },
   placeTitle: { en: 'Place furniture', ar: 'أضف أثاثاً' },
   controls: { en: 'Controls', ar: 'أدوات التحكم' },

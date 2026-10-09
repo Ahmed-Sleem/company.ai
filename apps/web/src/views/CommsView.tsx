@@ -90,7 +90,10 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   <header className="chat-head">
                     <Avatar index={agent.avatar} />
                     <span className="grow">
-                      <strong className="thread-name">{localized(agent.name, agent.nameAr, lang)}</strong>
+                      <strong className="thread-name">
+                        {localized(agent.name, agent.nameAr, lang)}
+                        <span className={`status-dot ${agent.status}`} title={agent.status} />
+                      </strong>
                       <span className="small dim" style={{ display: 'block' }}>
                         {localized(agent.role, agent.roleAr, lang)} · {t(STATUS_KEY[agent.status] ?? 'statusIdle', lang)}
                       </span>
@@ -99,19 +102,25 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   </header>
 
                   <div className="chat-log" ref={logRef} role="log" aria-live="polite">
-                    {thread && thread.messages.map((m) => {
+                    {thread && thread.messages.map((m, i) => {
                       const own = m.from === 'you';
+                      const prev = thread.messages[i - 1];
+                      const grouped = prev !== undefined && prev.from === m.from;
                       return (
-                        <article className={`message${own ? ' own' : ''}`} key={m.id}>
-                          {own
-                            ? <span className="initial">{operator.name.charAt(0).toUpperCase()}</span>
-                            : <Avatar index={agent.avatar} size="sm" />}
+                        <article className={`message${own ? ' own' : ''}${grouped ? ' grouped' : ''}`} key={m.id}>
+                          {grouped
+                            ? <span className="avatar-space" aria-hidden="true" />
+                            : own
+                              ? <span className="initial">{operator.name.charAt(0).toUpperCase()}</span>
+                              : <Avatar index={agent.avatar} size="sm" />}
                           <div className="message-body">
-                            <div className="message-meta">
-                              <strong>{own ? operator.name : localized(agent.name, agent.nameAr, lang)}</strong>
-                              <time>{new Date(m.at).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</time>
-                              {!own ? <span className="badge">AI</span> : null}
-                            </div>
+                            {grouped ? null : (
+                              <div className="message-meta">
+                                <strong>{own ? operator.name : localized(agent.name, agent.nameAr, lang)}</strong>
+                                <time>{new Date(m.at).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</time>
+                                {!own ? <span className="badge">AI</span> : null}
+                              </div>
+                            )}
                             <div className="message-text">{m.text}</div>
                           </div>
                         </article>
@@ -131,7 +140,7 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   {thread ? (
                     <form className="composer" onSubmit={send}>
                       <label className="sr-only" htmlFor="composer-input">{t('chatPlaceholder', lang)}</label>
-                      <textarea id="composer-input" rows={1} value={draft}
+                      <textarea id="composer-input" rows={2} value={draft}
                         placeholder={t('chatPlaceholder', lang)}
                         onChange={(e) => setDraft(e.target.value)}
                         onKeyDown={(e) => {
@@ -140,9 +149,12 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                             send(e);
                           }
                         }} />
-                      <button type="submit" className="btn primary" disabled={draft.trim() === ''}>
-                        <Icon name="send" />{t('chatSend', lang)}
-                      </button>
+                      <div className="composer-side">
+                        <button type="submit" className="btn primary" disabled={draft.trim() === ''}>
+                          <Icon name="send" />{t('chatSend', lang)}
+                        </button>
+                        <span className="composer-hint">{t('composerHint', lang)}</span>
+                      </div>
                     </form>
                   ) : null}
                 </>
