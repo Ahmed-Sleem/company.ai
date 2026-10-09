@@ -44,9 +44,9 @@ const tasks: TaskRow[] = [
 
 const agents: AgentRow[] = [
   { id: ANA, name: 'Aria', nameAr: 'آريا', role: 'Lead engineer', roleAr: null, department: null,
-    focus: null, focusAr: null, avatar: 3, status: 'working', capabilities: [], managerId: null },
+    focus: null, focusAr: null, avatar: 3, status: 'working', capabilities: [], managerId: null, model: null },
   { id: LEO, name: 'Leo', nameAr: 'ليو', role: 'Software engineer', roleAr: null, department: null,
-    focus: null, focusAr: null, avatar: 2, status: 'working', capabilities: [], managerId: ANA },
+    focus: null, focusAr: null, avatar: 2, status: 'working', capabilities: [], managerId: ANA, model: null },
 ];
 
 /** A named control in the form, typed. `namedItem` returns an element *or* a RadioNodeList. */

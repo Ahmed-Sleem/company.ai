@@ -696,6 +696,27 @@ try {
     await page.click('[data-team=save]');
     await page.waitForFunction(() => (document.querySelector('.roster')?.textContent ?? '').includes('Aria Zahra'));
     check('an existing teammate is editable — same window, pre-filled, saved', prefilled === 'Aria');
+
+    // Phase E (REQ-18/19): each person carries their own model connection, and the test button
+    // makes a tiny REAL request to the chosen provider. The provider's own error is a passing
+    // observation — what the rule asks for is that its words reach the owner.
+    await page.locator('.team-card').first().click();
+    await page.waitForSelector('[data-team=edit]');
+    await page.click('[data-team=edit]');
+    await page.waitForSelector('[data-team=provider]');
+    await page.selectOption('[data-team=provider]', 'anthropic');
+    await page.fill('[data-team=model-id]', 'claude-sonnet-4-5');
+    await page.fill('[data-team=model-key]', 'sk-ant-smoke');
+    await page.click('[data-team=test-conn]');
+    await page.waitForSelector('[data-team=test-result]', { timeout: 20_000 });
+    check('the connection test talks to the provider and reports its own words back',
+      ((await page.textContent('[data-team=test-result]')) ?? '').length > 3);
+    await page.click('[data-team=save]');
+    const conn = await page.evaluate(() => {
+      const a = JSON.parse(localStorage.getItem('company.ai.save.v1')).state.agents[0];
+      return a.model?.provider;
+    });
+    check('the connection is saved on the person, in the visitor’s own save', conn === 'anthropic', String(conn));
     // hand the next run a clean save
     await page.evaluate(() => localStorage.removeItem('company.ai.save.v1'));
   }

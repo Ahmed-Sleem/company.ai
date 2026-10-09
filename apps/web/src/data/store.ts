@@ -9,6 +9,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import demo from './demo.json';
+import type { ModelConnection } from '../lib/providers';
 import type { Plan as WorldPlan } from '../world/layout.data';
 
 export type { WorldPlan };
@@ -28,6 +29,8 @@ export interface AgentRow {
   managerId: string | null;
   errorReason?: string | null;
   pauseReason?: string | null;
+  /** The person's own model connection (REQ-18): provider, model, key — in the visitor's save. */
+  model: ModelConnection | null;
 }
 
 export type Stage = 'backlog' | 'progress' | 'review' | 'done';
@@ -146,6 +149,7 @@ interface SaveState {
   addAgent: (input: {
     name: string; nameAr: string | null; role: string; roleAr: string | null;
     focus: string | null; focusAr: string | null; avatar: number; managerId: string | null;
+    model: ModelConnection | null;
   }) => AgentRow;
   addTask: (task: TaskRow) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
@@ -169,7 +173,7 @@ const fixture = () => ({
   introDone: false,
   introDraft: null as IntroDraft | null,
   operator: { ...demo.operator },
-  agents: demo.agents.map((a) => ({ ...a })) as AgentRow[],
+  agents: demo.agents.map((a) => ({ model: null, ...a })) as AgentRow[],
   tasks: demo.tasks.map((t) => ({ ...t })) as TaskRow[],
   decisions: demo.decisions.map((d) => ({ ...d })) as DecisionRow[],
   threads: demo.threads.map((t) => ({ ...t, messages: t.messages.map((m) => ({ ...m })) })) as ThreadRow[],
@@ -219,6 +223,7 @@ export const useStore = create<SaveState>()(
           name: input.name, nameAr: input.nameAr, role: input.role, roleAr: input.roleAr,
           department: null, focus: input.focus, focusAr: input.focusAr,
           avatar: input.avatar, status: 'idle', capabilities: [], managerId: input.managerId,
+          model: input.model,
         };
         set((state) => ({ savedAt: new Date().toISOString(), agents: [...state.agents, row] }));
         return row;
@@ -241,6 +246,7 @@ export const useStore = create<SaveState>()(
           department: null, focus: e.focus, focusAr: null,
           avatar: e.avatar, status: 'idle', capabilities: [],
           managerId: e.managerId ? realId.get(e.managerId) ?? null : null,
+          model: null,
         }));
         if (draft.mode === 'edit') {
           // Reopened over an existing company (REQ-15): people keep their ids, and everything
@@ -248,7 +254,7 @@ export const useStore = create<SaveState>()(
           const agents: AgentRow[] = draft.employees.map((e) => {
             const base = e.sourceId ? state.agents.find((a) => a.id === e.sourceId) : null;
             return {
-              ...(base ?? { status: 'idle', capabilities: [], department: null, focusAr: null }),
+              ...(base ?? { status: 'idle', capabilities: [], department: null, focusAr: null, model: null }),
               id: e.sourceId ?? realId.get(e.id) ?? e.id,
               name: e.name, nameAr: e.nameAr, role: e.role, roleAr: e.roleAr,
               focus: e.focus, avatar: e.avatar,
@@ -339,19 +345,24 @@ export const useStore = create<SaveState>()(
     }),
     {
       name: 'company.ai.save.v1',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       // v1 → v2: the company grew a profile, and the intro arrived. Anyone who already has a
       // save has been through the front door the long way — let them in without the wizard.
+      // v2 → v3: every person grew a model connection slot (REQ-18); old saves get an empty one.
       migrate: (persisted, version) => {
-        const old = persisted as { company?: { name?: string } };
+        type Old = { company?: { name?: string }; agents?: unknown[] };
+        let old = persisted as Old;
         if (version < 2) {
-          return {
+          old = {
             ...old,
             company: { description: '', answers: [], ...(old.company ?? { name: 'Acme Studio' }) },
             introDone: true,
             introDraft: null,
-          };
+          } as Old;
+        }
+        if (version < 3) {
+          old = { ...old, agents: (old.agents ?? []).map((a) => ({ model: null, ...(a as object) })) };
         }
         return old;
       },

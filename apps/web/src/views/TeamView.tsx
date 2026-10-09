@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { useStore, type AgentRow } from '../data/store';
 import { PORTRAITS } from '../lib/avatars.data';
+import { PROVIDERS, testConnection, type ModelConnection, type TestResult } from '../lib/providers';
 import { t, type Lang } from '../lib/i18n';
 import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
@@ -187,6 +188,10 @@ function AgentEditor({ lang, open, agent, onClose }: {
   const [avatar, setAvatar] = useState(0);
   const [managerId, setManagerId] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /** The person's own model connection (REQ-18) — provider, model, key; tested for real (REQ-19). */
+  const [conn, setConn] = useState<ModelConnection>({ provider: 'openai', model: '', key: '', baseUrl: null });
+  const [testing, setTesting] = useState(false);
+  const [testRes, setTestRes] = useState<TestResult | null>(null);
   /** Bumped every time the window opens so the form starts from the row it edits. */
   const [seed, setSeed] = useState(0);
   const [lastOpen, setLastOpen] = useState(false);
@@ -197,6 +202,8 @@ function AgentEditor({ lang, open, agent, onClose }: {
       setRole(agent?.role ?? ''); setRoleAr(agent?.roleAr ?? '');
       setFocus(agent?.focus ?? ''); setAvatar(agent?.avatar ?? 0);
       setManagerId(agent?.managerId ?? ''); setError(null);
+      setConn(agent?.model ?? { provider: 'openai', model: '', key: '', baseUrl: null });
+      setTestRes(null); setTesting(false);
       setSeed(seed + 1);
     }
   }
@@ -210,7 +217,11 @@ function AgentEditor({ lang, open, agent, onClose }: {
       focus: focus.trim() === '' ? null : focus.trim(), focusAr: null,
       avatar, managerId: managerId === '' ? null : managerId,
     };
-    if (agent) patchAgent(agent.id, fields); else addAgent(fields);
+    const model = conn.model.trim() === '' && conn.key.trim() === '' ? null : {
+      ...conn, model: conn.model.trim(), key: conn.key.trim(),
+      baseUrl: conn.provider === 'custom' ? conn.baseUrl?.trim() || null : null,
+    };
+    if (agent) patchAgent(agent.id, { ...fields, model }); else addAgent({ ...fields, model });
     onClose();
   };
 
@@ -267,6 +278,52 @@ function AgentEditor({ lang, open, agent, onClose }: {
             ))}
           </select>
         </label>
+        <div className="field">
+          <span>{t('modelTitle', lang)}</span>
+          <div className="answer-row">
+            <label className="field">
+              <span className="sr-only">{t('providerLabel', lang)}</span>
+              <select value={conn.provider} data-team="provider"
+                onChange={(e) => setConn({ ...conn, provider: e.target.value as ModelConnection['provider'] })}>
+                {PROVIDERS.map((pr) => <option key={pr.id} value={pr.id}>{pr.label}</option>)}
+              </select>
+            </label>
+            <label className="field grow">
+              <span className="sr-only">{t('modelIdLabel', lang)}</span>
+              <input value={conn.model} placeholder={t('modelIdLabel', lang)} data-team="model-id"
+                onChange={(e) => setConn({ ...conn, model: e.target.value })} />
+            </label>
+          </div>
+          <div className="answer-row">
+            <label className="field grow">
+              <span className="sr-only">{t('keyLabel', lang)}</span>
+              <input type="password" value={conn.key} placeholder={t('keyLabel', lang)} data-team="model-key"
+                autoComplete="off" onChange={(e) => setConn({ ...conn, key: e.target.value })} />
+            </label>
+            {conn.provider === 'custom' ? (
+              <label className="field grow">
+                <span className="sr-only">{t('baseUrlLabel', lang)}</span>
+                <input value={conn.baseUrl ?? ''} placeholder={t('baseUrlLabel', lang)} data-team="model-base"
+                  onChange={(e) => setConn({ ...conn, baseUrl: e.target.value })} />
+              </label>
+            ) : null}
+          </div>
+          <div className="menu-row">
+            <button type="button" className="btn small" data-team="test-conn" disabled={testing || conn.key.trim() === ''}
+              onClick={() => {
+                setTesting(true); setTestRes(null);
+                testConnection(conn).then((result) => { setTestRes(result); setTesting(false); });
+              }}>
+              {testing ? t('testWorking', lang) : t('testConn', lang)}
+            </button>
+            {testRes ? (
+              <span className={`small${testRes.ok ? '' : ' field-error'}`} data-team="test-result" role="status">
+                {testRes.ok ? t('testOkMsg', lang) : testRes.message}
+              </span>
+            ) : null}
+          </div>
+          <span className="small dim">{t('modelNote', lang)}</span>
+        </div>
         {error ? <p className="field-error" data-team="error" role="alert">{error}</p> : null}
       </div> : null}
     </Dialog>
