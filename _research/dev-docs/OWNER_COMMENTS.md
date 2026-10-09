@@ -184,17 +184,37 @@ Comments (the work list):
 ## 2026-10-10 (later) — fifth round of comments
 
 - C34 #network: the canvas shows a blue "selected" border — remove it.
+  **DONE 2026-10-10** — commit `362d13a`: focus ring dropped; the pin window is the selection.
 - C35 inspectors (network + world): the card lacks contrast with what is underneath — improve.
+  **DONE 2026-10-10** — surfaces lifted off the canvas (`--app-surface-raise`), border + shadow.
 - C36 sidebar: move World Map directly under Network.
+  **DONE 2026-10-10** — order is now team · tasks · inbox · comms · network · world · settings.
 - C37 remove the "World Map / Overview / title / subtitle" head block; instead improve the
   topbar: drop "Acme Studio/", emphasise the view name (World Map, …).
+  **DONE 2026-10-10** — head blocks are screen-reader only; the topbar shows just the view name
+  in the display face; the company lives in the sidebar brand, so no prefix anywhere.
 - C38 remove the [a] logo from the top menu.
+  **DONE 2026-10-10** — brandmark gone from sidebar, landing, and wizard.
 - C39 #world: the grid must be infinite, not only inside the floor rectangle.
+  **DONE 2026-10-10** — the dotted plane follows the camera everywhere; the pan is free
+  (camera field 4000px, Fit is the way home; camera tests updated to the new contract).
 - C40 a LIVE toggle in world + network: bubbles over people (working on what, thinking,
   sleeping > 2h), agents walk to deliver to their counterpart and back; a circular clock with
   work/off hours in two colours and the current position.
+  **DONE 2026-10-10** — seat bubbles (task / review / thinking / idle / sleeping after hours),
+  studio clock (work vs off arcs + live hand), walker delivers done work to the manager's desk;
+  the network shows the same statuses as node sub-labels. Everything honours reduced-motion.
 - C41 #network: nodes must collide, never overlap; always in motion, never freeze.
+  **DONE 2026-10-10** — hover now pins only the hovered node while it is held; the rest keep
+  drifting; collision keeps every pair apart at every scale.
 - C42 furniture/world audit: gamify properly, room-type behaviours, mandatory rest room, no
   gaps in the logic — ASK THE OWNER with recommendations, he chooses.
+  **WAITING ON OWNER** — design questions sent 10 October 2026 (room set, energy, rest rule,
+  walks). Nothing is built until the answers are in.
 - C43 commits must read like a professional team's history — full detail per commit.
+  **DONE 2026-10-10** — from `362d13a` on, every commit carries a detailed body: what changed,
+  why, per-comment references, and the gate results.
 - Continue the next phase (Phase F — the engine).
+  **DONE 2026-10-10** — commit `362d13a`: work hours in prefs, the work loop
+  (progress → review → done with thread announcements), provider-or-local replies in Comms,
+  compiled system prompts (REQ-16/26/28/35). Gates green: verify 10/10, smoke 83/83, tests 87/87.
