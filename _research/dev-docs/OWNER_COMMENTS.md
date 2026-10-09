@@ -121,11 +121,29 @@ Comments (the work list):
 
 - C25 #world: the controls window needs a redesign, and it overlaps the people inspector —
   move it to the left side.
+  **DONE 2026-10-09** — commit `806af71`: the controls now float at the leading edge (left in
+  LTR), rebuilt as headed blocks — plan/rooms, zoom with its live scale read-out, build,
+  palette + room editor — with a header row and close button; the person drawer stays on the
+  end side and no longer collides (rects measured, no overlap).
 - C26 #network: the graph is perfect, but the inspector and controls are corrupted — some
   icons are very big; audit them. The same inspector must be shared with the world view.
+  **DONE 2026-10-09** — commit `806af71`: the audit found `.graph-stage svg {100%}` catching
+  every icon inside the floating windows (the rule meant for the canvas alone); it now targets
+  only the canvas, `icon-btn`/`iconbtn` unified, and every measured icon is 18px. A new
+  `AgentInspector` component is THE person window in both the world drawer and the network.
 - C27 #team: the "Add a teammate" button needs space under it so it does not stick to
   other things.
+  **DONE 2026-10-09** — commit `806af71`: 20px of measured air under the button.
 - C28 everywhere: reduce the titles' space (e.g. "The whole studio at once." + its line)
   to give more space to the pages.
+  **DONE 2026-10-09** — commit `806af71`: the page head is one compact band now (59px tall,
+  measured) — smaller title, tight eyebrow, one-line description — the page gets the rest.
 - C24 stands: on opening, there is no landing page or intro yet, and the data is the
   hard-coded demo — not the owner's own, not from scratch. → Phase D next.
+  **DONE 2026-10-09** — commit `34395b3`: a visitor with no save meets the landing page
+  (pixel style, three screenshots of the real product, one start button + a demo door). The
+  wizard collects the owner's company (name/description/answers), employees (full REQ-17
+  fields) and options; the draft lives in the save so a closed tab resumes; finishing starts
+  FROM SCRATCH — zero demo tasks/threads. Old saves migrate straight in (version 2). Settings
+  now edits the whole company profile. Note: compiling the profile into model prompts (REQ-16)
+  rides with the engine in Phase F.

@@ -1113,3 +1113,15 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - C23 #team (`346c7cf`, fix `a9fb00e`): teammates are typed in and edited — name, role,
   details, pixel portrait from the sprite set, reports-to placement; store gained `addAgent`
   (`p-new-N` ids); validation errors are user-facing; smoke 74/74, gate 10/10.
+
+## 2026-10-09 — C25-C28 + C24 (third-round comments)
+
+- C25 (`806af71`): world controls redesigned on the left side, headed blocks, close button,
+  zoom row with live scale; no longer overlaps the person drawer.
+- C26 (`806af71`): icon audit — the stage's full-size svg rule was stretching the windows'
+  icons; now 18px everywhere. One shared `AgentInspector` for the world drawer and network.
+- C27/C28 (`806af71`): air under Add-a-teammate; page heads compacted to a 59px band.
+- C24 (`34395b3`): Phase D — landing page (pixel style, real screenshots, one start button,
+  demo door) + intro wizard (company, employees, options), resumable through the save,
+  finishes into a from-scratch company; store save schema v2 with migration; Settings edits
+  the full company profile. REQ-16 prompt compilation rides with the Phase F engine.
