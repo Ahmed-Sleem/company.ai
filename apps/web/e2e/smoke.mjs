@@ -136,12 +136,17 @@ try {
   await page.waitForSelector('.sidebar');
 
   // REQ-37: search is typed straight into the topbar; results hang under the field; no dialog.
-  await page.fill('[data-action=search]', 'Aria');
-  await page.waitForSelector('.topsearch .search-results li', { timeout: 5_000 });
-  const anyDialog = await page.$('.dialog');
-  check('search lives inline in the topbar — typing shows results, no dialog',
-    (await page.$('.topsearch .search-results li')) !== null && !(anyDialog && await anyDialog.isVisible()));
-  await page.fill('[data-action=search]', '');
+  // REQ-44 (seventh round): search is the command palette — the topbar button opens it,
+  // typing filters commands and matches, Esc closes it again.
+  await page.click('[data-action=search]');
+  await page.waitForSelector('[data-palette=box]', { timeout: 5_000 });
+  await page.fill('[data-palette=box] [data-action=search]', 'Aria');
+  await page.waitForSelector('[data-palette=box] .palette-list li', { timeout: 5_000 });
+  const matched = (await page.$('[data-palette=box] .palette-list li')) !== null;
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[data-palette=box]', { state: 'detached', timeout: 5_000 });
+  const closed = (await page.$('[data-palette=box]')) === null;
+  check('the command palette opens, filters matches, and Esc closes it', matched && closed);
 
   // REQ-39: the contracted rail is a strip of labels — the company menu does not open there.
   // the rail defaults to contracted, so the button starts inert; expanding wakes it

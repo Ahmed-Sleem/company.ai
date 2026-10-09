@@ -38,7 +38,6 @@
   --sh-railpad:12px;
   --sh-railitem:44px;
   --sh-rail:68px;
-  --sh-search:218px;
   --sh-nav-mid:188px;
   --sh-count:18px;
   --sh-unread:5px;
@@ -65,7 +64,6 @@
   --app-clock:52px;
   --app-bubble-w:160px;
   --app-input-h:44px;
-  --sh-search-sm:150px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -163,12 +161,19 @@ body {
 .breadcrumb strong { color: var(--text); font-weight: 400; }
 /* REQ-37 (owner, sixth round): search lives in the topbar itself — type straight into it and
    the results hang under the field. The modal dialog is gone. */
-.topsearch { position: relative; display: flex; align-items: center; gap: var(--s2); inline-size: var(--sh-search); padding-inline: var(--s2); border: var(--app-hair) solid var(--line); background: var(--surface); color: var(--dim); }
-.topsearch input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--xs); padding-block: var(--s1); }
-.topsearch input:focus { outline: none; }
-.topsearch .search-results { position: absolute; inset-block-start: calc(100% + var(--s1)); inset-inline: 0; z-index: 40; margin: 0; padding: var(--s1); list-style: none; background: var(--raised); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); max-block-size: 60vh; overflow-y: auto; }
-.topsearch .search-results button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--xs); text-align: start; padding: var(--s1) var(--s2); cursor: pointer; }
-.topsearch .search-results button:hover { background: var(--surface); }
+/* REQ-44 (owner, seventh round): the command palette — one window, VS Code style, in the
+   task-dialog language: centred, bordered, dark field on top. */
+.palette-backdrop { position: fixed; inset: 0; z-index: 60; background: var(--shadow); display: flex; justify-content: center; padding-block-start: 12vh; padding-inline: var(--s4); }
+.palette { align-self: start; inline-size: min(560px, 100%); max-block-size: 70vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--s2); padding: var(--s3); }
+.palette-field { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); color: var(--dim); }
+.palette-field input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--base); }
+.palette-field input:focus { outline: none; }
+.palette-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: grid; gap: 2px; align-content: start; }
+.palette-list button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--sm); text-align: start; padding: var(--s2); cursor: pointer; }
+.palette-list button.is-on { background: var(--surface); box-shadow: inset 0 0 0 var(--app-hair) var(--line); }
+.palette-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-empty { padding: var(--s3); font-size: var(--sm); }
+.palette-foot { margin: 0; padding-inline: var(--s2); }
 .top-actions { display: flex; align-items: center; gap: var(--s2); }
 .notification { position: relative; }
 .notification .unread { position: absolute; inset-block-start: var(--sh-unread); inset-inline-end: var(--sh-unread); inline-size: var(--sh-unread); block-size: var(--sh-unread); background: var(--accent); }
@@ -825,7 +830,7 @@ dialog[open] { animation: pop-in var(--anim-med) var(--anim-ease); }
 }
 
 /* C7 — fields answer focus with colour, not a ring; icon controls keep the ring (a11y) */
-input:focus-visible, textarea:focus-visible, select:focus-visible, .search-results button:focus-visible {
+input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list button:focus-visible {
   outline: none;
   border-color: var(--accent);
   background: var(--accent-bg);
@@ -1162,7 +1167,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
   .crumb-title { font-family: var(--pixel); font-size: var(--lg); letter-spacing: var(--track-tight); }
 :root[lang='ar'] .crumb-title { font-family: var(--font); letter-spacing: 0; }
 .topbar .breadcrumb > .icon { display: none; }
-  .topsearch { inline-size: var(--sh-search-sm); }
+  .palette-backdrop { padding-block-start: 6vh; }
   .main { padding: var(--s6) var(--s4); }
   .statusbar .secondary { display: none; }
   .statusbar { padding: var(--s3) var(--s4); font-size: var(--sh-fine); gap: var(--s2); }

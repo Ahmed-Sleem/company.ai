@@ -7,8 +7,9 @@
  * every page. The per-screen head (pixel title + one line) lives in each view via ScreenHead,
  * exactly as the prototype draws it.
  */
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
+import { CommandPalette } from './components/CommandPalette';
 import { t, type Lang } from './lib/i18n';
 import { applyCustomAccent, deriveAccent } from './lib/accent';
 import { api } from './lib/api';
@@ -19,7 +20,6 @@ import { FX, LANG_EVENT, LANG_KEY, RAIL, applyAttr, onPrefsChange, readFx, readR
 import { downloadSave, parseSave, resetSave } from './lib/savefile';
 import { useStore } from './data/store';
 import { Icon } from './components/Icon';
-import { localized } from './lib/format';
 import { TeamView } from './views/TeamView';
 import { TasksView } from './views/TasksView';
 import { InboxView } from './views/InboxView';
@@ -73,9 +73,8 @@ export function App() {
   const [rail, setRail] = useState(readRail);
   const [health, setHealth] = useState<{ version: string; company: string | null } | null>(null);
   const [openDecisions, setOpenDecisions] = useState<number | null>(null);
-  /** REQ-37: search is typed straight into the topbar — no dialog, nothing between. */
-  const searchRef = useRef<HTMLInputElement | null>(null);
-  const [query, setQuery] = useState('');
+  /** REQ-44 (owner, seventh round): search lives in a command-palette window — ⌘K. */
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -166,8 +165,7 @@ export function App() {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
+        setPaletteOpen(true);
       }
     };
     addEventListener('keydown', onKey);
@@ -208,25 +206,6 @@ export function App() {
     return lang === 'ar' ? item?.labelAr ?? id : item?.label ?? id;
   };
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    const state = useStore.getState();
-    const out: Array<{ kind: string; label: string; to: ViewId }> = [];
-    for (const v of VIEWS) {
-      if (`${v.label} ${v.labelAr}`.toLowerCase().includes(q)) out.push({ kind: 'page', label: lang === 'ar' ? v.labelAr : v.label, to: v.id });
-    }
-    for (const a of state.agents) {
-      if (`${a.name} ${a.role} ${a.nameAr ?? ''}`.toLowerCase().includes(q)) out.push({ kind: 'person', label: localized(a.name, a.nameAr, lang), to: 'team' });
-    }
-    for (const task of state.tasks) {
-      if (`${task.title} ${task.shortRef} ${task.titleAr ?? ''}`.toLowerCase().includes(q)) out.push({ kind: 'task', label: `${task.shortRef} · ${localized(task.title, task.titleAr, lang)}`, to: 'tasks' });
-    }
-    for (const thread of state.threads) {
-      if (thread.title.toLowerCase().includes(q)) out.push({ kind: 'thread', label: thread.title, to: 'comms' });
-    }
-    return out.slice(0, 9);
-  }, [query, lang]);
 
   const viewProps = { lang, ...(forcedState ? { forcedState } : {}) };
 
@@ -367,30 +346,16 @@ export function App() {
             </div>
           </div>
           <div className="top-actions">
-            <div className="topsearch">
+            <button
+              type="button"
+              className="btn ghost iconbtn"
+              data-action="search"
+              aria-label={t('searchTitle', lang)}
+              title={`${t('searchTitle', lang)} (⌘K)`}
+              onClick={() => setPaletteOpen(true)}
+            >
               <Icon name="search" />
-              <input
-                ref={searchRef}
-                type="search"
-                data-action="search"
-                value={query}
-                placeholder={t('searchTrigger', lang)}
-                aria-label={t('searchTitle', lang)}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Escape') { setQuery(''); e.currentTarget.blur(); } }}
-              />
-              {query.trim() ? (
-                <ul className="search-results" aria-live="polite">
-                  {results.map((r) => (
-                    <li key={`${r.kind}-${r.label}`}>
-                      <button type="button" onClick={() => { navigate(r.to); setQuery(''); }}>
-                        <span className="tag">{r.kind}</span> {r.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
+            </button>
             <button
               type="button"
               className="btn ghost iconbtn"
@@ -434,6 +399,17 @@ export function App() {
           {view === 'settings' && <SettingsView {...viewProps} />}
           </div>
         </main>
+
+        {/* REQ-44: the command palette — ⌘K anywhere, one window for jumps and matches. */}
+        <CommandPalette
+          open={paletteOpen}
+          lang={lang}
+          onClose={() => setPaletteOpen(false)}
+          onNavigate={(id) => { navigate(id); setPaletteOpen(false); }}
+          onToggleTheme={() => setTheme((current) => nextTheme(current))}
+          onToggleLanguage={() => setLang(lang === 'en' ? 'ar' : 'en')}
+          onHelp={() => { navigate('settings'); setPaletteOpen(false); }}
+        />
 
         {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 
