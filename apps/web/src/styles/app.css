@@ -923,14 +923,29 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
   .setting > select { inline-size: 100%; }
 }
 
-/* ── the world fits the viewport exactly (owner C13): the stage takes what is left ────────── */
-.main[data-view='world'] { display: flex; flex-direction: column; padding-block: var(--s4); }
-.main[data-view='world'] > .view-anim { display: flex; flex-direction: column; flex: 1; min-block-size: 0; }
-.main[data-view='world'] .pagehead { flex: none; margin-block-end: var(--s3); }
-.main[data-view='world'] .pagebody { flex: 1; min-block-size: 0; display: flex; flex-direction: column; }
+/* ── the world, comms and network fit the viewport exactly (owner C13/C18): the stage takes
+   what is left and only the inner panes scroll — the page itself never does ─────────────── */
+.main[data-view='world'], .main[data-view='comms'], .main[data-view='network'] {
+  display: flex; flex-direction: column; padding-block: var(--s4);
+}
+:is(.main[data-view='world'], .main[data-view='comms'], .main[data-view='network']) > .view-anim {
+  display: flex; flex-direction: column; flex: 1; min-block-size: 0;
+}
+:is(.main[data-view='world'], .main[data-view='comms'], .main[data-view='network']) .pagehead {
+  flex: none; margin-block-end: var(--s3);
+}
+:is(.main[data-view='world'], .main[data-view='comms'], .main[data-view='network']) .pagebody {
+  flex: 1; min-block-size: 0; display: flex; flex-direction: column;
+}
 .main[data-view='world'] .world { flex: 1; min-block-size: 0; }
 .main[data-view='world'] .world-viewport { flex: 1; block-size: auto; min-block-size: 0; }
 .main[data-view='world'] .world-stats { flex: none; }
+.main[data-view='comms'] .chat-layout { flex: 1; min-block-size: 0; }
+.main[data-view='comms'] .threads { max-block-size: none; }
+.main[data-view='comms'] .chat { max-block-size: none; min-block-size: 0; }
+.main[data-view='network'] .graph-controls { flex: none; }
+.main[data-view='network'] .graph-stage { flex: 1; block-size: auto; min-block-size: 0; }
+.main[data-view='network'] .graph-info { flex: none; }
 
 /* build mode: the palette of furniture you can place, and the grid under the plan */
 .world-palette { display: flex; gap: var(--s1); overflow-x: auto; padding-block: var(--s1); }
