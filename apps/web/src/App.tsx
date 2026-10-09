@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { VIEWS, type ViewId } from '@company/contracts';
 import { CommandPalette } from './components/CommandPalette';
+import { HelpWindow } from './components/HelpWindow';
 import { t, type Lang } from './lib/i18n';
 import { applyCustomAccent, deriveAccent } from './lib/accent';
 import { api } from './lib/api';
@@ -75,6 +76,8 @@ export function App() {
   const [openDecisions, setOpenDecisions] = useState<number | null>(null);
   /** REQ-44 (owner, seventh round): search lives in a command-palette window — ⌘K. */
   const [paletteOpen, setPaletteOpen] = useState(false);
+  /** REQ-48: one Help window, opened from the topbar, from Settings, or from the palette. */
+  const [helpOpen, setHelpOpen] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -358,6 +361,16 @@ export function App() {
             </button>
             <button
               type="button"
+              className="btn ghost"
+              data-action="help"
+              aria-label={t('helpOpen', lang)}
+              title={t('helpOpen', lang)}
+              onClick={() => setHelpOpen(true)}
+            >
+              ?
+            </button>
+            <button
+              type="button"
               className="btn ghost iconbtn"
               data-action="theme"
               aria-label={`${t('theme', lang)}: ${theme}`}
@@ -396,7 +409,7 @@ export function App() {
           {view === 'comms' && <CommsView {...viewProps} />}
           {view === 'network' && <NetworkView {...viewProps} />}
           {view === 'world' && <WorldView {...viewProps} />}
-          {view === 'settings' && <SettingsView {...viewProps} />}
+          {view === 'settings' && <SettingsView {...viewProps} onHelp={() => setHelpOpen(true)} />}
           </div>
         </main>
 
@@ -408,8 +421,11 @@ export function App() {
           onNavigate={(id) => { navigate(id); setPaletteOpen(false); }}
           onToggleTheme={() => setTheme((current) => nextTheme(current))}
           onToggleLanguage={() => setLang(lang === 'en' ? 'ar' : 'en')}
-          onHelp={() => { navigate('settings'); setPaletteOpen(false); }}
+          onHelp={() => { setPaletteOpen(false); setHelpOpen(true); }}
         />
+
+        {/* REQ-48: the one Help window — every explanation and shortcut lives here. */}
+        <HelpWindow open={helpOpen} lang={lang} onClose={() => setHelpOpen(false)} />
 
         {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 

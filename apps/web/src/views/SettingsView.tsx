@@ -179,7 +179,7 @@ function ScheduleSetting({ lang }: { lang: Lang }) {
   );
 }
 
-export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
+export function SettingsView({ lang, forcedState, onHelp }: { lang: Lang; forcedState?: DataStateKind; onHelp?: () => void }) {
   const company = useStore((s) => s.company);
   const operatorName = useStore((s) => s.operator.name);
   const load = useStore((s) => s.load);
@@ -319,6 +319,17 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
                 <h2>{t('scheduleTitle', lang)}</h2>
                 <p className="small dim">{t('scheduleNote', lang)}</p>
                 <ScheduleSetting lang={lang} />
+                {onHelp ? (
+                  <div className="setting">
+                    <div>
+                      <h3>{t('helpOpen', lang)}</h3>
+                      <p>{t('helpViewsTitle', lang)} · {t('helpKeysTitle', lang)} · {t('helpModelsTitle', lang)} · {t('helpDataTitle', lang)}</p>
+                    </div>
+                    <button type="button" className="btn" data-settings="help" onClick={onHelp}>
+                      <Icon name="file" />{t('helpOpen', lang)}
+                    </button>
+                  </div>
+                ) : null}
                 <div className="setting">
                   <div>
                     <h3>{t('tickTitle', lang)}</h3>

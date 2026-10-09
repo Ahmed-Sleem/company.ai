@@ -945,6 +945,20 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   padding: var(--s4) var(--s5); margin-block-end: var(--s5);
   border: var(--app-hair) solid var(--line); background: var(--raised);
 }
+/* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */
+.help-sections { display: grid; gap: var(--s2); }
+.help-section { border: var(--app-hair) solid var(--line); background: var(--surface); }
+.help-section summary { padding: var(--s3) var(--s4); cursor: pointer; font-size: var(--sm); font-weight: 700; color: var(--text); list-style: none; display: flex; align-items: center; gap: var(--s2); }
+.help-section summary::before { content: '+'; inline-size: var(--sh-count); text-align: center; color: var(--accent); }
+.help-section[open] summary::before { content: '\2212'; }
+.help-section summary:hover { background: var(--raised); }
+.help-section p { margin: 0; padding: 0 var(--s4) var(--s4); font-size: var(--sm); color: var(--muted); line-height: 1.6; }
+.help-keys { margin: 0; padding: 0 var(--s4) var(--s4); display: grid; gap: var(--s2); }
+.help-keyrow { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: var(--s3); align-items: baseline; }
+.help-keyrow dt { margin: 0; }
+.help-keyrow dd { margin: 0; font-size: var(--sm); color: var(--muted); }
+.help-keys kbd { display: inline-block; padding: var(--s1) var(--s2); border: var(--app-hair) solid var(--line); background: var(--raised); color: var(--text); font: inherit; font-size: var(--xs); white-space: nowrap; }
+
 /* REQ-46 (owner, seventh round): the inbox is a mailbox — compact one-line letters that open
    on "read more" into their options or their facts. */
 .mailbox { list-style: none; margin: 0 0 var(--s6); padding: 0; display: grid; gap: var(--s2); }

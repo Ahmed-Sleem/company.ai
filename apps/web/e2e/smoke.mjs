@@ -701,6 +701,15 @@ try {
   const decisionText = await page.textContent('.mail.open');
   check('the opened letter shows its rule and change', decisionText?.includes('access.analytics.read') ?? false);
 
+  // REQ-48: one Help window — every explanation and shortcut, opened from the topbar.
+  await page.click('[data-action=help]');
+  await page.waitForSelector('[data-help=window]', { timeout: 5_000 });
+  const helpSections = await page.locator('.help-section').count();
+  const helpKeys = await page.locator('.help-keyrow').count();
+  await page.keyboard.press('Escape');
+  check('the Help window opens with its sections and its shortcut table',
+    helpSections === 4 && helpKeys >= 8);
+
   // 7 — hygiene
   // 5h — a phone. The owner opened the live link on his and it was unusable: the sidebar kept its
   // column of icons but lost its width, so every icon stacked into a ~1000px strip and pushed the
