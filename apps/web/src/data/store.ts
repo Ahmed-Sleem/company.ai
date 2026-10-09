@@ -74,6 +74,8 @@ export interface ModelRow {
 
 interface SaveState {
   company: { name: string };
+  /** When the save last changed, for the status bar. Not part of the save file itself. */
+  savedAt: string | null;
   operator: { name: string; role: string };
   agents: AgentRow[];
   tasks: TaskRow[];
@@ -90,6 +92,7 @@ interface SaveState {
 }
 
 const fixture = () => ({
+  savedAt: null as string | null,
   company: { ...demo.company },
   operator: { ...demo.operator },
   agents: demo.agents.map((a) => ({ ...a })) as AgentRow[],
@@ -103,11 +106,12 @@ export const useStore = create<SaveState>()(
   persist(
     (set) => ({
       ...fixture(),
-      load: (data) => set((state) => ({ ...state, ...data })),
-      reset: () => set(() => ({ ...fixture() })),
+      load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
+      reset: () => set(() => ({ ...fixture(), savedAt: new Date().toISOString() })),
       patchTask: (id, patch) => {
         let out: TaskRow | null = null;
         set((state) => ({
+          savedAt: new Date().toISOString(),
           tasks: state.tasks.map((task) => {
             if (task.id !== id) return task;
             out = { ...task, ...patch };
@@ -116,10 +120,11 @@ export const useStore = create<SaveState>()(
         }));
         return out;
       },
-      addTask: (task) => set((state) => ({ tasks: [task, ...state.tasks] })),
+      addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
       patchDecision: (id, patch) => {
         let out: DecisionRow | null = null;
         set((state) => ({
+          savedAt: new Date().toISOString(),
           decisions: state.decisions.map((decision) => {
             if (decision.id !== id) return decision;
             out = { ...decision, ...patch, audit: { ...decision.audit, ...patch.audit } };

@@ -67,3 +67,13 @@ export function localized(english: string | null | undefined, arabic: string | n
 export function percent(value: number, lang: Lang = 'en'): string {
   return `${num(value, lang)}%`;
 }
+
+/** The i18n key a person's status reads as — one table, so every surface agrees. */
+export type StatusKey = 'statusWorking' | 'statusIdle' | 'statusError' | 'statusPaused' | 'statusBlocked';
+export const STATUS_KEY: Record<string, StatusKey> = {
+  working: 'statusWorking',
+  idle: 'statusIdle',
+  error: 'statusError',
+  paused: 'statusPaused',
+  blocked: 'statusBlocked',
+};

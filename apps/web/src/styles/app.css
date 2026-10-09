@@ -50,6 +50,10 @@
   --sh-topbar-m:58px;
   --sh-scrim:#00000088;
   --sh-icon:18px;
+  --sh-mini-track:0.08em;
+  --anim-fast:120ms;
+  --anim-med:220ms;
+  --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 * { box-sizing: border-box; }
@@ -131,15 +135,8 @@ body {
 [dir='rtl'] .navitem[aria-current='page'] { box-shadow: inset calc(var(--app-notch) * -1) 0 0 var(--accent); }
 .navitem .count { margin-inline-start: auto; font-size: var(--sh-tiny); min-inline-size: var(--sh-count); text-align: center; }
 .sidebar-bottom { margin-block-start: auto; display: flex; flex-direction: column; gap: var(--s4); }
-.account { padding-block-start: var(--s4); border-top: var(--app-hair) solid var(--soft); }
-.initial {
-  inline-size: var(--sh-initial); block-size: var(--sh-initial); display: grid; place-items: center;
-  border-radius: var(--radius); border: var(--app-hair) solid var(--line);
-  font-family: var(--font); color: var(--accent); background: var(--raised);
-}
-.ownerrole { display: block; }
 
-.app { margin-inline-start: var(--nav); min-block-size: 100dvh; display: flex; flex-direction: column; }
+.app { margin-inline-start: var(--nav); block-size: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   block-size: var(--sh-topbar); flex-shrink: 0; border-bottom: var(--app-hair) solid var(--soft);
   display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
@@ -158,7 +155,7 @@ body {
 .nav-close { display: none; }
 .nav-scrim { display: none; }
 
-.main { padding: var(--s8) var(--s10) var(--s10); inline-size: 100%; max-inline-size: var(--max); margin-inline: auto; flex: 1; }
+.main { padding: var(--s8) var(--s10) var(--s10); inline-size: 100%; max-inline-size: var(--max); margin-inline: auto; flex: 1; min-block-size: 0; overflow-y: auto; }
 
 .panel {
   position: relative;
@@ -765,6 +762,47 @@ h3 { font-size: var(--base); }
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
 
+/* ── motion, defined once and reused everywhere (owner C5/C6) ─────────────────────────────── */
+:root:not([data-reduced]) { }
+@keyframes rise-in { from { opacity: 0; transform: translateY(var(--s1)); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.985) translateY(var(--s1)); } to { opacity: 1; transform: none; } }
+.view-anim { animation: rise-in var(--anim-med) var(--anim-ease); }
+dialog[open] { animation: pop-in var(--anim-med) var(--anim-ease); }
+.workspace-menu { animation: pop-in var(--anim-fast) var(--anim-ease); }
+.navitem, .btn, .workspace { transition: background-color var(--anim-fast) var(--anim-ease), color var(--anim-fast) var(--anim-ease), border-color var(--anim-fast) var(--anim-ease), box-shadow var(--anim-fast) var(--anim-ease); }
+@media (prefers-reduced-motion: reduce) {
+  *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* C7 — fields answer focus with colour, not a ring; icon controls keep the ring (a11y) */
+input:focus-visible, textarea:focus-visible, select:focus-visible, .search-results button:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text);
+}
+
+/* ── team roster: cards are the people themselves (owner C8) ──────────────────────────────── */
+.team-roster { gap: var(--s6); }
+.team-card {
+  inline-size: 100%; text-align: start; font: inherit; color: inherit; cursor: pointer;
+  padding: var(--s5); gap: var(--s4); border-color: var(--line);
+  transition: border-color var(--anim-fast) var(--anim-ease), background-color var(--anim-fast) var(--anim-ease);
+}
+.team-card:hover, .team-card:focus-visible { border-color: var(--accent); background: var(--accent-bg); }
+.team-card-head { display: flex; align-items: center; gap: var(--s4); }
+.team-card-head .grow { min-inline-size: 0; display: block; }
+.team-card .role { display: block; margin: 0; }
+.team-manager { margin: 0; color: var(--muted); font-size: var(--sm); }
+.sectionhead-mini { margin: 0; font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; color: var(--dim); font-family: var(--font); }
+.team-task-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); font-size: var(--sm); }
+.team-task-list li { display: flex; align-items: center; gap: var(--s3); min-inline-size: 0; }
+.team-task-list .grow { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-profile { display: flex; flex-direction: column; gap: var(--s5); }
+.small { font-size: var(--sm); }
+.muted { color: var(--muted); }
+.dim { color: var(--dim); }
+
 /* every pixel icon keeps its 18px box — the demo's `.icon` measure, named */
 .icon { inline-size: var(--sh-icon); block-size: var(--sh-icon); flex-shrink: 0; }
 /* the phone-only controls stay gone on desktop (the later `.iconbtn` rule sets display) */
@@ -788,8 +826,6 @@ h3 { font-size: var(--base); }
   [data-collapsed='true'] .navitem { position: relative; min-block-size: var(--sh-railitem); justify-content: center; padding: var(--s2) 0; gap: 0; }
   [data-collapsed='true'] .navitem > span:not(.count):not(.initial) { display: none; }
   [data-collapsed='true'] .navitem .count { position: absolute; inset-block-start: var(--s1); inset-inline-end: var(--s1); min-inline-size: auto; }
-  [data-collapsed='true'] .account .grow { display: none; }
-  [data-collapsed='true'] .account > .icon { display: none; }
 }
 
 /* mid widths: the sidebar narrows, the topbar breathes less */

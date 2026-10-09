@@ -1050,3 +1050,24 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - Screenshots: design/screenshots/shell-{desktop,expanded,phone}-2026-10-09.png now match the
   prototype's rail, drawer and topbar. Gate 10/10 green (87 web · 68/68 smoke with the drawer
   tests).
+
+## 2026-10-09 — Owner comments C1–C8: fixed chrome, live footer, one motion system, living roster
+
+- **C1/C2** — the app column owns the viewport (`.app` = `block-size:100dvh; overflow:hidden`);
+  only `.main` scrolls, so the topbar and statusbar cannot move. Verified in Chromium: topbar
+  top 0px and statusbar top 760px before and after scrolling the content.
+- **C3** — the statusbar's middle span is counted live from the save: people · open tasks ·
+  decisions waiting your call, plus the last-saved time once a save exists.
+- **C4** — the "V" owner row is gone from the sidebar JSX and its CSS (`.account/.initial/
+  .ownerrole`) with it; Settings and World Map stay in `.sidebar-bottom`.
+- **C5/C6** — motion lives in one section of app.css: `--anim-fast/--anim-med/--anim-ease`,
+  `rise-in` and `pop-in`, reused by `.view-anim` (keyed on the view), `dialog[open]`,
+  `.workspace-menu` and the nav/button transitions; `prefers-reduced-motion` turns it all off.
+  The search opens through that same `dialog[open]` rule.
+- **C7** — `input/textarea/select:focus-visible` drops the outline and answers with an `--accent`
+  border on `--accent-bg`; icon buttons keep their ring for keyboard users.
+- **C8** — #team is a living roster read from the save: portrait, role/department, status badge,
+  who they report to, the open tasks they carry with stages, capabilities, four counted
+  statistics on top, and a profile window per person.
+- Validation: `bash scripts/verify.sh` → 10/10 green; web tests 87/87; smoke 68/68;
+  screenshots design/screenshots/team-2026-10-09.png and team-profile-2026-10-09.png.

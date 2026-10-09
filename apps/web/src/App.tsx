@@ -77,7 +77,10 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const company = useStore((s) => s.company.name);
-  const operator = useStore((s) => s.operator);
+  const people = useStore((s) => s.agents.length);
+  const openTasks = useStore((s) => s.tasks.filter((t) => t.stage !== 'done').length);
+  const waiting = useStore((s) => s.decisions.filter((d) => d.status === 'pending').length);
+  const savedAt = useStore((s) => s.savedAt);
 
   const [forcedState, setForcedState] = useState<DataStateKind | undefined>(readForcedState);
 
@@ -290,17 +293,6 @@ export function App() {
         <div className="sidebar-bottom">
           {navButton(VIEWS[5]!)}
           {navButton(VIEWS[6]!)}
-          <button
-            type="button"
-            className="navitem account"
-            aria-label={`${operator.name} · ${t('owner', lang)}`}
-            data-rail-label={`${operator.name} · ${t('owner', lang)}`}
-            onClick={() => navigate('settings')}
-          >
-            <span className="initial" aria-hidden="true">{operator.name.slice(0, 1).toUpperCase()}</span>
-            <span className="grow">{operator.name}<span className="small dim ownerrole">{t('owner', lang)}</span></span>
-            <Icon name="more" />
-          </button>
         </div>
       </aside>
 
@@ -375,6 +367,7 @@ export function App() {
         </header>
 
         <main className="main" id="main">
+          <div className="view-anim" key={view}>
           {view === 'team' && <TeamView {...viewProps} />}
           {view === 'tasks' && <TasksView {...viewProps} />}
           {view === 'inbox' && <InboxView {...viewProps} />}
@@ -382,13 +375,17 @@ export function App() {
           {view === 'network' && <NetworkView {...viewProps} />}
           {view === 'world' && <WorldView {...viewProps} />}
           {view === 'settings' && <SettingsView {...viewProps} />}
+          </div>
         </main>
 
         {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 
         <footer className="statusbar">
           <span><span className="dot" aria-hidden="true" />{health ? `${health.company ?? '—'} · ${t('online', lang)}` : t('loading', lang)}</span>
-          <span className="secondary">{t('statusNote', lang)}</span>
+          <span className="secondary">
+            {`${people} ${t('footPeople', lang)} · ${openTasks} ${t('footOpen', lang)} · ${waiting} ${t('footWaiting', lang)}`}
+            {savedAt ? ` · ${t('footSaved', lang)} ${new Date(savedAt).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
+          </span>
           <span>{`company.ai ${health?.version ?? ''}`}</span>
         </footer>
       </div>
