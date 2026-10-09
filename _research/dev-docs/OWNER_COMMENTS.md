@@ -138,6 +138,13 @@ Comments (the work list):
   to give more space to the pages.
   **DONE 2026-10-09** — commit `806af71`: the page head is one compact band now (59px tall,
   measured) — smaller title, tight eyebrow, one-line description — the page gets the rest.
+## 2026-10-10 — Phase E done
+
+- Phase E (REQ-18/19): every teammate has their own model connection in the editor — provider
+  (OpenAI / Anthropic / Gemini / custom OpenAI-compatible), model id, key, base URL for custom —
+  and a Test button making a tiny real request to the provider, surfacing its own error words
+  ("invalid x-api-key" observed live). Keys live only in the visitor's save. Save schema v3.
+
 - C24 stands: on opening, there is no landing page or intro yet, and the data is the
   hard-coded demo — not the owner's own, not from scratch. → Phase D next.
   **DONE 2026-10-09** — commit `34395b3`: a visitor with no save meets the landing page
@@ -151,11 +158,25 @@ Comments (the work list):
 ## 2026-10-10 — fourth round of comments
 
 - C29 #world: the close button of the person inspector (drawer) does not work.
+  **DONE 2026-10-10** — commit `d5fef70`: the drawer lived inside the panning viewport, whose
+  pointer capture ate its buttons; it is now a sibling of the viewport. Close verified live.
 - C30 #world: when build expands, the menu must not grow very long — the viewport is fixed;
   the menu should expand in pages.
+  **DONE 2026-10-10** — commit `d5fef70`: the menu is paged — View / Build tabs plus a constant
+  camera strip (fit, scale, zoom). Measured heights: 394px view, 416px build; never taller.
 - C31 #world: new rooms must be resizable.
+  **DONE 2026-10-10** — commit `d5fef70`: rooms are selectable in every mode (a still press
+  chooses them; panning keeps the floor), and the resize handle shows on a chosen room as well
+  as in build mode. Verified: a brand-new room grew 130×87 → 268×174 and persisted.
 - C32 everywhere: world, graph and the rest must all be viewers and controls of the same
   general thing — add a person/task/room and every view must show it.
+  **VERIFIED 2026-10-10** (commit `28b5085`): one save, every view a viewer of it — a person
+  typed in Team appeared on a world desk, as a graph node and in the comms rail; a task added
+  once showed on the board, the desk and the graph. No fork needed; the probe proved it.
 - C33 the owner still has not SEEN the landing page (his save predates it) — he is on board,
   but give him a door to it.
+  **DONE 2026-10-10** — commit `28b5085`: Settings → "Open the intro again". The wizard
+  reopens OVER the current company in edit mode — prefilled, ids kept, nothing wiped (verified:
+  10 tasks / 3 threads before and after).
 - Continue the next phase (Phase E: per-employee providers, REQ-18/19).
+  **DONE 2026-10-10** — see Phase E entry below.

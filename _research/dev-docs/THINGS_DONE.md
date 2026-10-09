@@ -1125,3 +1125,13 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   demo door) + intro wizard (company, employees, options), resumable through the save,
   finishes into a from-scratch company; store save schema v2 with migration; Settings edits
   the full company profile. REQ-16 prompt compilation rides with the Phase F engine.
+
+## 2026-10-10 — C29-C33 + Phase E (fourth round)
+
+- C29 (`d5fef70`): world drawer moved out of the pan surface; its close button works.
+- C30 (`d5fef70`): world menu paged (View/Build tabs + constant camera strip), bounded height.
+- C31 (`d5fef70`): rooms selectable + resizable in every mode; new rooms verified growing.
+- C32 (`28b5085`): probe-verified — one save, every view a viewer of it.
+- C33 (`28b5085`): Settings door back to the landing; wizard edit mode preserves all work.
+- Phase E: per-employee model connection (provider/model/key/custom base URL) + real
+  test-connection button reporting the provider's own error; save schema v3.
