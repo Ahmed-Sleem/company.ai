@@ -54,6 +54,8 @@
   --app-chatside:250px;
   --app-grid:16px;
   --app-worldmenu-w:240px;
+  --app-graphwin-w:200px;
+  --app-nodewin-w:280px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -877,6 +879,22 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .gedge.member { stroke: var(--warning); stroke-dasharray: var(--app-hair) var(--app-stripe); }
 .gedge.hi { stroke-width: var(--app-track); }
 [data-hover='true'] .gnode:not(.hi), [data-hover='true'] .gedge:not(.hi) { opacity: 0.18; }
+/* the controls window and the node-details window float over the canvas (owner C21) */
+.graph-window { position: absolute; inset-block-start: var(--s3); inset-inline-end: var(--s3); background: var(--surface); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); inline-size: var(--app-graphwin-w); animation: pop-in var(--anim-fast) var(--anim-ease); }
+.graph-window .menu-label, .node-window .menu-label { margin: 0; font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; color: var(--dim); }
+.graph-window .menu-rows { display: flex; flex-direction: column; gap: var(--s1); }
+.graph-window .menu-row, .node-window .menu-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.graph-window .btn[aria-pressed='true'] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.node-window { position: absolute; inset-block-start: var(--s3); inset-inline-start: var(--s3); background: var(--surface); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); inline-size: var(--app-nodewin-w); max-block-size: calc(100% - var(--s6)); overflow-y: auto; animation: pop-in var(--anim-fast) var(--anim-ease); }
+.node-head { display: flex; align-items: flex-start; gap: var(--s3); }
+.node-row { margin: 0; }
+.node-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); font-size: var(--sm); }
+.node-tasks li { display: flex; gap: var(--s3); min-inline-size: 0; }
+.node-tasks .grow { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 800px) {
+  .graph-window, .node-window { position: static; inline-size: auto; margin-block-end: var(--s3); }
+  .graph-stage { display: flex; flex-direction: column; }
+}
 .graph-legend { position: absolute; inset-block-end: var(--s3); inset-inline-start: var(--s3); display: flex; gap: var(--s4); font-size: var(--xs); color: var(--dim); margin: 0; pointer-events: none; }
 .legend-line { display: inline-block; inline-size: var(--sh-item); block-size: 0; border-block-start: var(--app-track) solid currentColor; vertical-align: middle; margin-inline-end: var(--s1); }
 .legend-line.reports { color: var(--accent); }

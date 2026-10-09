@@ -103,6 +103,7 @@ interface SaveState {
   /** Back to the labelled demo company. */
   reset: () => void;
   patchTask: (id: string, patch: Partial<TaskRow>) => TaskRow | null;
+  patchAgent: (id: string, patch: Partial<AgentRow>) => AgentRow | null;
   addTask: (task: TaskRow) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
   startThread: (agentId: string, title: string) => void;
@@ -135,6 +136,18 @@ export const useStore = create<SaveState>()(
           tasks: state.tasks.map((task) => {
             if (task.id !== id) return task;
             out = { ...task, ...patch };
+            return out;
+          }),
+        }));
+        return out;
+      },
+      patchAgent: (id, patch) => {
+        let out: AgentRow | null = null;
+        set((state) => ({
+          savedAt: new Date().toISOString(),
+          agents: state.agents.map((agent) => {
+            if (agent.id !== id) return agent;
+            out = { ...agent, ...patch };
             return out;
           }),
         }));
