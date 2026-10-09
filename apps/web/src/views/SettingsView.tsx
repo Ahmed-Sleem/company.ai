@@ -186,7 +186,7 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
         {/* The state block sits above, never around: appearance is a local preference, so the
             palette, the theme and the toggles stay reachable while a fetch fails or loads. */}
         {state !== 'default' ? <DataState state={state} lang={lang} onRetry={() => location.reload()} /> : null}
-        <div className="settings-layout">
+        <div className="settings-main">
             <div className="settings-main">
               <section className="panel panel-pad settings-section">
                 <h2>{t('appearance', lang)}</h2>
@@ -273,20 +273,6 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
               </section>
             </div>
 
-            <aside className="stack">
-              <section className="panel panel-pad">
-                <span className="eyebrow">[ company.ai ]</span>
-                <h2 className="spaced">{t('philosophyHead', lang)}</h2>
-                <p className="small muted">{t('philosophyBody', lang)}</p>
-                <p className="small dim">{t('philosophyFoot', lang)}</p>
-              </section>
-              <section className="panel panel-pad">
-                <h3>{t('shortcutsTitle', lang)}</h3>
-                <div className="setting small"><span>{t('shortcutSearch', lang)}</span><kbd className="kbd">Ctrl / ⌘ K</kbd></div>
-                <div className="setting small"><span>{t('shortcutClose', lang)}</span><kbd className="kbd">Esc</kbd></div>
-                <div className="setting small"><span>{t('shortcutMove', lang)}</span><kbd className="kbd">Tab</kbd></div>
-              </section>
-            </aside>
         </div>
       </div>
     </>

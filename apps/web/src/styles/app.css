@@ -52,7 +52,6 @@
   --sh-icon:18px;
   --sh-mini-track:0.08em;
   --app-chatside:250px;
-  --app-settings-aside:300px;
   --app-grid:16px;
   --app-worldmenu-w:240px;
   --anim-fast:120ms;
@@ -889,7 +888,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .graph-info { margin-block-start: var(--s3); color: var(--muted); }
 
 /* ── settings on the prototype's layout (owner C12) ──────────────────────────────────────── */
-.settings-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--app-settings-aside); gap: var(--s6); align-items: start; }
 .settings-main { display: flex; flex-direction: column; gap: var(--s6); min-inline-size: 0; }
 .settings-section { display: flex; flex-direction: column; gap: var(--s5); }
 .settings-section h2 { margin: 0; font-size: var(--lg); }
@@ -903,12 +901,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 .theme-sample[data-theme='dark'] { background: var(--bg); }
 .theme-sample[data-theme='light'] { background: var(--line); }
 .theme-sample[data-theme='system'] { background: linear-gradient(to inline-end, var(--bg) 50%, var(--line) 50%); }
-.stack { display: flex; flex-direction: column; gap: var(--s5); }
-.kbd { display: inline-block; padding-inline: var(--s2); border: var(--app-hair) solid var(--line); background: var(--raised); font: var(--xs) var(--font); color: var(--muted); }
 .filebtn input { position: absolute; inline-size: var(--app-hair); block-size: var(--app-hair); overflow: hidden; clip-path: inset(50%); }
 .filebtn { position: relative; }
 @media (max-width: 900px) {
-  .settings-layout { grid-template-columns: 1fr; }
   .setting { flex-wrap: wrap; }
   .setting > select { inline-size: 100%; }
 }
