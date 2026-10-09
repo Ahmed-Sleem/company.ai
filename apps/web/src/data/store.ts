@@ -86,8 +86,41 @@ export interface ModelRow {
   displayName: string;
 }
 
+/** The company profile (REQ-14a/16): the name, the description, and the owner's own answers. */
+export interface CompanyProfile {
+  name: string;
+  description: string;
+  answers: { q: string; a: string }[];
+}
+
+/** One employee while the intro wizard is still drafting them (REQ-14b). */
+export interface DraftEmployee {
+  /** Draft ids number from the draft's own rows: `d-N`. Real ids arrive at finish. */
+  id: string;
+  name: string;
+  nameAr: string | null;
+  role: string;
+  roleAr: string | null;
+  focus: string | null;
+  avatar: number;
+  /** Another draft id, or null for "reports to the owner". */
+  managerId: string | null;
+}
+
+/** The intro wizard's draft — it lives in the save, so closing the tab loses nothing (REQ-15). */
+export interface IntroDraft {
+  step: number;
+  operatorName: string;
+  company: CompanyProfile;
+  employees: DraftEmployee[];
+  options: { theme: string; fx: boolean };
+}
+
 interface SaveState {
-  company: { name: string };
+  company: CompanyProfile;
+  /** False until the intro is finished or the demo company is chosen (REQ-33). */
+  introDone: boolean;
+  introDraft: IntroDraft | null;
   /** When the save last changed, for the status bar. Not part of the save file itself. */
   savedAt: string | null;
   operator: { name: string; role: string };
@@ -114,11 +147,19 @@ interface SaveState {
   startThread: (agentId: string, title: string) => void;
   setWorldPlan: (plan: WorldPlan | null) => void;
   patchDecision: (id: string, patch: Partial<DecisionRow>) => DecisionRow | null;
+  /** The wizard writes its draft here on every change; the save carries it across reloads. */
+  setIntroDraft: (draft: IntroDraft | null) => void;
+  /** Finish the intro: the draft becomes the company (REQ-14). Everything stays editable later. */
+  finishIntro: () => void;
+  /** Skip the intro with the labelled demo company (the landing page's second door). */
+  chooseDemo: () => void;
 }
 
 const fixture = () => ({
   savedAt: null as string | null,
-  company: { ...demo.company },
+  company: { description: '', answers: [] as { q: string; a: string }[], ...demo.company } as CompanyProfile,
+  introDone: false,
+  introDraft: null as IntroDraft | null,
   operator: { ...demo.operator },
   agents: demo.agents.map((a) => ({ ...a })) as AgentRow[],
   tasks: demo.tasks.map((t) => ({ ...t })) as TaskRow[],
@@ -133,7 +174,7 @@ export const useStore = create<SaveState>()(
     (set, get) => ({
       ...fixture(),
       load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
-      reset: () => set(() => ({ ...fixture(), savedAt: new Date().toISOString() })),
+      reset: () => set(() => ({ ...fixture(), introDone: true, savedAt: new Date().toISOString() })),
       patchTask: (id, patch) => {
         let out: TaskRow | null = null;
         set((state) => ({
@@ -174,6 +215,37 @@ export const useStore = create<SaveState>()(
         set((state) => ({ savedAt: new Date().toISOString(), agents: [...state.agents, row] }));
         return row;
       },
+      setIntroDraft: (draft) => set(() => ({ introDraft: draft })),
+      finishIntro: () => set((state) => {
+        const draft = state.introDraft;
+        if (!draft) return { introDone: true, introDraft: null };
+        // Draft people become real ones; the save numbers them the way it numbers everyone
+        // it did not ship with (`p-new-N`) — no clock, no dice (namespace lock).
+        const max = state.agents.reduce((m, a) => {
+          const n = a.id.startsWith('p-new-') ? Number(a.id.slice(6)) : 0;
+          return Number.isFinite(n) && n > m ? n : m;
+        }, 0);
+        const realId = new Map<string, string>();
+        draft.employees.forEach((e, i) => realId.set(e.id, `p-new-${max + i + 1}`));
+        const agents: AgentRow[] = draft.employees.map((e) => ({
+          id: realId.get(e.id) ?? e.id,
+          name: e.name, nameAr: e.nameAr, role: e.role, roleAr: e.roleAr,
+          department: null, focus: e.focus, focusAr: null,
+          avatar: e.avatar, status: 'idle', capabilities: [],
+          managerId: e.managerId ? realId.get(e.managerId) ?? null : null,
+        }));
+        return {
+          savedAt: new Date().toISOString(),
+          company: draft.company,
+          operator: { name: draft.operatorName.trim() === '' ? state.operator.name : draft.operatorName.trim(), role: state.operator.role },
+          // A company from scratch starts with its own empty board — no demo work attached.
+          agents, tasks: [], decisions: [], threads: [], models: [],
+          worldPlan: null,
+          introDone: true,
+          introDraft: null,
+        };
+      }),
+      chooseDemo: () => set((state) => ({ ...state, introDone: true, introDraft: null, savedAt: new Date().toISOString() })),
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
       addMessage: (threadId, from, text) => set((state) => {
         const at = new Date().toISOString();
@@ -216,10 +288,26 @@ export const useStore = create<SaveState>()(
     }),
     {
       name: 'company.ai.save.v1',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      // v1 → v2: the company grew a profile, and the intro arrived. Anyone who already has a
+      // save has been through the front door the long way — let them in without the wizard.
+      migrate: (persisted, version) => {
+        const old = persisted as { company?: { name?: string } };
+        if (version < 2) {
+          return {
+            ...old,
+            company: { description: '', answers: [], ...(old.company ?? { name: 'Acme Studio' }) },
+            introDone: true,
+            introDraft: null,
+          };
+        }
+        return old;
+      },
       partialize: (state) => ({
         company: state.company,
+        introDone: state.introDone,
+        introDraft: state.introDraft,
         operator: state.operator,
         agents: state.agents,
         tasks: state.tasks,
@@ -232,14 +320,7 @@ export const useStore = create<SaveState>()(
   ),
 );
 
-// First run: localStorage is still empty, and `persist` only writes when the state changes —
-// so a visitor who merely looks around would have no save file at all. Writing the demo save
-// on first paint makes the file exist from the start: the workspace menu can export it and
-// the smoke test can read it without anyone touching a button first.
-try {
-  if (localStorage.getItem('company.ai.save.v1') === null) {
-    useStore.setState((state) => ({ ...state }));
-  }
-} catch {
-  // Storage blocked (private mode, quota): the app still runs in memory for this visit.
-}
+// First run used to write the demo save on first paint. It does not anymore (REQ-33): a
+// brand-new visitor has no save at all, which is exactly how the shell knows to show the
+// landing page instead. The save file appears the moment they choose a door — their own
+// company through the wizard, or the labelled demo company.

@@ -94,6 +94,14 @@ try {
 
   await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
 
+  // 0 — the front door (REQ-33): a brand-new visitor has no save at all, so the product shows
+  // its landing page before anything else. The rest of the smoke looks at the demo company,
+  // so it walks through that door first.
+  await page.waitForSelector('.landing');
+  check('a brand-new visitor meets the landing page before the product', true, 'landing shown');
+  await page.click('[data-landing=demo]');
+  await page.waitForSelector('.sidebar');
+
   // 1 — shell
   const navIds = await page.$$eval('[data-nav]', (nodes) => nodes.map((n) => n.getAttribute('data-nav')));
   check('the shell renders the six designer views plus the owner’s World Map',
@@ -589,6 +597,10 @@ try {
   {
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
     await phone.goto(`http://127.0.0.1:${WEB_PORT}/#team`, { waitUntil: 'networkidle' });
+    // a fresh context has no save, so it meets the landing page first (REQ-33) — take the demo door
+    if (await phone.$('.landing')) {
+      await phone.click('[data-landing=demo]');
+    }
     await phone.waitForSelector('[data-nav]', { timeout: 15_000 });
     // the prototype's phone answer: the sidebar is a drawer, opened by the hamburger — not a strip
     const closed = await phone.evaluate(() => {
@@ -686,6 +698,50 @@ try {
     check('an existing teammate is editable — same window, pre-filled, saved', prefilled === 'Aria');
     // hand the next run a clean save
     await page.evaluate(() => localStorage.removeItem('company.ai.save.v1'));
+  }
+
+  // 5j — Phase D, the owner's own words: "I open it, I don't see any landing page or intro,
+  // and the data is the hard-coded demo, not my own or start from scratch." All three, fixed:
+  // the landing appears for a visitor with no save, the wizard collects THEIR company, and
+  // finishing it starts from scratch — no demo work attached — and is resumable on the way.
+  {
+    await page.reload({ waitUntil: 'networkidle' }); // 5i just cleared the save
+    await page.waitForSelector('.landing');
+    check('the landing explains the product with screenshots of itself',
+      (await page.locator('.landing-shot img').count()) === 3);
+    await page.click('[data-landing=start]');
+    await page.waitForSelector('.intro-main');
+    await page.click('[data-intro=next]');
+    check('the wizard refuses a nameless company',
+      (await page.textContent('[data-intro=error]'))?.includes('name') ?? false);
+    await page.fill('[data-intro=company-name]', 'Nile Pixels');
+    await page.click('[data-intro=next]');
+    await page.fill('[data-intro=employee-name]', 'Sara');
+    await page.fill('[data-intro=employee-role]', 'Producer');
+    await page.click('[data-portrait="5"]');
+    await page.click('[data-intro=add-employee]');
+    await page.reload({ waitUntil: 'networkidle' }); // close the tab mid-wizard…
+    await page.waitForSelector('.landing');
+    check('…and the wizard is resumable, draft included (REQ-15)',
+      ((await page.textContent('[data-landing=start]')) ?? '').includes('Continue'));
+    await page.click('[data-landing=start]');
+    await page.waitForSelector('.intro-main');
+    check('the drafted employee survived the reload',
+      (await page.locator('.draft-employee').count()) === 1);
+    await page.click('[data-intro=next]');
+    await page.click('[data-intro=finish]');
+    await page.waitForSelector('.sidebar');
+    const mine = await page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('company.ai.save.v1')).state;
+      return { name: s.company.name, agents: s.agents.length, tasks: s.tasks.length, introDone: s.introDone };
+    });
+    check('finishing the wizard starts MY company from scratch — not the hard-coded demo',
+      mine.name === 'Nile Pixels' && mine.agents === 1 && mine.tasks === 0 && mine.introDone === true,
+      JSON.stringify(mine));
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.sidebar');
+    check('and my own company is what opens from now on',
+      (await page.textContent('.breadcrumb'))?.includes('Nile Pixels') ?? false);
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));

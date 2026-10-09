@@ -28,6 +28,8 @@ import { CommsView } from './views/CommsView';
 import { NetworkView } from './views/NetworkView';
 import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
+import { LandingView } from './views/LandingView';
+import { IntroWizard } from './views/IntroWizard';
 import type { DataStateKind } from './components/DataState';
 
 
@@ -78,6 +80,12 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const company = useStore((s) => s.company.name);
+  // Phase D (REQ-33): until the intro is finished — or the demo company chosen — the product
+  // shows its front door instead of the shell. The save file does not even exist yet.
+  const introDone = useStore((s) => s.introDone);
+  const introDraft = useStore((s) => s.introDraft);
+  const chooseDemo = useStore((s) => s.chooseDemo);
+  const [starting, setStarting] = useState(false);
   const people = useStore((s) => s.agents.length);
   const openTasks = useStore((s) => s.tasks.filter((task) => task.stage !== 'done').length);
   const waiting = useStore((s) => s.decisions.filter((d) => d.status === 'pending').length);
@@ -227,6 +235,21 @@ export function App() {
       </button>
     );
   };
+
+  if (!introDone) {
+    const toggleLang = () => setLang(lang === 'en' ? 'ar' : 'en');
+    return starting ? (
+      <IntroWizard lang={lang} onLanguage={toggleLang} />
+    ) : (
+      <LandingView
+        lang={lang}
+        resumable={introDraft !== null}
+        onStart={() => setStarting(true)}
+        onDemo={chooseDemo}
+        onLanguage={toggleLang}
+      />
+    );
+  }
 
   return (
     <>

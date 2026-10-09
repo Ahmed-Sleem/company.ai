@@ -151,17 +151,31 @@ function SkinSetting({ lang }: { lang: Lang }) {
 }
 
 export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: DataStateKind }) {
-  const company = useStore((s) => s.company.name);
+  const company = useStore((s) => s.company);
   const operatorName = useStore((s) => s.operator.name);
   const load = useStore((s) => s.load);
-  const [form, setForm] = useState({ company, operator: operatorName });
+  const [form, setForm] = useState({
+    company: company.name,
+    description: company.description,
+    answers: company.answers,
+    operator: operatorName,
+  });
   const [note, setNote] = useState<string | null>(null);
 
   const state: DataStateKind = forcedState && forcedState !== 'default' ? forcedState : 'default';
 
   const saveProfile = (event: React.FormEvent) => {
     event.preventDefault();
-    load({ company: { name: form.company.trim() }, operator: { name: form.operator.trim(), role: 'owner' } });
+    // The whole profile the intro collected stays editable here (REQ-15) — the team reads it
+    // from the same save the wizard wrote (REQ-16).
+    load({
+      company: {
+        name: form.company.trim(),
+        description: form.description.trim(),
+        answers: form.answers.filter((a) => a.q.trim() !== '' || a.a.trim() !== ''),
+      },
+      operator: { name: form.operator.trim(), role: 'owner' },
+    });
     setNote(t('saveChanges', lang));
   };
 
@@ -226,6 +240,45 @@ export function SettingsView({ lang, forcedState }: { lang: Lang; forcedState?: 
                       onChange={(event) => setForm((f) => ({ ...f, operator: event.target.value }))}
                     />
                   </label>
+                  <label className="field">
+                    {t('companyDescLabel', lang)}
+                    <textarea
+                      rows={2} value={form.description}
+                      onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
+                    />
+                  </label>
+                  <div className="field">
+                    <span>{t('customAnswersTitle', lang)}</span>
+                    {form.answers.map((row, i) => (
+                      <div className="answer-row" key={i}>
+                        <label className="field">
+                          <span className="sr-only">{t('questionLabel', lang)}</span>
+                          <input value={row.q} placeholder={t('questionLabel', lang)}
+                            onChange={(event) => setForm((f) => ({
+                              ...f,
+                              answers: f.answers.map((r, j) => (j === i ? { ...r, q: event.target.value } : r)),
+                            }))} />
+                        </label>
+                        <label className="field grow">
+                          <span className="sr-only">{t('answerLabel', lang)}</span>
+                          <input value={row.a} placeholder={t('answerLabel', lang)}
+                            onChange={(event) => setForm((f) => ({
+                              ...f,
+                              answers: f.answers.map((r, j) => (j === i ? { ...r, a: event.target.value } : r)),
+                            }))} />
+                        </label>
+                        <button type="button" className="btn small ghost"
+                          aria-label={`${t('removeRow', lang)} ${row.q}`}
+                          onClick={() => setForm((f) => ({ ...f, answers: f.answers.filter((_, j) => j !== i) }))}>
+                          <Icon name="close" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn small"
+                      onClick={() => setForm((f) => ({ ...f, answers: [...f.answers, { q: '', a: '' }] }))}>
+                      <Icon name="plus" />{t('addAnswer', lang)}
+                    </button>
+                  </div>
                   <div className="full">
                     <button className="btn" type="submit">{t('saveChanges', lang)}</button>
                   </div>

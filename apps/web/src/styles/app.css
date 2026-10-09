@@ -59,6 +59,9 @@
   --app-portrait-cell:38px;
   --app-portrait-max:150px;
   --app-portrait-pad:2px;
+  --app-intro-w:860px;
+  --app-shot-w:260px;
+  --app-landing-title:34px;
   --anim-fast:120ms;
   --anim-med:220ms;
   --anim-ease:cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -787,6 +790,43 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .search-resul
 
 /* ── team roster: cards are the people themselves (owner C8) ──────────────────────────────── */
 .team-actions { display: flex; justify-content: flex-end; margin-block: var(--s4) var(--s5); }
+.answer-row { display: flex; gap: var(--s2); align-items: flex-end; }
+.answer-row .field { flex: 1; }
+.answer-row .field.grow { flex: 2; }
+.draft-employees { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.draft-employee { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s3); background: var(--raised); border: var(--app-hair) solid var(--soft); }
+.draft-form { display: flex; flex-direction: column; gap: var(--s3); }
+
+/* ── the front door (owner, Phase D): the landing page and the intro wizard ──────────────
+   Both are the product wearing its own skin — the same tokens, the same panel recipe, the
+   same pixel type. Neither is inside the shell, because at this point there is no company
+   to show a shell for. */
+.landing, .intro { min-block-size: 100dvh; display: flex; flex-direction: column; align-items: center; padding: var(--s6) var(--s5) var(--s10); background: var(--bg); }
+.landing-top, .intro-top { inline-size: 100%; max-inline-size: var(--app-intro-w); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s8); }
+.landing-hero { inline-size: 100%; max-inline-size: var(--app-intro-w); display: flex; flex-direction: column; gap: var(--s4); }
+.landing-hero h1 { margin: 0; font-size: var(--app-landing-title); line-height: 1.1; max-inline-size: 22ch; }
+.landing-body { margin: 0; color: var(--muted); font-size: var(--lg); max-inline-size: 62ch; }
+.landing-actions { gap: var(--s3); flex-wrap: wrap; }
+.landing-demo-note { margin: 0; max-inline-size: 62ch; }
+.landing-shots { inline-size: 100%; max-inline-size: var(--app-intro-w); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--app-shot-w)), 1fr)); gap: var(--s4); margin-block-start: var(--s10); }
+.landing-shot { margin: 0; padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
+.landing-shot img { inline-size: 100%; block-size: auto; display: block; border: var(--app-hair) solid var(--line); background: var(--raised); }
+.landing-shot figcaption { font-size: var(--sm); color: var(--muted); }
+.intro-main { inline-size: 100%; max-inline-size: var(--app-intro-w); padding: var(--s6); display: flex; flex-direction: column; gap: var(--s5); }
+.intro-main h1 { margin: 0; font-size: var(--xl); }
+.intro-steps { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; border-block: var(--app-hair) solid var(--soft); padding-block: var(--s3); }
+.intro-step { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: var(--app-hair) solid transparent; color: var(--dim); font: inherit; font-size: var(--sm); padding: var(--s1) var(--s2); cursor: pointer; }
+.intro-step:disabled { cursor: default; }
+.intro-step:not(:disabled):hover { color: var(--ink); }
+.intro-step[aria-current='step'] { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+.intro-step-num { inline-size: var(--s5); block-size: var(--s5); display: inline-grid; place-items: center; font-size: var(--xs); border: var(--app-hair) solid currentColor; }
+.intro-step-count { margin-inline-start: auto; }
+.intro-nav { display: flex; align-items: center; gap: var(--s3); border-block-start: var(--app-hair) solid var(--soft); padding-block-start: var(--s4); }
+@media (max-width: 800px) {
+  .landing, .intro { padding-inline: var(--s3); }
+  .intro-main { padding: var(--s4); }
+  .answer-row { flex-direction: column; align-items: stretch; }
+}
 .team-form { display: flex; flex-direction: column; gap: var(--s4); }
 .team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
 .portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-portrait-cell), 1fr)); gap: var(--s2); max-block-size: var(--app-portrait-max); overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
