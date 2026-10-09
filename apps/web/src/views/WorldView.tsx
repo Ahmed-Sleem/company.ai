@@ -31,6 +31,7 @@ import { ScreenHead } from '../components/ScreenHead';
 import { DataState, type DataStateKind } from '../components/DataState';
 import { PropArt } from '../world/art';
 import { seatAgents, type Seat } from '../world/seat';
+import { boardRoom, centreOf, loungeRoom, placeAgents, spotInRoom, type Place } from '../world/placement';
 import { defaultPlan, sprite, ROOM_THEMES, SPRITES, type Desk, type Plan, type Room } from '../world/layout.data';
 import { useStore } from '../data/store';
 import { WORLD, roomAt, shapeFor, snap } from '../world/plan';
@@ -92,6 +93,17 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     from: { x: number; y: number }; to: { x: number; y: number };
     pos: 'from' | 'to' | 'back';
   } | null>(null);
+  /** C42 — the owner's rule, kept simple: working → desk, free during work hours → break room,
+      talking → meeting room. No energy, no forced rest, nothing to fall out of sync. */
+  const [tickAt, setTickAt] = useState(() => Date.now());
+  const [meeting, setMeeting] = useState<{ a: string; b: string } | null>(null);
+  const [walkers, setWalkers] = useState<{
+    key: string; agentId: string; avatar: number | null;
+    from: { x: number; y: number }; to: { x: number; y: number }; pos: 'from' | 'to';
+  }[]>([]);
+  const workTime = useMemo(() => isWorkTime(new Date(tickAt)), [tickAt]);
+  const lounge = useMemo(() => loungeRoom(plan), [plan]);
+  const board = useMemo(() => boardRoom(plan), [plan]);
 
   const viewport = useRef<HTMLDivElement | null>(null);
   const canvasEl = useRef<HTMLDivElement | null>(null);
@@ -120,11 +132,108 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     [plan, agents, tasks],
   );
 
+  /** The owner's rule (C42): has work → desk; free during work hours → break room; else desk. */
+  const places = useMemo<Record<string, Place>>(() => {
+    if (!liveOn) return {};
+    return placeAgents(
+      seats.filter((seat) => seat.agent).map((seat) => ({
+        agentId: seat.agent!.id,
+        hasOpenTasks: seat.tasks.some((task) => task.stage === 'progress' || task.stage === 'review'),
+      })),
+      lounge,
+      workTime,
+    );
+  }, [liveOn, seats, lounge, workTime]);
+
+  const meetingPartner = useCallback(
+    (id: string) => (meeting ? (meeting.a === id ? meeting.b : meeting.b === id ? meeting.a : null) : null),
+    [meeting],
+  );
+
+  const nameOf = useCallback((id: string) => {
+    const seat = seats.find((each) => each.agent?.id === id);
+    return seat?.agent ? localized(seat.agent.name, seat.agent.nameAr, lang) : '';
+  }, [seats, lang]);
+
+  /** Where every body stands on the floor. Desks never move; free people gather in the break
+      room and a talking pair sits in the meeting room. A change in this map is exactly what
+      starts a walk — so walks only ever mean something: to break, back to work, to a meeting. */
+  const spots = useMemo(() => {
+    const out: Record<string, { x: number; y: number }> = {};
+    let crowd = 0;
+    for (const seat of seats) {
+      if (!seat.agent) continue;
+      const id = seat.agent.id;
+      if (board && meetingPartner(id)) {
+        out[id] = spotInRoom(board, meeting?.a === id ? 0 : 1);
+        continue;
+      }
+      if (lounge && places[id] === 'lounge') {
+        out[id] = spotInRoom(lounge, crowd);
+        crowd += 1;
+        continue;
+      }
+      out[id] = centreOf(seat.desk);
+    }
+    return out;
+  }, [seats, places, lounge, board, meeting, meetingPartner]);
+
+  const startWalk = useCallback((m: { agentId: string; avatar: number | null; from: { x: number; y: number }; to: { x: number; y: number } }) => {
+    const key = `${m.agentId}-${Math.round(m.to.x)}-${Math.round(m.to.y)}-${Date.now()}`;
+    setWalkers((ws) => [...ws, { key, ...m, pos: 'from' as const }]);
+    setTimeout(() => setWalkers((ws) => ws.map((w) => (w.key === key ? { ...w, pos: 'to' as const } : w))), 60);
+    setTimeout(() => setWalkers((ws) => ws.filter((w) => w.key !== key)), 4_400);
+  }, []);
+
+  const prevSpots = useRef<Record<string, { x: number; y: number }>>({});
+  useEffect(() => {
+    if (!liveOn) { prevSpots.current = {}; setWalkers([]); return; }
+    for (const seat of seats) {
+      if (!seat.agent) continue;
+      const next = spots[seat.agent.id];
+      // Nobody teleports: the first time the floor is seen, everybody starts at their desk,
+      // so a free agent visibly walks to the break room when the studio opens.
+      const prev = prevSpots.current[seat.agent.id] ?? centreOf(seat.desk);
+      if (next && (Math.abs(prev.x - next.x) > 8 || Math.abs(prev.y - next.y) > 8)) {
+        startWalk({ agentId: seat.agent.id, avatar: seat.agent.avatar ?? null, from: prev, to: next });
+      }
+    }
+    prevSpots.current = spots;
+  }, [spots, seats, liveOn, startWalk]);
+
+  /** Talking pairs (C42): during work hours two free agents meet in the meeting room for one
+      round, then head back. Only when the floor actually has a meeting room — no dead ends. */
+  const idleKey = useMemo(
+    () => seats
+      .filter((seat) => seat.agent && places[seat.agent.id] === 'lounge')
+      .map((seat) => seat.agent!.id)
+      .join(','),
+    [seats, places],
+  );
+  useEffect(() => {
+    if (!liveOn || !workTime || !board) { setMeeting(null); return; }
+    const timer = setInterval(() => {
+      setMeeting((cur) => {
+        if (cur) return null;
+        const free = idleKey ? idleKey.split(',') : [];
+        if (free.length < 2) return null;
+        const i = Math.floor(Math.random() * free.length);
+        let j = Math.floor(Math.random() * (free.length - 1));
+        if (j >= i) j += 1;
+        const a = free[i];
+        const b = free[j];
+        return a && b ? { a, b } : null;
+      });
+    }, 16_000);
+    return () => clearInterval(timer);
+  }, [liveOn, workTime, board, idleKey]);
+
   useEffect(() => {
     if (!liveOn) { setWalk(null); return; }
-    const tick = setInterval(() => runTick(lang), 20_000);
+    const tick = setInterval(() => { runTick(lang); setTickAt(Date.now()); }, 20_000);
     const walker = setInterval(() => {
-      const candidates = seats.filter((seat) => seat.agent && seat.agent.status === 'working' && seat.agent.managerId);
+      const candidates = seats.filter((seat) => seat.agent && seat.agent.status === 'working'
+        && seat.agent.managerId && places[seat.agent.id] !== 'lounge' && !meetingPartner(seat.agent.id));
       const picked = candidates[Math.floor(Math.random() * candidates.length)];
       const managerSeat = picked?.agent
         ? seats.find((seat) => seat.agent?.id === picked.agent?.managerId)
@@ -141,7 +250,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       setTimeout(() => setWalk(null), 8_600);
     }, 14_000);
     return () => { clearInterval(tick); clearInterval(walker); };
-  }, [liveOn, seats, lang]);
+  }, [liveOn, seats, lang, places, meetingPartner]);
 
   /**
    * Fit the whole plan the moment the plan exists, and keep it fitted while the viewport resizes.
@@ -627,6 +736,47 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                     <strong>{OWNER_ROOMS.has(each.id) ? t(roomKey(each.id), lang) : each.name}</strong>
                     {each.sub ? <small>{each.sub}</small> : null}
                   </header>
+                  {liveOn && lounge && each.id === lounge.id ? (
+                    <div className="room-presence" data-world="lounge-crowd">
+                      <small>{t('roomLoungeNote', lang)}</small>
+                      {seats
+                        .filter((seat) => seat.agent && places[seat.agent.id] === 'lounge' && !meetingPartner(seat.agent.id))
+                        .map((seat) => {
+                          const spot = spots[seat.agent!.id];
+                          if (!spot) return null;
+                          return (
+                            <span
+                              key={seat.desk.id}
+                              className="presence-chip"
+                              data-presence={seat.agent!.id}
+                              style={{ insetInlineStart: spot.x - each.x, insetBlockStart: spot.y - each.y }}
+                            >
+                              <Avatar index={seat.agent!.avatar ?? undefined} size="sm" />
+                            </span>
+                          );
+                        })}
+                    </div>
+                  ) : null}
+                  {liveOn && board && each.id === board.id && meeting ? (
+                    <div className="room-presence" data-world="meeting-pair">
+                      <small>{t('roomBoardNote', lang)}</small>
+                      {[meeting.a, meeting.b].map((id) => {
+                        const seat = seats.find((each2) => each2.agent?.id === id);
+                        const spot = spots[id];
+                        if (!seat?.agent || !spot) return null;
+                        return (
+                          <span
+                            key={id}
+                            className="presence-chip"
+                            data-presence={id}
+                            style={{ insetInlineStart: spot.x - each.x, insetBlockStart: spot.y - each.y }}
+                          >
+                            <Avatar index={seat.agent.avatar ?? undefined} size="sm" />
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                   {building || (selected?.kind === 'room' && selected.id === each.id) ? (
                     <span
                       className="room-resize"
@@ -657,7 +807,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                 <button
                   key={seat.desk.id}
                   type="button"
-                  className={`desk${seat.agent ? '' : ' desk-empty'}${isChosen(seat.agent?.id) || (building && isChosen(seat.desk.id)) ? ' desk-selected' : ''}`}
+                  className={`desk${seat.agent ? '' : ' desk-empty'}${seat.agent && places[seat.agent.id] === 'lounge' ? ' desk-away' : ''}${isChosen(seat.agent?.id) || (building && isChosen(seat.desk.id)) ? ' desk-selected' : ''}`}
                   data-desk={seat.desk.id}
                   data-agent={seat.agent?.id ?? undefined}
                   aria-pressed={seat.agent ? isChosen(seat.agent.id) : undefined}
@@ -685,7 +835,11 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                         <span className="desk-bubble" data-world="bubble">
                           {walk && walk.agentId === seat.agent.id && walk.pos !== 'from'
                             ? t('liveDelivering', lang).replace('{name}', walk.managerName)
-                            : seatBubble(seat.agent.status, seat.tasks.map((task) => localized(task.title, task.titleAr, lang)), lang)}
+                            : meetingPartner(seat.agent.id)
+                              ? t('liveInMeeting', lang).replace('{name}', nameOf(meetingPartner(seat.agent.id)!))
+                              : places[seat.agent.id] === 'lounge'
+                                ? t('liveOnBreak', lang)
+                                : seatBubble(seat.agent.status, seat.tasks.map((task) => localized(task.title, task.titleAr, lang)), lang)}
                         </span>
                       ) : null}
                     </>
@@ -709,6 +863,23 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   <Avatar index={walk.avatar ?? undefined} size="sm" />
                 </span>
               ) : null}
+
+              {/* The C42 walks: to the break room, back to the desk, to a meeting. Each one
+                  starts when a body's spot changes, so a walk always means a real move. */}
+              {liveOn && walkers.map((w) => (
+                <span
+                  key={w.key}
+                  className="walker"
+                  data-world="walker"
+                  aria-hidden="true"
+                  style={{
+                    insetInlineStart: w.pos === 'to' ? w.to.x : w.from.x,
+                    insetBlockStart: w.pos === 'to' ? w.to.y : w.from.y,
+                  }}
+                >
+                  <Avatar index={w.avatar ?? undefined} size="sm" />
+                </span>
+              ))}
 
               <p className="visually-hidden" data-world="summary">
                 {t('worldSummary', lang)

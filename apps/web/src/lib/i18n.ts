@@ -145,6 +145,12 @@ export const STRINGS = {
   liveBlocked: { en: 'blocked!', ar: 'متعثّر!' },
   livePaused: { en: 'paused', ar: 'متوقف مؤقتًا' },
   liveDelivering: { en: 'delivering to {name}', ar: 'يُسلّم إلى {name}' },
+  /* ── fifth round, C42: the owner's rule — work at the desk, free in the break room, talk in
+     the meeting room. Nothing more. ── */
+  liveOnBreak: { en: 'on break', ar: 'في الاستراحة' },
+  liveInMeeting: { en: 'talking with {name}', ar: 'يتحدّث مع {name}' },
+  roomLoungeNote: { en: 'Free during work hours', ar: 'متاحون في ساعات العمل' },
+  roomBoardNote: { en: 'Agents talk here', ar: 'يتحدّث الموظفون هنا' },
   clockLabel: { en: 'Studio clock — work hours and off hours', ar: 'ساعة الاستوديو — ساعات العمل وخارجه' },
   scheduleTitle: { en: 'Studio hours', ar: 'ساعات الاستوديو' },
   scheduleNote: { en: 'When the studio is at work. The clock, the bubbles and the engine all read this.', ar: 'متى يعمل الاستوديو. الساعة والفقاعات والمحرك كلها تقرأ هذا.' },

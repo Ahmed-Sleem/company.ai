@@ -1142,3 +1142,9 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   the work loop (progress → review → done + thread announcements), provider or local replies in
   Comms, compiled system prompts. Gates green: verify 10/10, smoke 83/83, web tests 87/87.
   Commit `362d13a`.
+- 10 October 2026 — C42, the owner's world rule, shipped exactly as he chose it: working → desk,
+  free during work hours → break room, talking pair → meeting room; walks only to deliver, to
+  break, back to work, to a meeting. No energy, no forced rest. `world/placement.ts` is a pure
+  function (5 unit tests), presence chips + dimmed away-desks + walking on every real move,
+  theme-based room lookup with a desk fallback so no floor can dead-end. Smoke gained an
+  adaptive break-room check. Gates green: verify 10/10, smoke 84/84, web tests 92/92.

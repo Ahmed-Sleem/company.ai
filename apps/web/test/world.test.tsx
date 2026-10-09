@@ -268,3 +268,48 @@ describe('seating people at desks', () => {
     }
   });
 });
+
+/* ── C42: the owner's placement rule — work at the desk, free in the break room, else desk ── */
+import { boardRoom, loungeRoom, placeAgents, spotInRoom } from '../src/world/placement';
+
+describe('placement (owner C42)', () => {
+  const lounge = { id: 'lounge', key: 'lounge', name: 'Break', sub: '', theme: 'lounge-area', x: 100, y: 100, w: 200, h: 200 } as const;
+  const board = { id: 'board', key: 'board', name: 'Board', sub: '', theme: 'boardroom-hub', x: 0, y: 0, w: 100, h: 100 } as const;
+  const plan = { rooms: [lounge, board], desks: [], props: [] } as never;
+
+  it('finds the break room and the meeting room by id or by theme', () => {
+    expect(loungeRoom(plan)?.id).toBe('lounge');
+    expect(boardRoom(plan)?.id).toBe('board');
+    const themed = { rooms: [{ id: 'r-new-1', theme: 'lounge-area' }] } as never;
+    expect(loungeRoom(themed)?.id).toBe('r-new-1');
+  });
+
+  it('working stays at the desk; free during work hours goes to the break room', () => {
+    const places = placeAgents(
+      [{ agentId: 'a', hasOpenTasks: true }, { agentId: 'b', hasOpenTasks: false }],
+      lounge,
+      true,
+    );
+    expect(places).toEqual({ a: 'desk', b: 'lounge' });
+  });
+
+  it('falls back to the desk when the floor has no break room — no dead ends', () => {
+    const places = placeAgents([{ agentId: 'b', hasOpenTasks: false }], null, true);
+    expect(places).toEqual({ b: 'desk' });
+  });
+
+  it('outside work hours everybody stays at the desk', () => {
+    const places = placeAgents([{ agentId: 'b', hasOpenTasks: false }], lounge, false);
+    expect(places).toEqual({ b: 'desk' });
+  });
+
+  it('spots spread a crowd out so nobody stands inside somebody else', () => {
+    const first = spotInRoom(lounge, 0);
+    const second = spotInRoom(lounge, 1);
+    const third = spotInRoom(lounge, 2);
+    const far = spotInRoom(lounge, 4);
+    expect(Math.abs(first.x - second.x)).toBe(52);
+    expect(first.y).toBe(second.y);
+    expect(far.y).toBeGreaterThan(third.y);
+  });
+});

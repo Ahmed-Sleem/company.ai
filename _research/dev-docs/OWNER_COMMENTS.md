@@ -209,8 +209,16 @@ Comments (the work list):
   drifting; collision keeps every pair apart at every scale.
 - C42 furniture/world audit: gamify properly, room-type behaviours, mandatory rest room, no
   gaps in the logic — ASK THE OWNER with recommendations, he chooses.
-  **WAITING ON OWNER** — design questions sent 10 October 2026 (room set, energy, rest rule,
-  walks). Nothing is built until the answers are in.
+  **OWNER ANSWERED 2026-10-10** — no energy meters, nothing "realistic" that would slow the work
+  down. The rule, in his words, kept exactly this simple: working → work room; free with no task
+  → break room; talking to each other → meeting room. Walks only for: deliver, go to break, back
+  to work, go to a meeting. Nothing else moves.
+  **DONE 2026-10-10** — placement is a pure function of "is this person on a task?"
+  (`world/placement.ts`); the demo floor already had the rooms (Breakroom & Lounge, Boardroom),
+  and any visitor-built room painted with those themes counts too — floors without them fall
+  back to the desk, never a dead end. Verified live: chloe/sam/iris rest in the lounge with
+  dimmed desks and "on break" bubbles; a talking pair (iris+sam) meets in the boardroom with
+  "talking with X" bubbles; opening the studio walks everybody who is free to the break room.
 - C43 commits must read like a professional team's history — full detail per commit.
   **DONE 2026-10-10** — from `362d13a` on, every commit carries a detailed body: what changed,
   why, per-comment references, and the gate results.

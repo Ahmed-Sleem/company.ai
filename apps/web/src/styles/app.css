@@ -602,6 +602,13 @@ h3 { font-size: var(--base); }
 .clock-pin { fill: var(--text); }
 .desk-bubble { position: absolute; inset-block-end: calc(100% + var(--s1)); inset-inline-start: 50%; transform: translateX(-50%); background: var(--raised); border: var(--app-hair) solid var(--line); box-shadow: var(--app-stroke) var(--app-stroke) 0 var(--soft); color: var(--text); font-size: var(--sh-fine); padding: var(--s1) var(--s2); white-space: nowrap; max-inline-size: var(--app-bubble-w); overflow: hidden; text-overflow: ellipsis; z-index: 3; }
 [dir='rtl'] .desk-bubble { transform: translateX(50%); }
+/* ── C42 (owner): where everybody is. Free people gather in the break room, a talking pair
+   meets in the meeting room, and their desk shows they are away. Nothing else moves. ── */
+.desk-away .avatar { opacity: 0.3; }
+.room-presence { position: absolute; inset-block: 0; inset-inline: 0; pointer-events: none; z-index: 2; }
+.room-presence small { position: absolute; inset-block-end: var(--s2); inset-inline-start: 50%; transform: translateX(-50%); color: var(--dim); font-size: var(--sh-fine); white-space: nowrap; background: var(--raised); border: var(--app-hair) solid var(--line); padding: 0 var(--s2); }
+[dir='rtl'] .room-presence small { transform: translateX(50%); }
+.presence-chip { position: absolute; transform: translate(-50%, -50%); filter: drop-shadow(var(--app-stroke) var(--app-stroke) 0 var(--soft)); }
 .walker { position: absolute; z-index: 4; transform: translate(-50%, -50%); transition: inset-inline-start 4s linear, inset-block-start 4s linear; filter: drop-shadow(var(--app-stroke) var(--app-stroke) 0 var(--soft)); pointer-events: none; }
 
 /* ── the one controls menu (owner C19): floats over the floor, closed by default ─────────── */

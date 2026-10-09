@@ -377,6 +377,17 @@ try {
     rooms === 6 && desks === 16 && props === 21, `${rooms} rooms · ${desks} desks · ${props} props`);
   check('the company is sitting at the desks it has', staffed === 8, `${staffed} desks staffed`);
 
+  // C42 (owner): free agents gather in the break room during work hours — and only then.
+  {
+    const hour = new Date().getHours();
+    const atWork = hour >= 9 && hour < 17;
+    const crowd = await page.$$eval('[data-world=lounge-crowd] .presence-chip', (n) => n.length);
+    const away = await page.$$eval('.desk-away', (n) => n.length);
+    check('free agents rest in the break room during work hours, and stay at their desks outside them',
+      atWork ? crowd >= 1 && crowd === away : crowd === 0 && away === 0,
+      `crowd ${crowd}, away ${away}, hour ${hour}`);
+  }
+
   // the stats strip is gone (owner 2026-10-09): the floor belongs to the plan; the facts the
   // strip carried still exist for screen readers in the hidden summary sentence
   const noStats = (await page.$('.world-stats')) === null;
