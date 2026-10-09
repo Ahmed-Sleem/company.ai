@@ -77,3 +77,20 @@ Comments (the work list):
   mechanics), typography, the shadow/frame language (incl. the stepped-corner recipe), component
   visual recipes, icon and portrait pixel rules, motion tokens and keyframes, the CRT overlay,
   accessibility, and a copy-paste token block. Pushed as 897b45f.
+
+## 2026-10-09 (evening) — second round of comments
+
+- C18 #comms and #network must fit the viewport, page not scrollable (like the world fix).
+- C19 #world: remove the staff/working/tasks stats; all controls collapse into one menu that
+  opens/closes, giving the space to the viewer itself; rooms become customisable/buildable.
+- C20 #settings: remove the "[ company.ai ] Designed to stay focused…" panel and the keyboard
+  shortcuts panel (the whole aside).
+- C21 #network: a controls window to choose which graph to see (tasks, people, …); clicking a
+  node opens its details with options to control that task/employee; the graph is dynamic,
+  always gently moving, smooth like Obsidian.
+- C22 #comms: the Teammates list scrolls by itself (not the whole page); the chat interface —
+  details and the text box — redesigned to be more pleasing.
+- C23 #team: people must be editable (change their info), exactly per the main plan and the
+  requirements (REQ-17: user-typed name, role, details; pixel portrait; place in the hierarchy).
+- C24 Complete the next phase in the plan → Phase D: landing page + intro wizard
+  (REQ-33/14/15/16), resumable, everything editable later.
