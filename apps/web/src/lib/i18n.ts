@@ -258,6 +258,7 @@ export const STRINGS = {
   worldCanvas: { en: 'Studio floor plan', ar: 'مخطط أرضية الاستوديو' },
   zoomIn: { en: 'Zoom in', ar: 'تقريب' },
   zoomLabel: { en: 'Zoom', ar: 'التكبير' },
+  pageView: { en: 'View', ar: 'عرض' },
   zoomOut: { en: 'Zoom out', ar: 'تبعيد' },
   deskDetail: { en: 'Desk detail', ar: 'تفاصيل المكتب' },
   emptyDesk: { en: 'Empty desk', ar: 'مكتب فارغ' },

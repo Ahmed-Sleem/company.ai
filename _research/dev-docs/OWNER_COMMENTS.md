@@ -147,3 +147,15 @@ Comments (the work list):
   FROM SCRATCH — zero demo tasks/threads. Old saves migrate straight in (version 2). Settings
   now edits the whole company profile. Note: compiling the profile into model prompts (REQ-16)
   rides with the engine in Phase F.
+
+## 2026-10-10 — fourth round of comments
+
+- C29 #world: the close button of the person inspector (drawer) does not work.
+- C30 #world: when build expands, the menu must not grow very long — the viewport is fixed;
+  the menu should expand in pages.
+- C31 #world: new rooms must be resizable.
+- C32 everywhere: world, graph and the rest must all be viewers and controls of the same
+  general thing — add a person/task/room and every view must show it.
+- C33 the owner still has not SEEN the landing page (his save predates it) — he is on board,
+  but give him a door to it.
+- Continue the next phase (Phase E: per-employee providers, REQ-18/19).
