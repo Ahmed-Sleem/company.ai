@@ -185,7 +185,7 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                       {/* REQ-47: one line at first, grows with the typing to three, then
                           scrolls — and the round send button sits centred on it. */}
                       <textarea id="composer-input" rows={1} value={draft}
-                        placeholder={t('chatPlaceholder', lang)}
+                        aria-label={t('chatPlaceholder', lang)}
                         onChange={(e) => setDraft(e.target.value)}
                         onInput={(e) => {
                           const el = e.currentTarget;

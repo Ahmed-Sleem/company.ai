@@ -32,6 +32,8 @@ export const STRINGS = {
   mailOptionsAria: { en: 'Answer with one of these', ar: 'أجب بأحد هذه' },
   mailReplyPlaceholder: { en: 'Write your answer…', ar: 'اكتب ردك…' },
   mailSend: { en: 'Send', ar: 'أرسل' },
+  mailReadMore: { en: 'Read more', ar: 'اقرأ المزيد' },
+  mailClose: { en: 'Close', ar: 'إغلاق' },
   /* REQ-48: the Help window — everything explained in one place. */
   helpViewsTitle: { en: 'The studio', ar: 'الاستوديو' },
   helpViewsBody: { en: 'Team holds your people — humans and AI employees, each with a role, a focus and an optional model. Tasks is the board where work moves through four stages. Inbox is your mailbox: decisions to approve and letters from your team, answered with their options or your own words. Comms are the threads. Network is the living graph of who works with whom. World is the office floor you can walk, drag and zoom. Settings keeps the models, the schedule, the look and your save file.', ar: 'الفريق يضمّ أشخاصك — بشرًا وموظفي ذكاء اصطناعي، لكلّ دورٌ وتركيزٌ ونموذجٌ اختياري. المهام لوحة تتحرك فيها الأعمال عبر أربع مراحل. الصندوق بريدك: قرارات للموافقة ورسائل من فريقك تردّ عليها بخياراتها أو بكلماتك. المراسلات هي المحادثات. الشبكة الرسم الحيّ لمن يعمل مع من. العالم طابق المكتب تتجول فيه وتسحبه وتكبّره. والإعدادات تحفظ النماذج والجدول والمظهر وملف حفظك.' },
@@ -66,7 +68,6 @@ export const STRINGS = {
   teamNow: { en: 'Current work', ar: 'العمل الحالي' },
   teamNoTasks: { en: 'No open tasks right now.', ar: 'لا مهام مفتوحة حالياً.' },
   teamSee: { en: 'Open profile', ar: 'افتح الملف' },
-  waitingYou: { en: 'waiting for you', ar: 'بانتظارك' },
   localOnly: { en: 'Local changes only', ar: 'تغييرات محلية فقط' },
   deckNav: { en: 'Decision deck', ar: 'سجل القرارات' },
   prev: { en: 'Previous decision', ar: 'القرار السابق' },

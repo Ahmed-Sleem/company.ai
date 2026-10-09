@@ -78,14 +78,6 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       />
       <div className="pagebody">
         <DataState state={state} lang={lang} onRetry={() => location.reload()}>
-          {decisions && (
-            <div className="queue-summary">
-              <Icon name="inbox" />
-              <span className="grow">{`${pending.length} ${t('waitingYou', lang)}`}</span>
-              <span className="small dim">{t('localOnly', lang)}</span>
-            </div>
-          )}
-
           {pending.length === 0 && decisions ? <DataState state="empty" lang={lang} /> : null}
 
           {/* REQ-46: the mailbox — compact one-line letters; "read more" opens one. */}
@@ -105,6 +97,8 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                       <span className="mail-subject">{localized(d.title, d.titleAr, lang)}</span>
                       <span className="grow" />
                       {d.kind === 'ask' ? <span className="tag">{t('mailAskTag', lang)}</span> : null}
+                      {/* R8: the affordance the owner asked for — an actual button word. */}
+                      <span className="mail-more">{open ? t('mailClose', lang) : t('mailReadMore', lang)}</span>
                       <time className="mail-time" dateTime={d.audit.raisedAt}>{dateTime(d.audit.raisedAt, lang)}</time>
                     </button>
                     {open ? (

@@ -78,6 +78,10 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [camera, setCamera] = useState<Camera>({ scale: 1, x: 0, y: 0 });
   const [room, setRoom] = useState<string | null>(null);
   const [building, setBuilding] = useState(false);
+  /** R8 (owner): closing Build drops every edit-selection — the View page holds nothing chosen. */
+  useEffect(() => {
+    if (!building) setSelected((now) => (now && now.kind !== 'agent' ? null : now));
+  }, [building]);
   const [history, setHistory] = useState<Plan[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   /** The menu pages (owner C30): the floor's height is fixed, so a long menu would scroll the
@@ -467,16 +471,9 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     aim(panBy(pan.camera, event.clientX - pan.x, event.clientY - pan.y));
   };
 
-  /** A still press on a room (under 5px of travel) chooses it — the pan gesture owns the room's
-      surface otherwise, and its pointer capture would swallow a native click (owner C31). */
-  const roomPress = useRef<{ id: string; x: number; y: number } | null>(null);
-
   const onPointerUp = (event: React.PointerEvent) => {
-    const press = roomPress.current;
-    roomPress.current = null;
-    if (press && !building && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 5) {
-      setSelected((now) => (now?.kind === 'room' && now.id === press.id ? null : { kind: 'room', id: press.id }));
-    }
+    // R8 (owner): the View page is for looking — nothing is chosen, moved or resized
+    // outside the Build toggle. Selection happens only through Build's own gestures.
     pointers.current.delete(event.pointerId);
     pinch.current = null;
     if (panning.current && !reduced) {
@@ -507,6 +504,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   /** Build mode: the corner handle resizes the room, snapped to the same 16-unit grid. */
   const onResizeDown = (event: React.PointerEvent, id: string) => {
+    if (!building) return;
     event.stopPropagation();
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
     const box = boxOf();
@@ -800,10 +798,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   data-room-box={each.id}
                   style={{ insetInlineStart: each.x, insetBlockStart: each.y, inlineSize: each.w, blockSize: each.h }}
                   aria-label={OWNER_ROOMS.has(each.id) ? t(roomKey(each.id), lang) : each.name}
-                  onPointerDown={(event) => {
-                    if (!building) roomPress.current = { id: each.id, x: event.clientX, y: event.clientY };
-                    onRoomDown(event, each.id);
-                  }}
+                  onPointerDown={(event) => onRoomDown(event, each.id)}
                   onClick={() => building && setSelected({ kind: 'room', id: each.id })}
                 >
                   <header className="room-head">
@@ -851,7 +846,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                       })}
                     </div>
                   ) : null}
-                  {building || (selected?.kind === 'room' && selected.id === each.id) ? (
+                  {building ? (
                     <span
                       className="room-resize"
                       data-world={`resize-${each.id}`}

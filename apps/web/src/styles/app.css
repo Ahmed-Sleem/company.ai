@@ -63,6 +63,7 @@
   --app-landing-title:34px;
   --app-clock:52px;
   --app-bubble-w:160px;
+  --app-chat-w:720px;
   --app-input-h:44px;
   --app-palette-w:560px;
   --app-palette-gap:2px;
@@ -179,6 +180,8 @@ body {
 .palette-field { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); color: var(--dim); }
 .palette-field input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--base); }
 .palette-field input:focus { outline: none; }
+/* R8 (owner): no blue slab when text is selected in the palette field. */
+.palette-field input::selection { background: transparent; }
 .palette-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: grid; gap: var(--app-palette-gap); align-content: start; }
 .palette-list button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--sm); text-align: start; padding: var(--s2); cursor: pointer; }
 .palette-list button.is-on { background: var(--surface); box-shadow: inset 0 0 0 var(--app-hair) var(--line); }
@@ -955,11 +958,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .dim { color: var(--dim); }
 
 /* ── inbox as a deck of slides (owner C9) ────────────────────────────────────────────────── */
-.queue-summary {
-  display: flex; align-items: center; gap: var(--s4);
-  padding: var(--s4) var(--s5); margin-block-end: var(--s5);
-  border: var(--app-hair) solid var(--line); background: var(--raised);
-}
 /* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */
 .help-sections { display: grid; gap: var(--s2); }
 .help-section { border: var(--app-hair) solid var(--line); background: var(--surface); }
@@ -984,6 +982,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .mail-who { font-weight: 700; white-space: nowrap; }
 .mail-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .mail-time { font-size: var(--xs); color: var(--dim); white-space: nowrap; }
+.mail-more { font-size: var(--xs); color: var(--accent); white-space: nowrap; }
 .mail-body { padding: var(--s4); display: grid; gap: var(--s3); }
 .mail-text { margin: 0; color: var(--text); font-size: var(--sm); }
 .mail-options { display: flex; flex-wrap: wrap; gap: var(--s2); }
@@ -1018,7 +1017,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .status-dot.idle { background: var(--dim); }
 .chat { display: flex; flex-direction: column; border: var(--app-hair) solid var(--soft); background: var(--raised); min-block-size: var(--app-world-h-min); max-block-size: var(--app-world-h); }
 .chat-head { display: flex; align-items: center; gap: var(--s4); padding: var(--s4) var(--s5); border-block-end: var(--app-hair) solid var(--soft); }
-.chat-log { flex: 1; overflow-y: auto; padding: var(--s5); display: flex; flex-direction: column; gap: var(--s2); }
+/* R8 (owner): the conversation is a centred column with breathing room on top. */
+.chat-log { flex: 1; overflow-y: auto; padding: var(--s8) var(--s5) var(--s5); display: flex; flex-direction: column; gap: var(--s2); }
+.chat-log > * { inline-size: 100%; max-inline-size: var(--app-chat-w); margin-inline: auto; }
 .chat-head .thread-name { font-family: var(--pixel); font-weight: 500; font-size: var(--lg); display: inline-flex; align-items: center; gap: var(--sh-dotgap); }
 :root[lang='ar'] .chat-head .thread-name { font-family: var(--font); }
 .avatar-space { inline-size: var(--avatar-sm); flex-shrink: 0; }
