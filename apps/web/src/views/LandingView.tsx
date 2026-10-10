@@ -8,9 +8,10 @@
  * companies|new-company|language]` in the hero and the picker. The deep-dive scenes are pure
  * CSS (no screenshots, no external assets), and every string is bilingual.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { t, type Lang } from '../lib/i18n';
 import { Icon } from '../components/Icon';
+import { Dialog } from '../components/Dialog';
 import type { StudioMeta } from '../lib/studios';
 
 const VIEW_KEYS = ['landViewTeam', 'landViewTasks', 'landViewInbox', 'landViewComms', 'landViewNetwork', 'landViewWorld', 'landViewSet'] as const;
@@ -97,6 +98,8 @@ export function LandingView({
   onOpen,
   onOpenStudio,
   onNewStudio,
+  onDeleteStudio,
+  onImport,
   onLanguage,
   onDemoView,
 }: {
@@ -112,18 +115,21 @@ export function LandingView({
   onOpen?: () => void;
   onOpenStudio: (id: string) => void;
   onNewStudio: () => void;
+  /** Round fifteen: created companies can be deleted from the window; the demo cannot. */
+  onDeleteStudio: (id: string) => void;
+  /** Load a company from a save file; false means "not a company.ai save". */
+  onImport: (file: File) => Promise<{ ok: true; name: string } | { ok: false }>;
   onLanguage: () => void;
   /** R11: every section leads somewhere — the demo, dropped into the room it describes. */
   onDemoView: (view: string) => void;
 }) {
-  /** Start with companies on the device shows the picker first; without, it starts.
-      With no active save at all (a cleared or brand-new browser) there is nothing to pick
-      between — Start starts. */
-  const [picking, setPicking] = useState(false);
-  const hasSave = typeof localStorage !== 'undefined' && localStorage.getItem('company.ai.save.v1') !== null;
-  // A half-finished wizard always wins over the picker — the draft is the newest intent.
-  const start = () => (studios.length > 0 && hasSave && !resumable ? setPicking(true) : onStart());
-  const startLabel = resumable && !studio ? t('landingResume', lang) : studios.length > 0 ? t('landingStart', lang) : resumable ? t('landingResume', lang) : t('landingStart', lang);
+  /** Round fifteen (owner): the options were confusing, so now ONE button starts, and it
+      opens ONE window holding everything — the created companies, the demo, create-new and
+      load-from-file. The demo row carries no delete button at all. */
+  const [winOpen, setWinOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [importBad, setImportBad] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const deepDives = [
     { id: 'tools', view: 'tasks', title: t('landBandToolsT', lang), body: t('landBandToolsB', lang), lines: [t('landBandToolsL1', lang), t('landBandToolsL2', lang), t('landBandToolsL3', lang)], scene: <ToolScene lang={lang} /> },
@@ -159,8 +165,8 @@ export function LandingView({
             aria-label={lang === 'en' ? 'العربية' : 'English'} onClick={onLanguage}>
             {lang === 'en' ? 'ع' : 'EN'}
           </button>
-          <button type="button" className="btn primary" data-landing="start" onClick={start}>
-            {startLabel}
+          <button type="button" className="btn primary" data-landing="start" onClick={() => setWinOpen(true)}>
+            {t('landStartOne', lang)}
           </button>
         </div>
       </header>
@@ -171,16 +177,8 @@ export function LandingView({
           <h1 id="page-title" tabIndex={-1}>{t('landHeroTitle', lang)}</h1>
           <p className="landing-body">{t('landHeroBody', lang)}</p>
           <div className="row landing-actions">
-            {studio && onOpen ? (
-              <button type="button" className="btn primary" data-landing="open" onClick={onOpen}>
-                <Icon name="play" />{t('landingOpen', lang).replace('{company}', studio)}
-              </button>
-            ) : null}
-            {studio && onOpen ? (
-              <button type="button" className="btn" onClick={start}>{startLabel}</button>
-            ) : null}
-            <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
-              {t('landingDemo', lang)}
+            <button type="button" className="btn primary" data-landing="start" onClick={() => setWinOpen(true)}>
+              <Icon name="play" />{t('landStartOne', lang)}
             </button>
           </div>
           <ul className="landing-trust">
@@ -193,10 +191,23 @@ export function LandingView({
         <HeroScene lang={lang} />
       </section>
 
-      {/* R8: after Start — every company on this device, and the door to a new one. */}
-      {picking ? (
-        <section className="landing-companies panel" data-landing="companies" aria-label={t('landCompaniesTitle', lang)}>
-          <h2>{t('landCompaniesTitle', lang)}</h2>
+      {/* Round fifteen: the one window the one Start button opens — the created companies
+          (open or delete), the demo (open, never deleted), create-new and load-from-file.
+          It speaks the product's one dialog language. */}
+      <Dialog open={winOpen} onClose={() => setWinOpen(false)} lang={lang}
+        eyebrow={t('brand', lang)} title={t('landCompaniesTitle', lang)}>
+        <div className="companies-win" data-landing="companies-window">
+          {resumable ? (
+            <div className="studio-row resume-row">
+              <span className="grow">
+                <strong>{t('landResumeSetup', lang)}</strong>
+                <small className="dim">{t('landResumeSetupB', lang)}</small>
+              </span>
+              <button type="button" className="btn primary" data-landing="resume" onClick={onStart}>
+                {t('landingResume', lang)}
+              </button>
+            </div>
+          ) : null}
           <ul className="studio-list">
             {studios.map((s) => (
               <li key={s.id} className="studio-row">
@@ -204,18 +215,58 @@ export function LandingView({
                   <strong>{s.name}</strong>
                   <small className="dim">{new Date(s.at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</small>
                 </span>
-                <button type="button" className="btn" data-studio={s.id}
+                <button type="button" className="btn" data-landing="open" data-studio={s.id}
                   onClick={() => (s.name === studio && onOpen ? onOpen() : onOpenStudio(s.id))}>
                   {t('landOpenC', lang)}
+                </button>
+                <button type="button" className={`btn ghost${confirmId === s.id ? ' danger' : ''}`}
+                  data-landing="delete" data-studio={s.id}
+                  onClick={() => {
+                    if (confirmId === s.id) { setConfirmId(null); onDeleteStudio(s.id); }
+                    else setConfirmId(s.id);
+                  }}>
+                  {confirmId === s.id ? t('landDeleteSure', lang) : t('landDelete', lang)}
                 </button>
               </li>
             ))}
           </ul>
-          <button type="button" className="btn primary" data-landing="new-company" onClick={onNewStudio}>
-            <Icon name="plus" />{t('landNewCompany', lang)}
-          </button>
-        </section>
-      ) : null}
+          <div className="studio-row demo-row">
+            <span className="grow">
+              <strong>{t('landDemoName', lang)}</strong>
+              <small className="dim">{t('landDemoRowB', lang)}</small>
+            </span>
+            <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
+              {t('landingDemo', lang)}
+            </button>
+          </div>
+          {studios.length === 0 && !resumable ? (
+            <p className="small dim companies-empty">{t('landEmpty', lang)}</p>
+          ) : null}
+          {importBad ? (
+            <p className="small companies-error" data-landing="import-error">{t('landImportBad', lang)}</p>
+          ) : null}
+          <div className="row win-actions">
+            <button type="button" className="btn primary" data-landing="new-company" onClick={onNewStudio}>
+              <Icon name="plus" />{t('landNewCompany', lang)}
+            </button>
+            <button type="button" className="btn" data-landing="load-file"
+              onClick={() => fileRef.current?.click()}>
+              {t('landLoadFile', lang)}
+            </button>
+            <input ref={fileRef} type="file" accept=".json,application/json" className="file-hidden"
+              tabIndex={-1} aria-hidden="true"
+              onChange={(e) => {
+                const file = e.currentTarget.files?.[0];
+                e.currentTarget.value = '';
+                if (!file) return;
+                void onImport(file).then((result) => {
+                  if (result.ok) onOpen?.();
+                  else setImportBad(true);
+                });
+              }} />
+          </div>
+        </div>
+      </Dialog>
 
       {/* The honest facts strip — real numbers about the shipped product, nothing invented. */}
       <section className="landing-facts" aria-label={t('brand', lang)}>
@@ -343,13 +394,14 @@ export function LandingView({
         ))}
       </section>
 
-      {/* The final call — same two doors, said once more. */}
+      {/* The final call — the same one button, said once more. */}
       <section className="landing-cta-final">
         <h2>{t('landCtaT', lang)}</h2>
         <p className="landing-body">{t('landCtaB', lang)}</p>
         <div className="row landing-actions">
-          <button type="button" className="btn primary" onClick={start}>{startLabel}</button>
-          <button type="button" className="btn" onClick={onDemo}>{t('landingDemo', lang)}</button>
+          <button type="button" className="btn primary" onClick={() => setWinOpen(true)}>
+            {t('landStartOne', lang)}
+          </button>
         </div>
       </section>
 

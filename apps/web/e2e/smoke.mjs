@@ -106,11 +106,22 @@ try {
   // R11: the demo leaves no save, so once the suite has taken the demo door, every later
   // navigation must take it again — but the very first visit WANTS the landing to be there.
   let demoEntered = false;
+  /** Round fifteen: every way in lives inside the one Start window. The closed dialog stays
+      in the DOM, so presence ($/waitForSelector) says nothing — visibility is the signal. */
+  const openWindow = async () => {
+    if (!(await page.isVisible('[data-landing=companies-window]'))) {
+      await page.click('[data-landing=start]');
+      await page.waitForFunction(() => document.querySelector('dialog.dialog')?.open === true);
+    }
+  };
   const openDoor = async (target, options = {}) => {
     await page.goto(target, { waitUntil: 'networkidle' });
-    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
-    else if ((options.allowDemo || demoEntered) && await page.$('[data-landing=demo]')) {
-      await page.click('[data-landing=demo]');
+    if (!(await page.$('.landing'))) return;
+    await openWindow();
+    if (await page.isVisible('[data-landing=companies-window] [data-landing=open]')) {
+      await page.click('[data-landing=companies-window] [data-landing=open]');
+    } else if (options.allowDemo || demoEntered) {
+      await page.click('[data-landing=companies-window] [data-landing=demo]');
       demoEntered = true;
     }
   };
@@ -121,7 +132,15 @@ try {
   // so it walks through that door first.
   await page.waitForSelector('.landing');
   check('a brand-new visitor meets the landing page before the product', true, 'landing shown');
-  await page.click('[data-landing=demo]');
+  check('round 15 — one Start button in the hero, no door clutter',
+    (await page.locator('.landing-actions [data-landing=start]').count()) === 1 &&
+    (await page.$('.landing-actions [data-landing=demo]')) === null);
+  await openWindow();
+  await page.waitForSelector('[data-landing=companies-window]');
+  check('round 15 — the window lists the demo with no delete control on it',
+    (await page.$('[data-landing=companies-window] .demo-row [data-landing=demo]')) !== null &&
+    (await page.$('[data-landing=companies-window] .demo-row [data-landing=delete]')) === null);
+  await page.click('[data-landing=companies-window] [data-landing=demo]');
   demoEntered = true;
   await page.waitForSelector('.sidebar');
 
@@ -136,7 +155,11 @@ try {
     check('a section door drops the visitor in the room it describes (R11)',
       (await page.evaluate(() => location.hash)) === '#team');
     await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
-    if (await page.$('[data-landing=demo]')) { await page.click('[data-landing=demo]'); demoEntered = true; }
+    if (await page.$('.landing')) {
+      await openWindow();
+      await page.click('[data-landing=companies-window] [data-landing=demo]');
+      demoEntered = true;
+    }
     await page.waitForSelector('.sidebar');
   }
 
@@ -164,10 +187,11 @@ try {
   // greets a fresh visitor; the resume door belongs to the visitor's own companies (checked
   // later with Nile Pixels).
   await page.reload({ waitUntil: 'networkidle' });
-  const demoResume = await page.$('[data-landing=open]');
+  await openWindow();
+  const demoResume = await page.$('[data-landing=companies-window] [data-landing=open]');
   check('the demo leaves nothing behind — reload greets a fresh visitor, not a resume door (R11)',
     demoResume === null);
-  await page.click('[data-landing=demo]');
+  await page.click('[data-landing=companies-window] [data-landing=demo]');
   demoEntered = true;
   await page.waitForSelector('.sidebar');
   const demoTasksBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('company.ai.save.v1') ?? 'null') === null);
@@ -420,8 +444,15 @@ try {
   const setTheme = async (theme) => {
     await page.evaluate((value) => localStorage.setItem('company-os.theme', value), theme);
     await page.reload({ waitUntil: 'networkidle' });
-    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
-    else if (await page.$('[data-landing=demo]')) { await page.click('[data-landing=demo]'); demoEntered = true; }
+    if (await page.$('.landing')) {
+      await openWindow();
+      if (await page.$('[data-landing=companies-window] [data-landing=open]')) {
+        await page.click('[data-landing=companies-window] [data-landing=open]');
+      } else {
+        await page.click('[data-landing=companies-window] [data-landing=demo]');
+        demoEntered = true;
+      }
+    }
     await page.waitForSelector('.palette-option');
   }; // setTheme runs before any user save exists — the demo door is the way in (R11)
 
@@ -449,7 +480,6 @@ try {
 
   // the palette has to survive a reload: a preference that lasts only until you navigate is a bug
   await page.reload({ waitUntil: 'networkidle' });
-  if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
   check('the palette survives a reload',
     (await page.evaluate(() => document.documentElement.dataset.palette)) === 'ocean' && (await bg()) === oceanLight);
 
@@ -820,7 +850,7 @@ try {
   await page.unroute('http://mcp.test/mcp');
 
   check('the Help window opens with its sections and its shortcut table',
-    helpSections === 7 && helpKeys >= 8);
+    helpSections === 8 && helpKeys >= 8); // round fifteen: the diary section joins (REQ-58)
 
   // 7 — hygiene
   // 5h — a phone. The owner opened the live link on his and it was unusable: the sidebar kept its
@@ -830,13 +860,19 @@ try {
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
     const openDoorPhone = async (target) => {
       await phone.goto(target, { waitUntil: 'networkidle' });
-      if (await phone.$('[data-landing=open]')) await phone.click('[data-landing=open]');
-      else if (await phone.$('[data-landing=demo]')) await phone.click('[data-landing=demo]');
+      if (await phone.$('.landing')) {
+        await phone.click('[data-landing=start]');
+        await phone.waitForSelector('[data-landing=companies-window]');
+        if (await phone.$('[data-landing=companies-window] [data-landing=open]')) await phone.click('[data-landing=companies-window] [data-landing=open]');
+        else await phone.click('[data-landing=companies-window] [data-landing=demo]');
+      }
     };
     await openDoorPhone(`http://127.0.0.1:${WEB_PORT}/#team`);
     // a fresh context has no save, so it meets the landing page first (REQ-33) — take the demo door
     if (await phone.$('.landing')) {
-      await phone.click('[data-landing=demo]');
+      await phone.click('[data-landing=start]');
+      await phone.waitForSelector('[data-landing=companies-window] [data-landing=demo]');
+      await phone.click('[data-landing=companies-window] [data-landing=demo]');
     }
     await phone.waitForSelector('[data-nav]', { timeout: 15_000 });
     // the prototype's phone answer: the sidebar is a drawer, opened by the hamburger — not a strip
@@ -923,9 +959,11 @@ try {
     // teammate is gone by design; what must survive a reload is the visitor's own company,
     // which 5j below still proves.
     await page.reload({ waitUntil: 'networkidle' });
+    await openWindow();
+    await page.waitForSelector('[data-landing=companies-window]');
     check('reload hands the showroom back fresh — no resume door, no leftovers (R11)',
-      (await page.$('[data-landing=open]')) === null);
-    await page.click('[data-landing=demo]');
+      (await page.$('[data-landing=companies-window] [data-landing=open]')) === null);
+    await page.click('[data-landing=companies-window] [data-landing=demo]');
     await page.waitForSelector('.team-card');
     check('a re-entered demo is the pristine company again — Nour is gone (R11)',
       !((await page.textContent('.roster'))?.includes('Nour') ?? true));
@@ -985,7 +1023,9 @@ try {
     check('the landing sells the whole product — nav, facts, FAQ and a final call (R10)',
       navLinks >= 4 && facts === 4 && faqs >= 5 && finalCta === 1,
       `nav ${navLinks} · facts ${facts} · faq ${faqs} · cta ${finalCta}`);
-    await page.click('[data-landing=start]');
+    await openWindow();
+    await page.waitForSelector('[data-landing=companies-window]');
+    await page.click('[data-landing=new-company]');
     await page.waitForSelector('.intro-main');
     await page.click('[data-intro=next]');
     check('the wizard refuses a nameless company',
@@ -998,9 +1038,11 @@ try {
     await page.click('[data-intro=add-employee]');
     await page.reload({ waitUntil: 'networkidle' }); // close the tab mid-wizard…
     await page.waitForSelector('.landing');
-    check('…and the wizard is resumable, draft included (REQ-15)',
-      ((await page.textContent('[data-landing=start]')) ?? '').includes('Continue'));
-    await page.click('[data-landing=start]');
+    await openWindow();
+    await page.waitForSelector('[data-landing=companies-window]');
+    check('…and the wizard is resumable from the Start window, draft included (REQ-15)',
+      (await page.$('[data-landing=resume]')) !== null);
+    await page.click('[data-landing=resume]');
     await page.waitForSelector('.intro-main');
     check('the drafted employee survived the reload',
       (await page.locator('.draft-employee').count()) === 1);
@@ -1016,11 +1058,13 @@ try {
       JSON.stringify(mine));
     // REQ-41: even my own studio now waits behind the front door — one click gives it back.
     await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForSelector('[data-landing=open]');
-    check('the landing offers MY studio back by name (REQ-41)',
-      (await page.textContent('[data-landing=open]'))?.includes('Nile Pixels') ?? false,
-      (await page.textContent('[data-landing=open]')) ?? '');
-    await page.click('[data-landing=open]');
+    await page.waitForSelector('.landing');
+    await openWindow();
+    await page.waitForSelector('[data-landing=companies-window] [data-landing=open]');
+    check('the Start window offers MY studio back by name (REQ-41)',
+      (await page.textContent('.companies-win'))?.includes('Nile Pixels') ?? false,
+      (await page.textContent('.companies-win')) ?? '');
+    await page.click('[data-landing=companies-window] [data-landing=open]');
     await page.waitForSelector('.sidebar');
     check('and my own company is what opens from now on',
       (await page.textContent('.workspace'))?.includes('Nile Pixels') ?? false);
@@ -1035,10 +1079,12 @@ try {
       page.waitForEvent('popup'),
       page.click('[data-team=history]'),
     ]);
-    await diary.waitForSelector('[data-landing=open]');
-    await diary.click('[data-landing=open]');
+    // Round fifteen (owner bug): the diary tab used to meet the landing door — now it must
+    // open STRAIGHT into the diary, no landing in between.
     await diary.waitForSelector('[data-history-view]');
-    check('a person’s diary opens in its own tab behind the front door (REQ-57)',
+    check('round 15 — the diary tab opens straight into the diary, never the landing (owner bug)',
+      (await diary.$('[data-landing=start]')) === null);
+    check('a person’s diary opens in its own tab with its empty state (REQ-57)',
       (await diary.$('[data-history-none]')) !== null);
     await diary.close();
   }

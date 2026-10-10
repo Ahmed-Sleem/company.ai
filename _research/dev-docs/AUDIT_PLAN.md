@@ -117,4 +117,17 @@ checks, gate coverage of everything above, the captures script as a CI artefact.
   overflow) were already shipped in rounds eleven/twelve.
 - Gates green at the time of writing: verify 11/11, tests 158/158, smoke 107/107, demo 10/10.
 
-Phase 1 (the landing) runs next round, by this protocol.
+### Phase 1 findings (round fifteen, 2026-10-12) — fixed in the same round
+
+- **A1-1 (owner bug, fixed, REQ-61):** the diary's new tab met the landing door — the door
+  check ran before the history route. The history route now renders first; the smoke asserts
+  the popup has no landing at all.
+- **A1-2 (owner direction, fixed, REQ-60):** three competing doors in the hero read as
+  clutter. Replaced by one Start button opening the companies window (companies / demo /
+  create-new / load-from-file / resume; demo undeletable).
+- **A1-3 (checked, clean):** the re-captured landing renders true at 1440 and 390, EN and AR,
+  both themes; scenes animate without layout shift; the facts strip still matches the shipped
+  product. The deeper landing polish (hero rhythm at mid widths, AR pixel-title sizing, FAQ
+  anchors) stays open for the next landing pass once the owner has seen the new window.
+
+Phase 2 (first run: wizard and doors) runs next round, by this protocol.

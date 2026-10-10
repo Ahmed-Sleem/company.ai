@@ -930,6 +930,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .studio-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); }
 .studio-row strong { display: block; }
 .studio-row small { font-size: var(--xs); }
+/* round fifteen — the one Start button's companies window */
+.companies-win .studio-list { margin-block: var(--s3); }
+.companies-win .demo-row { border-color: var(--line); background: var(--raised); }
+.companies-win .resume-row { background: var(--raised); }
+.companies-empty { margin: 0; }
+.companies-error { color: var(--danger); margin: 0; }
+.win-actions { margin-block-start: var(--s4); }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+.file-hidden { position: absolute; inline-size: var(--app-hair); block-size: var(--app-hair); overflow: clip; opacity: 0; }
+/* the diary tab is its own tab: the shell's main column, nothing else */
+[data-history-tab] { block-size: 100dvh; }
 /* REQ-54 (Phase J): the mail body, the attachments, the visible lock. */
 .markdown { display: grid; gap: var(--s2); }
 .markdown p { margin: 0; }

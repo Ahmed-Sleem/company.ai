@@ -370,3 +370,11 @@ Comments (the work list):
   and i think the landing page still needs alot , but create teh plan , then we audit
   everything in phases" — quick fixes this turn; the phased audit plan lives in
   _research/dev-docs/AUDIT_PLAN.md; the phases run one per round from now on.
+
+## Round fifteen (2026-10-12) — the history bug and the confusing options
+- "continue but note that , the history page not opening , the opening is the landing page
+  instead , and in the landing page teh options is confusing , it shoudl have one button to
+  start , that button opens widow have the alreaded created companies , and the demo one , and
+  the option to create new , also the user shoud be able to delete created companies or load
+  new one from file , but he shoud not be able to delete the demo" — both shipped this round
+  (REQ-60, REQ-61); the audit continues in phases per the round-fourteen plan.

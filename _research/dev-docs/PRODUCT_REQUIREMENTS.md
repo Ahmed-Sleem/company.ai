@@ -234,6 +234,14 @@ Required, scheduled into phases (MANDATORY — nothing may be dropped):
   its explanation and shortcuts to the Help window in the same commit.
 - REQ-59 README credits: the repo's README lists every borrowed piece of code with its
   licence — the project is free and non-commercial, and the credits are part of it.
+- REQ-60 One button starts (owner, round fifteen): the landing's options were confusing, so a
+  single Start button opens one window holding the created companies (open, or delete after it
+  asks twice), the demo showroom (open — with NO delete control at all), create-new, and
+  load-from-file behind the same save gate Settings uses. An unfinished setup resumes from the
+  same window. (Round fifteen)
+- REQ-61 The diary tab is its own tab (owner bug, round fifteen): `#history/<person>` renders
+  the diary straight away and never meets the landing door — the old build showed the landing
+  in the new tab.
 
 Research conclusions behind REQ-53..55 (2026-10-11): MCP is the de-facto standard for
 connecting agents to tools (Linux-Foundation-governed, ~97M monthly SDK downloads, adopted

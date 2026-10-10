@@ -62,6 +62,10 @@ export function HelpWindow({ open, lang, onClose }: { open: boolean; lang: Lang;
           <p>{t('helpStudiosBody', lang)}</p>
         </details>
         <details className="help-section">
+          <summary>{t('helpHistoryTitle', lang)}</summary>
+          <p>{t('helpHistoryBody', lang)}</p>
+        </details>
+        <details className="help-section">
           <summary>{t('helpDataTitle', lang)}</summary>
           <p>{t('helpDataBody', lang)}</p>
         </details>

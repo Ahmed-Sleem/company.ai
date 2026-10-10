@@ -12,6 +12,6 @@ node scripts/capture-screens.mjs
 ```
 
 The set: `00` landing · `01` team · `02` tasks · `03` inbox · `04` conversations · `05` network ·
-`06` world map · `07` settings · `13` history (light, English); `08`–`11` the dark and Arabic
-passes; `12` a phone. Older prototype captures were retired when the product outgrew them
+`06` world map · `07` settings · `13` history · `14` the Start window (light, English);
+`08`–`11` the dark and Arabic passes; `12` a phone. Older prototype captures were retired when the product outgrew them
 (2026-10-12).

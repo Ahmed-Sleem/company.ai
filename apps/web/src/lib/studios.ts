@@ -95,6 +95,16 @@ export function openStudio(id: string): void {
   location.reload();
 }
 
+function nextId(index: Index): string {
+  let max = 0;
+  for (const s of index.list) {
+    const m = /^studio-(\d+)$/.exec(s.id);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  max = Math.max(max, Number(/^studio-(\d+)$/.exec(index.active)?.[1] ?? 1));
+  return `studio-${max + 1}`;
+}
+
 /**
  * Start a brand-new company: archive the current one, clear the save, and take a fresh
  * numbered id. The reload boots an empty save — introDone is false, so the wizard is there.
@@ -102,13 +112,7 @@ export function openStudio(id: string): void {
 export function newStudio(): void {
   const index = readIndex();
   archiveActive();
-  let max = 0;
-  for (const s of index.list) {
-    const m = /^studio-(\d+)$/.exec(s.id);
-    if (m) max = Math.max(max, Number(m[1]));
-  }
-  max = Math.max(max, Number(/^studio-(\d+)$/.exec(index.active)?.[1] ?? 1));
-  index.active = `studio-${max + 1}`;
+  index.active = nextId(index);
   writeIndex(index);
   localStorage.removeItem(SAVE_KEY);
   // After the reboot the landing must open the wizard straight away — "New company" means
@@ -122,4 +126,66 @@ export function consumePendingNew(): boolean {
   if (localStorage.getItem(PENDING_NEW_KEY) !== '1') return false;
   localStorage.removeItem(PENDING_NEW_KEY);
   return true;
+}
+
+/**
+ * Delete a created company (round fifteen, owner): its archive slot and its index entry go.
+ * Deleting the ACTIVE one also drops the live save — the device forgets it completely — and
+ * hands the next numbered id to whatever comes next. The demo is not in the index at all, so
+ * there is simply no way to delete it. Returns whether the page must reboot.
+ */
+export function deleteStudio(id: string): { reload: boolean } {
+  const index = readIndex();
+  index.list = index.list.filter((s) => s.id !== id);
+  try { localStorage.removeItem(studioKey(id)); } catch { /* a blocked box forgets on its own */ }
+  if (id === index.active) {
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* nothing to drop */ }
+    index.active = nextId(index);
+    writeIndex(index);
+    return { reload: true };
+  }
+  writeIndex(index);
+  return { reload: false };
+}
+
+/**
+ * Load a company from a save file (round fifteen, owner): the file must pass the same
+ * `parseSave` gate Settings uses. The current studio is archived first, then the imported
+ * company takes a fresh numbered id and becomes the live save. `apply` is the store's own
+ * loader, handed in so this module never imports the store itself.
+ */
+export function importStudio(
+  text: string,
+  apply: (data: Record<string, unknown>) => void,
+): { ok: true; name: string } | { ok: false } {
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return { ok: false };
+  }
+  if (!data || typeof data !== 'object' || !('company' in data)
+    || !Array.isArray((data as { agents?: unknown }).agents)) {
+    return { ok: false };
+  }
+  const index = readIndex();
+  archiveActive();
+  const freshId = nextId(index);
+  index.active = freshId;
+  writeIndex(index);
+  // The store's own loader swaps the state in; its persist middleware then writes the proper
+  // envelope into the save key, and THAT is what the archive slot must hold (openStudio copies
+  // slots back verbatim on a later switch).
+  apply(data);
+  let envelope: string | null = null;
+  try { envelope = localStorage.getItem(SAVE_KEY); } catch { /* a blocked box keeps it in memory */ }
+  if (!envelope) return { ok: false };
+  try {
+    localStorage.setItem(studioKey(freshId), envelope);
+  } catch {
+    return { ok: false };
+  }
+  const company = (data as { company?: { name?: unknown } }).company;
+  const name = typeof company?.name === 'string' && company.name.trim() !== '' ? company.name : 'Imported company';
+  return { ok: true, name };
 }

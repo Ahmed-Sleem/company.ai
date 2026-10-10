@@ -40,7 +40,11 @@ try {
   await page.waitForSelector('.landing');
   await shot(page, '00-landing-light-en.png');
 
-  await page.click('[data-landing=demo]');
+  // round fifteen: the one Start button and its companies window
+  await page.click('[data-landing=start]');
+  await page.waitForSelector('[data-landing=companies-window]');
+  await shot(page, '14-companies-window-light-en.png');
+  await page.click('[data-landing=companies-window] [data-landing=demo]');
   await page.waitForSelector('.sidebar');
   const go = async (view, sel) => { await page.click(`[data-nav=${view}]`); await page.waitForSelector(sel); };
 
@@ -57,9 +61,7 @@ try {
   await page.locator('.team-card').first().click();
   await page.waitForSelector('[data-team=history]');
   const [diary] = await Promise.all([page.waitForEvent('popup'), page.click('[data-team=history]')]);
-  await diary.waitForSelector('.landing');
-  // the demo showroom never resumes: the new tab is a fresh visitor and takes the demo door
-  await diary.click('[data-landing=demo]');
+  // round fifteen: the diary tab opens straight into the diary — no landing door
   await diary.waitForSelector('[data-history-view]');
   await shot(diary, '13-history-light-en.png');
   await diary.close();
@@ -76,7 +78,9 @@ try {
 
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await phone.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'networkidle' });
-  await phone.click('[data-landing=demo]');
+  await phone.click('[data-landing=start]');
+  await phone.waitForSelector('[data-landing=companies-window] [data-landing=demo]');
+  await phone.click('[data-landing=companies-window] [data-landing=demo]');
   await phone.waitForSelector('.sidebar');
   await phone.evaluate(() => { location.hash = 'network'; });
   await phone.waitForSelector('svg.graph, .graph-stage');

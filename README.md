@@ -112,6 +112,8 @@ not the prototype. Dark and light, English and Arabic, desktop and a phone. Re-c
 | **World Map** — the pixel office, walks, bubbles, the clock | **Settings** — palettes, schedule, integrations, the save |
 | ![History](design/screenshots/13-history-light-en.png) | ![Team — dark](design/screenshots/08-team-dark-en.png) |
 | **History** — one person's diary, in its own tab | the same studio in dark |
+| ![The Start window](design/screenshots/14-companies-window-light-en.png) | |
+| **Start** — one button, one window: your companies, the demo (never deletable), new, load-from-file | |
 
 | Arabic (RTL) | A phone |
 |---|---|

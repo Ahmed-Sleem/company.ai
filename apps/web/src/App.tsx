@@ -30,7 +30,7 @@ import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
 import { HistoryView } from './views/HistoryView';
 import { LandingView } from './views/LandingView';
-import { consumePendingNew, listStudios, newStudio, openStudio, rememberStudio } from './lib/studios';
+import { consumePendingNew, deleteStudio, importStudio, listStudios, newStudio, openStudio, rememberStudio } from './lib/studios';
 import { IntroWizard } from './views/IntroWizard';
 import type { DataStateKind } from './components/DataState';
 
@@ -258,6 +258,18 @@ export function App() {
     );
   };
 
+  /** Round fifteen (owner bug report): the diary tab is its own tab — `#history/<person>`
+      renders the diary straight away and NEVER meets the landing door. The old build showed
+      the landing in the new tab because the door check ran first; the owner saw a landing
+      page instead of the history. */
+  if (historyFor) {
+    return (
+      <main className="main" data-history-tab>
+        <HistoryView agentId={historyFor} lang={lang} />
+      </main>
+    );
+  }
+
   // A forced state (?state=…) is the QA door — it looks straight at the shell's states and
   // never meets the landing.
   if ((!introDone || !doorPassed) && !forcedState) {
@@ -276,6 +288,11 @@ export function App() {
         onOpen={enter}
         onOpenStudio={openStudio}
         onNewStudio={newStudio}
+        onDeleteStudio={(id) => { if (deleteStudio(id).reload) location.reload(); }}
+        onImport={(file) => file.text().then((text) => {
+          const result = importStudio(text, (data) => useStore.getState().load(data));
+          return result;
+        })}
         onLanguage={toggleLang}
       />
     );

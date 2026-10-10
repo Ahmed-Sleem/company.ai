@@ -1274,3 +1274,16 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 - 12 October 2026 — README audit (owner): the README still told the old server-first story
   with prototype screens and stale counts; rewritten to describe the product as it is now —
   browser-only, landing to diary — with fresh captures of the real screens.
+
+## Round fifteen (2026-10-12) — the one Start button, the companies window, the diary-tab fix
+* Landing hero now has ONE Start button; it opens the companies window (the product's one
+  dialog language): created companies with open + two-step delete, the demo row with open and
+  no delete at all, New company, Load from file (the Settings save gate), and the resumable
+  setup row. REQ-60.
+* `#history/<person>` renders the diary before the door check — the new tab opens straight
+  into the diary, never the landing (the bug the owner saw). REQ-61.
+* Help window gained the diary section and the window's behaviour (REQ-58); README and the
+  screenshots set gained the window capture; new checks: 8 in start-window.test.tsx plus the
+  rewritten smoke doors.
+* Phase 1 of the standing audit (the landing) ran with these two findings fixed; the rest of
+  the phase's visual pass found nothing broken in the re-captured screens.
