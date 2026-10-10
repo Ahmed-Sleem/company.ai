@@ -1135,7 +1135,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 
 /* R11: the teammates-column search — fixed at the top of the column, plain like the owner
    likes it: a field and a glyph, no overlay, no hints, no blue. */
-.col-search-wrap { position: sticky; inset-block-start: 0; z-index: 2; display: flex; align-items: center; gap: var(--s2); padding: var(--s2); margin-block: calc(var(--s2) * -1) var(--s2); background: var(--bg); border-block-end: var(--app-hair) solid var(--soft); }
+/* R12 (owner): heading + search are one FIXED banner; the list scrolls beneath it only. */
+.col-head { flex: none; display: grid; gap: var(--s2); padding: var(--s3); border-block-end: var(--app-hair) solid var(--soft); background: var(--raised); }
+.col-head .eyebrow { margin: 0; }
+.col-search-wrap { display: flex; align-items: center; gap: var(--s2); }
+.col-list { flex: 1; min-block-size: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s1); padding: var(--s3); }
 .col-search-wrap .icon { color: var(--dim); flex: none; }
 .col-search { inline-size: 100%; background: var(--raised); border: var(--app-hair) solid var(--line); color: var(--text); font: inherit; font-size: var(--sm); padding: var(--s2) var(--s3); }
 .col-search::placeholder { color: var(--dim); }
@@ -1165,6 +1169,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .ix-head { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .ix-tools { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .ix-tools span { font-size: var(--xs); color: var(--muted); border: var(--app-hair) solid var(--line); background: var(--bg); padding: var(--s1) var(--s2); }
+
+/* ── Phase L: messenger stamps — sent, delivered, seen ───────────────────────────────────── */
+.stamp { display: block; text-align: end; font-size: var(--xs); color: var(--dim); margin-block-start: var(--s1); letter-spacing: calc(var(--s1) * -0.5); }
+.stamp.seen { color: var(--accent); }
 
 /* ── inbox as a deck of slides (owner C9) ────────────────────────────────────────────────── */
 /* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */
@@ -1216,7 +1224,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 /* ── comms as a normal messenger (owner C10) ─────────────────────────────────────────────── */
 .sr-only { position: absolute; inline-size: var(--app-hair); block-size: var(--app-hair); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .chat-layout { display: grid; grid-template-columns: var(--app-chatside) minmax(0, 1fr); gap: var(--s5); align-items: stretch; }
-.threads { border: var(--app-hair) solid var(--soft); background: var(--raised); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s1); overflow-y: auto; max-block-size: var(--app-world-h); }
+.threads { border: var(--app-hair) solid var(--soft); background: var(--raised); display: flex; flex-direction: column; max-block-size: var(--app-world-h); }
 .thread { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); inline-size: 100%; text-align: start; font: inherit; color: inherit; background: none; border: var(--app-hair) solid transparent; cursor: pointer; transition: background-color var(--anim-fast) var(--anim-ease), border-color var(--anim-fast) var(--anim-ease); }
 .thread:hover { background: var(--accent-bg); }
 .thread.active { border-color: var(--accent); background: var(--accent-bg); }
@@ -1251,8 +1259,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .composer-send { block-size: var(--app-input-h); inline-size: var(--app-input-h); border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
 @media (max-width: 800px) {
   .chat-layout { grid-template-columns: 1fr; }
-  .threads { flex-direction: row; overflow-x: auto; max-block-size: none; padding: var(--s2); }
-  .threads .eyebrow { display: none; }
+  .threads { max-block-size: none; }
+  .col-head .eyebrow { display: none; }
+  .col-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: var(--s2); }
+  .col-list .thread { flex: none; inline-size: auto; }
   .thread { inline-size: auto; flex-shrink: 0; }
   .thread-preview { max-inline-size: 12ch; }
 }

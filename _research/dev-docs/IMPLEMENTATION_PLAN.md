@@ -253,7 +253,7 @@ that a saved plan round-trips through the export file. This phase starts after G
   (googleapis, Apache-2.0 / the archived gdrive reference server) as the first adapters,
   surfaced to the ROOT MANAGER as tools; per-integration connect flow in Settings; every
   repo credited in THIRD_PARTY.md + README (REQ-59).
-- **Phase L — the messenger** (REQ-56): seen stamps (sent/delivered/seen) and the turn
+- **Phase L — the messenger** ✅ done 2026-10-12: seen stamps (sent/delivered/seen) and the turn
   scheduler — a batch of messages queues and releases one per model turn.
 - **Phase M — history** (REQ-57): Dexie.js (Apache-2.0) transcript store — every call's
   exact system/user/tool inputs and model outputs per employee — and the new-tab History

@@ -16,21 +16,6 @@ import { Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
 import { Icon } from '../components/Icon';
 import { localized, STATUS_KEY } from '../lib/format';
-import { compileSystemPrompt } from '../lib/prompt';
-import { chatCompletion } from '../lib/providers';
-
-/** The local teammate voice: what a person says when no provider key is configured yet. */
-const localVoice = (agent: { status: string; id: string }, lang: Lang) => {
-  const tasks = useStore.getState().tasks.filter((task) => task.ownerAgentId === agent.id && task.stage !== 'done');
-  const first = tasks[0];
-  if (agent.status === 'error') return t('replyBlocked', lang);
-  if (agent.status === 'paused') return t('replyPaused', lang);
-  if (agent.status === 'working' && first) {
-    return t('replyWorking', lang).replace('{title}', localized(first.title, first.titleAr, lang))
-      .replace('{n}', String(first.progress));
-  }
-  return t('replyIdle', lang);
-};
 
 const statusTone = (status: string) =>
   status === 'working' ? 'accent' : status === 'idle' ? 'neutral' : status === 'error' ? 'danger' : 'warning';
@@ -39,7 +24,6 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const agents = useStore((s) => s.agents);
   const threads = useStore((s) => s.threads);
   const operator = useStore((s) => s.operator);
-  const addMessage = useStore((s) => s.addMessage);
   const startThread = useStore((s) => s.startThread);
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -81,23 +65,10 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     event.preventDefault();
     const text = draft.trim();
     if (!text || !thread || !agent) return;
-    addMessage(thread.id, 'you', text);
+    // Phase L (REQ-56): the message is stamped, queued, and the turn scheduler releases it —
+    // one message per model turn, each answered in its own turn.
+    useStore.getState().sendOwnerMessage(thread.id, text, lang);
     setDraft('');
-
-    // Phase F: the teammate answers. With a key configured, their OWN provider answers, carrying
-    // the company's system prompt (REQ-16); without one, the local voice keeps the studio alive.
-    const state = useStore.getState();
-    const conn = agent.model;
-    const threadId = thread.id;
-    const person = agent;
-    if (conn && conn.key.trim() !== '' && conn.model.trim() !== '') {
-      const system = compileSystemPrompt(state, person, lang);
-      chatCompletion(conn, system, text)
-        .then((answer) => addMessage(threadId, person.id, answer))
-        .catch(() => addMessage(threadId, person.id, localVoice(person, lang)));
-    } else {
-      setTimeout(() => addMessage(threadId, person.id, localVoice(person, lang)), 800);
-    }
   };
 
   return (
@@ -111,13 +82,18 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
         <DataState state={state} lang={lang} onRetry={() => location.reload()}>
           <div className="chat-layout">
             <aside className="threads" aria-label={t('chatTeammates', lang)}>
-              <p className="eyebrow">{t('chatTeammates', lang)}</p>
-              <div className="col-search-wrap">
-                <Icon name="search" />
-                <input className="col-search" data-comms-search value={query}
-                  placeholder={t('commsSearch', lang)} aria-label={t('commsSearch', lang)}
-                  onChange={(e) => setQuery(e.target.value)} />
+              {/* R12 (owner): the heading and the search stay fixed together as one banner —
+                  the people scroll only in the list that begins beneath it, never under it. */}
+              <div className="col-head">
+                <p className="eyebrow">{t('chatTeammates', lang)}</p>
+                <div className="col-search-wrap">
+                  <Icon name="search" />
+                  <input className="col-search" data-comms-search value={query}
+                    placeholder={t('commsSearch', lang)} aria-label={t('commsSearch', lang)}
+                    onChange={(e) => setQuery(e.target.value)} />
+                </div>
               </div>
+              <div className="col-list">
               {shown.length === 0 ? <p className="small dim col-search-none">{t('commsNoMatch', lang)}</p> : null}
               {shown.map((a) => {
                 const th = threads.find((x) => x.agentId === a.id);
@@ -135,6 +111,7 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                   </button>
                 );
               })}
+              </div>
             </aside>
 
             <section className="chat" aria-label={agent ? localized(agent.name, agent.nameAr, lang) : t('comms', lang)}>
@@ -175,6 +152,12 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                               </div>
                             )}
                             <div className="message-text">{m.text}</div>
+                            {own && m.stamp ? (
+                              <span className={`stamp ${m.stamp}`} data-stamp={m.stamp}
+                                title={t(m.stamp === 'seen' ? 'stampSeen' : m.stamp === 'delivered' ? 'stampDelivered' : 'stampSent', lang)}>
+                                {m.stamp === 'sent' ? '✓' : '✓✓'}
+                              </span>
+                            ) : null}
                           </div>
                         </article>
                       );

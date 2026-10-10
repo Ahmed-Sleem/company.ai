@@ -175,6 +175,10 @@ export const STRINGS = {
   ixRemove: { en: 'Remove', ar: 'أزل' },
   ixGithubOnly: { en: 'An integration’s server must live on GitHub — paste a github.com repository address.', ar: 'موطن خادم التكامل يجب أن يكون على GitHub — ألصق عنوان مستودع github.com.' },
   ixNone: { en: 'No integrations yet — the shelf above links the reference servers.', ar: 'لا تكاملات بعد — الرف أعلاه يصلك بالخوادم المرجعية.' },
+  // Phase L (REQ-56): the messenger's stamps.
+  stampSent: { en: 'Sent', ar: 'أُرسلت' },
+  stampDelivered: { en: 'Delivered', ar: 'وصلت' },
+  stampSeen: { en: 'Seen', ar: 'شوهدت' },
   helpBuildTitle: { en: 'Building the world', ar: 'بناء العالم' },
   helpBuildBody: { en: 'The World view is for looking: drag pans, the wheel zooms, nothing else moves. Open the Build toggle and the floor becomes editable — grab rooms, props and desks to move them, pull a room\u2019s corner to resize it (everything snaps to the grid), delete what is selected, and undo step by step. Closing Build drops every selection and the floor goes back to being a map.', ar: 'عرض العالم للمشاهدة: السحب يحرك، والعجلة تكبّر، ولا شيء آخر يتحرك. افتح مفتاح البناء فيصبح الطابق قابلًا للتعديل — اسحب الغرف والأثاث والمكاتب، واسحب زاوية الغرفة لتغيير حجمها (كل شيء ينطبق على الشبكة)، واحذف المحدّد، وتراجع خطوة بخطوة. وإغلاق البناء يُسقط كل تحديد ويعيد الطابق خريطة.' },
   helpMailTitle: { en: 'Mail vs chat', ar: 'البريد والدردشة' },

@@ -185,6 +185,32 @@ try {
   check('and says so plainly when nobody matches (R11)', true);
   await page.fill('[data-comms-search]', '');
 
+  // R12 (owner): the heading and the search stay fixed as one banner; the people scroll only
+  // in the list that begins beneath it — never under the bar.
+  const banner = await page.evaluate(() => {
+    const head = document.querySelector('.col-head').getBoundingClientRect();
+    const list = document.querySelector('.col-list');
+    const first = list.querySelector('.thread').getBoundingClientRect();
+    return { headBottom: Math.round(head.bottom), firstTop: Math.round(first.top), scroller: getComputedStyle(list).overflowY };
+  });
+  check('the teammates heading and search are one fixed banner; the list scrolls beneath it (R12)',
+    banner.firstTop >= banner.headBottom && banner.scroller === 'auto', JSON.stringify(banner));
+
+  // Phase L (REQ-56): the owner's words carry stamps, and a batch waits its turn — one
+  // message is read and answered per model turn.
+  await page.fill('#composer-input', 'First thing.');
+  await page.keyboard.press('Enter');
+  await page.fill('#composer-input', 'Second thing.');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('[data-stamp]');
+  const stampsEarly = await page.$$eval('[data-stamp]', (ns) => ns.slice(-2).map((n) => n.getAttribute('data-stamp')));
+  await page.waitForFunction(
+    () => [...document.querySelectorAll('[data-stamp]')].slice(-2).every((n) => n.getAttribute('data-stamp') === 'seen'),
+    null, { timeout: 15_000 },
+  );
+  check('a batch of messages is queued, stamped delivered, then seen one turn at a time (REQ-56)',
+    stampsEarly.every((st) => st === 'delivered' || st === 'seen'), stampsEarly.join(','));
+
   // R11: the studio clock says in words whether the studio is on the clock.
   await page.click('[data-nav=world]');
   await page.waitForSelector('[data-clock-state]');

@@ -1253,3 +1253,13 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   fallback prompt alike, executed through the engine's awaited tool loop. Credits in
   THIRD_PARTY.md and README. Tests 151/151 (nine new), smoke 104/104 (three new, the connect
   proven against a routed fake server), gate 11/11, demo 10/10.
+- 12 October 2026 — Round twelve, comms column (owner): the teammates heading and the search
+  are now one FIXED banner with breathing room between them; the people scroll only inside the
+  list that begins beneath the banner — nothing slides under the search bar anymore; the phone
+  layout keeps its horizontal row under the same banner.
+- 12 October 2026 — Phase L completed: the messenger (REQ-56). The owner's words now carry
+  stamps — sent, delivered, seen — drawn as quiet ticks that light up in the accent when seen;
+  and the turn scheduler: a batch of messages queues on the thread, each turn releases exactly
+  one (seen), the teammate answers that one, then the next turn takes the next — the rhythm
+  lives in the store, so it survives leaving the chat. Old saves load without queues and stay
+  unbroken. Tests 154/154 (three new), smoke 106/106 (two new), gate 11/11.

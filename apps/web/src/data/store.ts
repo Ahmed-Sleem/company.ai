@@ -11,6 +11,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import demo from './demo.json';
 import type { ModelConnection } from '../lib/providers';
 import { isGitHubRepo } from '../lib/integrations';
+import { localVoice } from '../lib/voice';
+import { chatCompletion } from '../lib/providers';
+import { compileSystemPrompt } from '../lib/prompt';
+import type { Lang } from '../lib/i18n';
 import type { IntegrationRow } from '../lib/integrations';
 import type { Plan as WorldPlan } from '../world/layout.data';
 
@@ -88,6 +92,8 @@ export interface MessageRow {
   from: string;
   text: string;
   at: string;
+  /** Phase L (REQ-56): the messenger's stamps for the owner's messages. */
+  stamp?: 'sent' | 'delivered' | 'seen';
 }
 
 export interface ThreadRow {
@@ -98,6 +104,8 @@ export interface ThreadRow {
   agentId: string | null;
   lastMessage: { text: string; authorKind: string } | null;
   messages: MessageRow[];
+  /** Phase L (REQ-56): owner messages waiting for their turn — one is released per turn. */
+  queue?: string[];
 }
 
 export interface ModelRow {
@@ -185,6 +193,10 @@ export interface SaveState {
   patchIntegration: (id: string, patch: Partial<IntegrationRow>) => void;
   removeIntegration: (id: string) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
+  /** Phase L (REQ-56): the owner speaks — stamped sent, queued, and the scheduler is kicked. */
+  sendOwnerMessage: (threadId: string, text: string, lang: Lang) => void;
+  /** Phase L (REQ-56): one turn of the thread — reads exactly one queued message, answers it. */
+  pumpThread: (threadId: string, lang: Lang) => Promise<void>;
   startThread: (agentId: string, title: string) => void;
   setWorldPlan: (plan: WorldPlan | null) => void;
   patchDecision: (id: string, patch: Partial<DecisionRow>) => DecisionRow | null;
@@ -224,7 +236,7 @@ const fixture = () => ({
   agents: demo.agents.map((a) => ({ model: null, ...a })) as AgentRow[],
   tasks: demo.tasks.map((t) => ({ ...t })) as TaskRow[],
   decisions: demo.decisions.map((d) => ({ ...d })) as DecisionRow[],
-  threads: demo.threads.map((t) => ({ ...t, messages: t.messages.map((m) => ({ ...m })) })) as ThreadRow[],
+  threads: demo.threads.map((t) => ({ ...t, queue: [], messages: t.messages.map((m) => ({ ...m })) })) as ThreadRow[],
   models: demo.models.map((m) => ({ ...m })) as ModelRow[],
   worldPlan: null,
 });
@@ -235,7 +247,12 @@ export const useStore = create<SaveState>()(
       ...fixture(),
       load: (data) => {
         demoSession = false;
-        set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() }));
+        set((state) => ({
+          ...state, ...data,
+          // Phase L: saves from before the messenger stamps arrive without turn queues.
+          threads: ((data.threads ?? state.threads) as ThreadRow[]).map((th) => ({ ...th, queue: th.queue ?? [] })),
+          savedAt: new Date().toISOString(),
+        }));
       },
       passDoor: () => set({ doorPassed: true }),
       reset: () => {
@@ -417,6 +434,52 @@ export const useStore = create<SaveState>()(
         savedAt: new Date().toISOString(),
         integrations: state.integrations.filter((r) => r.id !== id),
       })),
+      sendOwnerMessage: (threadId, text, lang) => {
+        get().addMessage(threadId, 'you', text);
+        const th = get().threads.find((x) => x.id === threadId);
+        const msg = th?.messages[th.messages.length - 1];
+        if (!th || !msg) return;
+        // delivered: the teammate's client acknowledges it as it joins their turn queue.
+        set((state) => ({
+          threads: state.threads.map((x) => (x.id === threadId ? {
+            ...x,
+            queue: [...(x.queue ?? []), msg.id],
+            messages: x.messages.map((m) => (m.id === msg.id ? { ...m, stamp: 'delivered' as const } : m)),
+          } : x)),
+        }));
+        schedulePump(threadId, lang);
+      },
+      pumpThread: async (threadId, lang) => {
+        const th = get().threads.find((x) => x.id === threadId);
+        const mid = (th?.queue ?? [])[0];
+        if (!th || !mid || activeTurns.has(threadId)) return;
+        activeTurns.add(threadId);
+        // seen: this turn reads exactly ONE queued message — the batch waits its turn (REQ-56).
+        set((state) => ({
+          threads: state.threads.map((x) => (x.id === threadId ? {
+            ...x,
+            queue: (x.queue ?? []).slice(1),
+            messages: x.messages.map((m) => (m.id === mid ? { ...m, stamp: 'seen' as const } : m)),
+          } : x)),
+        }));
+        const person = get().agents.find((a) => a.id === th.agentId) ?? null;
+        const msgText = th.messages.find((m) => m.id === mid)?.text ?? '';
+        let answer = '';
+        const conn = person?.model ?? null;
+        if (person && conn && conn.key.trim() !== '' && conn.model.trim() !== '') {
+          try {
+            answer = await chatCompletion(conn, compileSystemPrompt(get(), person, lang), msgText);
+          } catch {
+            answer = localVoice(person, get().tasks, lang);
+          }
+        } else {
+          await wait(800);
+          answer = person ? localVoice(person, get().tasks, lang) : '…';
+        }
+        if (person) get().addMessage(threadId, person.id, answer);
+        activeTurns.delete(threadId);
+        if ((get().threads.find((x) => x.id === threadId)?.queue ?? []).length > 0) schedulePump(threadId, lang);
+      },
       addMessage: (threadId, from, text) => set((state) => {
         // REQ-54: when the employee answers the owner's reply in their thread, their open
         // letter closes itself — mail is turn-taking, and the loop is done.
@@ -427,7 +490,7 @@ export const useStore = create<SaveState>()(
         const threadNow = state.threads.find((th) => th.id === threadId);
         // The save is this app's database, so it numbers the message within its thread —
         // no clock, no dice (namespace lock).
-        const message: MessageRow = { id: `msg-${threadId}-${(threadNow?.messages.length ?? 0) + 1}`, from, text, at };
+        const message: MessageRow = { id: `msg-${threadId}-${(threadNow?.messages.length ?? 0) + 1}`, from, text, at, ...(from === 'you' ? { stamp: 'sent' as const } : {}) };
         return {
           savedAt: at,
           threads: state.threads.map((thread) => thread.id === threadId
@@ -574,6 +637,19 @@ export const useStore = create<SaveState>()(
     },
   ),
 );
+
+// Phase L (REQ-56): the turn scheduler. A batch of owner messages queues; each turn releases
+// exactly one. The timers live here so the rhythm survives leaving the chat view.
+const activeTurns = new Set<string>();
+const pumpTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const wait = (ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
+function schedulePump(threadId: string, lang: Lang): void {
+  if (pumpTimers.has(threadId)) return;
+  pumpTimers.set(threadId, setTimeout(() => {
+    pumpTimers.delete(threadId);
+    void useStore.getState().pumpThread(threadId, lang);
+  }, 120));
+}
 
 // First run used to write the demo save on first paint. It does not anymore (REQ-33): a
 // brand-new visitor has no save at all, which is exactly how the shell knows to show the
