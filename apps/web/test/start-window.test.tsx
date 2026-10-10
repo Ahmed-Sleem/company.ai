@@ -83,11 +83,12 @@ describe('the one Start button and its window (round fifteen)', () => {
 
   it('shows one Start button, and the window holds companies, demo, new and load', () => {
     const { container } = render(<LandingView {...props()} />);
-    const starts = container.querySelectorAll('.landing-actions [data-landing=start]');
-    expect(starts.length).toBe(1);
-    expect(container.querySelector('.landing-actions [data-landing=demo]')).toBeNull();
+    // round sixteen: no door buttons anywhere but the top menu's one way in
+    expect(container.querySelectorAll('[data-landing=start]').length).toBe(1);
+    expect(container.querySelector('.landing-top [data-landing=start]')).toBeTruthy();
+    expect(container.querySelector('.landing-hero button')).toBeNull();
 
-    fireEvent.click(container.querySelector('.landing-actions [data-landing=start]')!);
+    fireEvent.click(container.querySelector('[data-landing=start]')!);
     expect(container.querySelector('[data-landing=companies-window]')).toBeTruthy();
     expect(container.textContent).toContain('Acme Test');
     expect(container.querySelector('[data-landing=new-company]')).toBeTruthy();
@@ -101,7 +102,7 @@ describe('the one Start button and its window (round fifteen)', () => {
   it('deletes a created company only after asking twice', () => {
     let deleted: string | null = null;
     const { container } = render(<LandingView {...props({ onDeleteStudio: (id) => { deleted = id; } })} />);
-    fireEvent.click(container.querySelector('.landing-actions [data-landing=start]')!);
+    fireEvent.click(container.querySelector('[data-landing=start]')!);
     const del = () => container.querySelector('[data-landing=delete]')!;
     fireEvent.click(del()); // first click: it asks
     expect(deleted).toBeNull();
@@ -112,7 +113,7 @@ describe('the one Start button and its window (round fifteen)', () => {
 
   it('says so in owner words when the loaded file is not a save', async () => {
     const { container } = render(<LandingView {...props()} />);
-    fireEvent.click(container.querySelector('.landing-actions [data-landing=start]')!);
+    fireEvent.click(container.querySelector('[data-landing=start]')!);
     const input = container.querySelector('input[type=file]') as HTMLInputElement;
     const file = new File(['{"nope":true}'], 'not-a-save.json', { type: 'application/json' });
     fireEvent.change(input, { target: { files: [file] } });

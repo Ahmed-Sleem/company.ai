@@ -132,11 +132,19 @@ try {
   // so it walks through that door first.
   await page.waitForSelector('.landing');
   check('a brand-new visitor meets the landing page before the product', true, 'landing shown');
-  check('round 15 — one Start button in the hero, no door clutter',
-    (await page.locator('.landing-actions [data-landing=start]').count()) === 1 &&
-    (await page.$('.landing-actions [data-landing=demo]')) === null);
+  check('round 16 — the hero carries no door buttons; the top menu holds the one way in',
+    (await page.locator('.landing-hero button').count()) === 0 &&
+    (await page.locator('.landing-top [data-landing=start]').count()) === 1 &&
+    ((await page.textContent('.landing-top [data-landing=start]')) ?? '').includes('Start my company'));
   await openWindow();
   await page.waitForSelector('[data-landing=companies-window]');
+  {
+    const box = await page.locator('dialog.dialog').boundingBox();
+    const vp = page.viewportSize();
+    check('round 16 — the Start window is a popup centred on the screen',
+      !!box && Math.abs((box.x + box.width / 2) - vp.width / 2) < 48 && box.y > 24 && box.y < vp.height / 2,
+      box ? `x ${Math.round(box.x)} y ${Math.round(box.y)} w ${Math.round(box.width)}` : 'no box');
+  }
   check('round 15 — the window lists the demo with no delete control on it',
     (await page.$('[data-landing=companies-window] .demo-row [data-landing=demo]')) !== null &&
     (await page.$('[data-landing=companies-window] .demo-row [data-landing=delete]')) === null);
@@ -1084,6 +1092,46 @@ try {
     await diary.waitForSelector('[data-history-view]');
     check('round 15 — the diary tab opens straight into the diary, never the landing (owner bug)',
       (await diary.$('[data-landing=start]')) === null);
+
+
+  // Round sixteen (owner): the whole thing must be fully adaptive — no horizontal overflow at
+  // any sensible width, landing, the Start window and every shell view alike.
+  {
+    const bad = [];
+    const overflow = () => page.evaluate(() => {
+      const el = document.scrollingElement ?? document.documentElement;
+      return Math.max(0, el.scrollWidth - el.clientWidth);
+    });
+    await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
+    for (const w of [320, 390, 768, 1024, 1440, 2200]) {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.waitForTimeout(120);
+      let o = await overflow();
+      if (o > 0) bad.push(`landing@${w}:+${o}px`);
+      await openWindow();
+      o = await overflow();
+      if (o > 0) bad.push(`start-window@${w}:+${o}px`);
+      const box = await page.locator('dialog.dialog').boundingBox();
+      if (!box || box.x < -1 || box.x + box.width > w + 1) bad.push(`window-offscreen@${w}`);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(80);
+    }
+    // back inside the studio, then every view at every width
+    await openWindow();
+    await page.click('[data-landing=companies-window] [data-landing=open]');
+    await page.waitForSelector('.sidebar');
+    for (const w of [320, 390, 768, 1024, 1440, 2200]) {
+      await page.setViewportSize({ width: w, height: 900 });
+      for (const v of ['team', 'tasks', 'inbox', 'comms', 'network', 'world', 'settings']) {
+        await page.evaluate((h) => { location.hash = h; }, v);
+        await page.waitForTimeout(120);
+        const o = await overflow();
+        if (o > 0) bad.push(`${v}@${w}:+${o}px`);
+      }
+    }
+    check('round 16 — fully adaptive: no horizontal overflow from 320 to 2200, anywhere',
+      bad.length === 0, bad.join(', ') || 'clean at every width');
+  }
     check('a person’s diary opens in its own tab with its empty state (REQ-57)',
       (await diary.$('[data-history-none]')) !== null);
     await diary.close();

@@ -932,6 +932,16 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .studio-row small { font-size: var(--xs); }
 /* round fifteen — the one Start button's companies window */
 .companies-win .studio-list { margin-block: var(--s3); }
+.companies-win .studio-row { flex-wrap: wrap; }
+.companies-win .win-actions { flex-wrap: wrap; }
+/* round sixteen — the narrowest phones: the door bar must fit 320px */
+@media (max-width: 400px) {
+  .landing, .intro { padding-inline: var(--s3); }
+  .landing-top, .intro-top { gap: var(--s2); flex-wrap: wrap; }
+  .landing-top .brand small { display: none; }
+  .landing-navcta { margin-inline-start: auto; }
+  .landing-navcta .btn { padding-inline: var(--s3); }
+}
 .companies-win .demo-row { border-color: var(--line); background: var(--raised); }
 .companies-win .resume-row { background: var(--raised); }
 .companies-empty { margin: 0; }

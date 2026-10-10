@@ -143,7 +143,6 @@ export const STRINGS = {
   landCompaniesTitle: { en: 'Your companies on this device', ar: 'شركاتك على هذا الجهاز' },
   landNewCompany: { en: 'New company', ar: 'شركة جديدة' },
   landOpenC: { en: 'Open', ar: 'افتح' },
-  landStartOne: { en: 'Start', ar: 'ابدأ' },
   landResumeSetup: { en: 'An unfinished setup is waiting', ar: 'إعداد غير مكتمل بانتظارك' },
   landResumeSetupB: { en: 'Pick up the wizard where you left it', ar: 'أكمل المعالج من حيث توقفت' },
   landDemoName: { en: 'Demo showroom', ar: 'صالة التجربة' },

@@ -130,4 +130,17 @@ checks, gate coverage of everything above, the captures script as a CI artefact.
   product. The deeper landing polish (hero rhythm at mid widths, AR pixel-title sizing, FAQ
   anchors) stays open for the next landing pass once the owner has seen the new window.
 
-Phase 2 (first run: wizard and doors) runs next round, by this protocol.
+### Phase 2 findings (round sixteen, 2026-10-12)
+
+- **A2-1 (owner direction, fixed, REQ-62):** door buttons still lived in the page body (hero
+  and final call). Removed — the top menu's one button is the only way in, and the window it
+  opens is asserted centred by the smoke.
+- **A2-2 (owner direction, fixed, REQ-62):** adaptiveness was never proven across widths. A
+  standing smoke section now fails on any horizontal overflow at 320/390/768/1024/1440/2200,
+  on the landing, the open window and every shell view; the first run found the door bar
+  spilling 17px at 320 — it wraps now.
+- **A2-3 (checked, clean):** the wizard's three steps keep the one form language, validation
+  speaks in owner words, the draft resumes from the window, portrait and manager controls read
+  clean at phone width.
+
+Phase 3 (shell: topbar, rail, palette, help, statusbar) runs next round, by this protocol.

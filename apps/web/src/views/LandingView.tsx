@@ -166,7 +166,7 @@ export function LandingView({
             {lang === 'en' ? 'ع' : 'EN'}
           </button>
           <button type="button" className="btn primary" data-landing="start" onClick={() => setWinOpen(true)}>
-            {t('landStartOne', lang)}
+            {t('landingStart', lang)}
           </button>
         </div>
       </header>
@@ -176,11 +176,6 @@ export function LandingView({
           <p className="eyebrow">{t('brandSub', lang)}</p>
           <h1 id="page-title" tabIndex={-1}>{t('landHeroTitle', lang)}</h1>
           <p className="landing-body">{t('landHeroBody', lang)}</p>
-          <div className="row landing-actions">
-            <button type="button" className="btn primary" data-landing="start" onClick={() => setWinOpen(true)}>
-              <Icon name="play" />{t('landStartOne', lang)}
-            </button>
-          </div>
           <ul className="landing-trust">
             <li><Icon name="check" />{t('landTrust1', lang)}</li>
             <li><Icon name="check" />{t('landTrust2', lang)}</li>
@@ -400,7 +395,7 @@ export function LandingView({
         <p className="landing-body">{t('landCtaB', lang)}</p>
         <div className="row landing-actions">
           <button type="button" className="btn primary" onClick={() => setWinOpen(true)}>
-            {t('landStartOne', lang)}
+            {t('landingStart', lang)}
           </button>
         </div>
       </section>

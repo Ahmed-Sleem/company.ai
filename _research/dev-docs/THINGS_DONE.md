@@ -1287,3 +1287,13 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   rewritten smoke doors.
 * Phase 1 of the standing audit (the landing) ran with these two findings fixed; the rest of
   the phase's visual pass found nothing broken in the re-captured screens.
+
+## Round sixteen (2026-10-12) — one way in, centred, adaptive; Phase 2 audit
+* The hero and the final call no longer carry door buttons: the top menu's single
+  "Start my company" button opens the companies window, centred on the screen (REQ-62).
+* Adaptive obligation: a smoke section walks 320/390/768/1024/1440/2200 across the landing,
+  the open window and all seven views, failing on any horizontal overflow; the 320px door
+  bar now wraps instead of spilling.
+* Phase 2 (wizard & doors) audited: validation words, draft resume, portrait picker and the
+  manager list all read clean in code and smoke; the narrow-width rules now cover the wizard
+  bar too. Findings logged in AUDIT_PLAN.md.

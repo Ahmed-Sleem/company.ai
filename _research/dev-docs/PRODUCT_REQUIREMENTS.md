@@ -242,6 +242,10 @@ Required, scheduled into phases (MANDATORY — nothing may be dropped):
 - REQ-61 The diary tab is its own tab (owner bug, round fifteen): `#history/<person>` renders
   the diary straight away and never meets the landing door — the old build showed the landing
   in the new tab.
+- REQ-62 One way in, centred, adaptive (owner, round sixteen): no door buttons on the page body —
+  the top menu's single "Start my company" button opens the companies window as a centred popup;
+  and the whole product (landing, window, wizard, every shell view) shows no horizontal overflow
+  from 320px to 2200px.
 
 Research conclusions behind REQ-53..55 (2026-10-11): MCP is the de-facto standard for
 connecting agents to tools (Linux-Foundation-governed, ~97M monthly SDK downloads, adopted

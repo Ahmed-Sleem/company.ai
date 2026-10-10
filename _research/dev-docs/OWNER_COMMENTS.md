@@ -378,3 +378,10 @@ Comments (the work list):
   the option to create new , also the user shoud be able to delete created companies or load
   new one from file , but he shoud not be able to delete the demo" — both shipped this round
   (REQ-60, REQ-61); the audit continues in phases per the round-fourteen plan.
+
+## Round sixteen (2026-10-12) — the buttons again, and every viewport
+- "great , but now these buttons (note the one in top menu) are confusing : Open Acme Studio /
+  Start my company / Explore the demo company — remove them , and the window that opens when
+  click Start my company (the one in the top menu) should be a pop up window in the middle of
+  screen" and "continue auditing" and "make sure that the whole thing is fully adaptive to
+  different view port sizes" — shipped as REQ-62; the audit moved to Phase 2.
