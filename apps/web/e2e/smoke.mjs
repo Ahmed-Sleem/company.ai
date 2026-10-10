@@ -865,6 +865,16 @@ try {
     const blocks = await page.locator('.landing-story .landing-block').count();
     const scenes = await page.locator('.landing-story .lvis').count();
     check('the landing tells the whole story in full sections', blocks >= 6 && scenes >= 4);
+    // R10 (owner, tenth round): the landing is a FULL PRODUCT page — the shape of the great
+    // ones (hero, facts, features, how-it-works, deep dives, privacy, FAQ, final call), still
+    // in our pixel skin and still honest — no invented numbers, no fake customers.
+    const navLinks = await page.locator('.landing-nav a').count();
+    const facts = await page.locator('.landing-facts .landing-fact').count();
+    const faqs = await page.locator('.landing-faq details').count();
+    const finalCta = await page.locator('.landing-cta-final').count();
+    check('the landing sells the whole product — nav, facts, FAQ and a final call (R10)',
+      navLinks >= 4 && facts === 4 && faqs >= 5 && finalCta === 1,
+      `nav ${navLinks} · facts ${facts} · faq ${faqs} · cta ${finalCta}`);
     await page.click('[data-landing=start]');
     await page.waitForSelector('.intro-main');
     await page.click('[data-intro=next]');

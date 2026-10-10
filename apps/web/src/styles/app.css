@@ -71,6 +71,31 @@
   --lvis-h:92px;
   --lvis-mate:36px;
   --lvis-lift:6px;
+  /* R10 — the full product landing: one measure and the scenes' pixel sizes */
+  --land-w:1040px;
+  --land-fact:26px;
+  --land-step:30px;
+  --land-dot:8px;
+  --land-rail:14px;
+  --land-desk:34px;
+  --land-floor-h:220px;
+  --land-clock:22px;
+  --land-task-w:90px;
+  --land-door-h:64px;
+  --land-door-mini:44px;
+  --land-door-low:52px;
+  --land-cell:18px;
+  --land-walker:10px;
+  --land-walker-top:-4px;
+  --land-bar:5px;
+  --land-grid-dot:16px;
+  --land-bob:3px;
+  --land-w1x:70px;
+  --land-w1y:24px;
+  --land-w2x:20px;
+  --land-w2y:48px;
+  --land-w3x:90px;
+  --land-w3y:8px;
   --good:#9ece6a;
   --mate-1:#7aa2f7;
   --mate-2:#9ece6a;
@@ -874,28 +899,30 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
    same pixel type. Neither is inside the shell, because at this point there is no company
    to show a shell for. */
 .landing, .intro { min-block-size: 100dvh; display: flex; flex-direction: column; align-items: center; padding: var(--s6) var(--s5) var(--s10); background: var(--bg); }
-.landing-top, .intro-top { inline-size: 100%; max-inline-size: var(--app-intro-w); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s8); }
-.landing-hero { inline-size: 100%; max-inline-size: var(--app-intro-w); display: flex; flex-direction: column; gap: var(--s4); }
+.landing-top, .intro-top { inline-size: 100%; max-inline-size: var(--land-w); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-block-end: var(--s8); }
+.landing-hero { inline-size: 100%; max-inline-size: var(--land-w); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: var(--s7); align-items: center; }
+.landing-hero-copy { display: flex; flex-direction: column; gap: var(--s4); }
+
 .landing-hero h1 { margin: 0; font-size: var(--app-landing-title); line-height: 1.1; max-inline-size: 22ch; }
 .landing-body { margin: 0; color: var(--muted); font-size: var(--lg); max-inline-size: 62ch; }
 .landing-actions { gap: var(--s3); flex-wrap: wrap; }
 .landing-demo-note { margin: 0; max-inline-size: 62ch; }
 /* R8 (owner, eighth round): the landing is a COMPLETE page — the story of the product in
    full sections, the company picker after Start, and the same pixel scenes as illustrations. */
-.landing-story { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s10); display: grid; gap: var(--s5); }
+.landing-story { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s10); display: grid; gap: var(--s5); }
 .landing-block { padding: var(--s6); display: grid; gap: var(--s4); }
 .landing-block h2 { margin: 0; font-size: var(--lg); }
 .landing-block p { margin: 0; color: var(--muted); line-height: 1.7; }
 .landing-views ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
 .landing-views li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--sm); color: var(--muted); }
 .landing-views li .icon { color: var(--accent); flex: none; }
-.landing-companies { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s6); padding: var(--s5); display: grid; gap: var(--s4); }
+.landing-companies { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s6); padding: var(--s5); display: grid; gap: var(--s4); }
 .landing-companies h2 { margin: 0; font-size: var(--lg); }
 .studio-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
 .studio-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); }
 .studio-row strong { display: block; }
 .studio-row small { font-size: var(--xs); }
-.landing-foot { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block: var(--s10) var(--s6); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.landing-foot { inline-size: 100%; max-inline-size: var(--land-w); margin-block: var(--s10) var(--s6); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 /* The little teaching scenes — pure markup, animated on mount (remounts per step). */
 .lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: var(--lvis-h); padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }
 .lvis-check { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); animation: lvis-pop .45s both; }
@@ -924,6 +951,119 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .lvis-task em { inline-size: 40%; animation: lvis-grow .9s .6s both; }
 .lvis-bubble { padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); font-size: var(--sm); animation: lvis-pop .45s 1s both; }
 .lvis-bubble.right { margin-inline-start: auto; border-color: var(--accent); color: var(--accent); animation-delay: 1.4s; }
+
+/* ── R10 (owner, tenth round): the landing as a FULL PRODUCT page ──────────────────────────
+   The shape of the great product pages in our pixel skin: sticky product bar, two-column
+   hero with a live pixel studio, an honest facts strip, a feature grid, three steps,
+   alternating deep dives, the privacy promise, an FAQ and the final call. Every scene is
+   CSS — no screenshots, no external assets, reduced-motion respected. */
+.landing-nav { position: sticky; inset-block-start: 0; z-index: 5; background: var(--bg); border-block-end: var(--app-hair) solid var(--soft); padding-block: var(--s3); margin-block-end: var(--s7); }
+.landing-links { display: flex; gap: var(--s4); }
+.landing-links a { color: var(--muted); text-decoration: none; font-size: var(--sm); padding-block: var(--s1); border-block-end: var(--app-stroke) solid transparent; }
+.landing-links a:hover { color: var(--text); border-color: var(--accent); }
+.landing-navcta { flex: none; gap: var(--s2); }
+.landing-trust { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin: 0; padding: 0; }
+.landing-trust li { display: flex; align-items: center; gap: var(--s2); font-size: var(--sm); color: var(--muted); }
+.landing-trust .icon { color: var(--good); flex: none; }
+.landing-facts { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s9); display: grid; grid-template-columns: repeat(4, 1fr); border: var(--app-hair) solid var(--soft); background: var(--surface); }
+.landing-fact { padding: var(--s5); display: grid; gap: var(--s1); border-inline-start: var(--app-hair) solid var(--soft); }
+.landing-fact:first-child { border-inline-start: 0; }
+.landing-fact b { font-size: var(--land-fact); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.landing-fact small { color: var(--muted); font-size: var(--xs); line-height: 1.5; }
+.landing-section-title { margin: 0 0 var(--s5); font-size: var(--lg); }
+.landing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
+.landing-grid .landing-block { align-content: start; }
+.landing-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
+.landing-stepnum { font-size: var(--land-step); line-height: 1; color: transparent; -webkit-text-stroke: var(--app-hair) var(--accent); }
+.landing-deep { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: var(--s6); padding: var(--s6); align-items: center; }
+.landing-deep.flip .lvis-deep { order: 2; }
+.landing-deep-copy { display: grid; gap: var(--s3); align-content: center; }
+.landing-deep-copy h2 { margin: 0; font-size: var(--lg); }
+.landing-deep-copy p { margin: 0; color: var(--muted); line-height: 1.7; }
+.landing-deep-copy ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.landing-deep-copy li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--sm); color: var(--muted); }
+.landing-deep-copy li .icon { color: var(--accent); flex: none; }
+.landing-privacy { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s5); padding: var(--s7); text-align: center; display: grid; gap: var(--s3); justify-items: center; }
+.landing-privacy h2 { margin: 0; font-size: var(--lg); }
+.landing-privacy p { margin: 0; color: var(--muted); line-height: 1.7; max-inline-size: 70ch; }
+.landing-faq { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s10); display: grid; gap: var(--s3); }
+.landing-faq details { padding: var(--s4) var(--s5); }
+.landing-faq summary { cursor: pointer; font-weight: 600; }
+.landing-faq summary::marker { color: var(--accent); }
+.landing-faq p { margin: var(--s3) 0 0; color: var(--muted); line-height: 1.7; }
+.landing-cta-final { inline-size: 100%; max-inline-size: var(--land-w); margin-block-start: var(--s10); padding: var(--s9) var(--s6); display: grid; gap: var(--s4); justify-items: center; text-align: center; border: var(--app-hair) solid var(--soft); background: var(--surface); }
+.landing-cta-final h2 { margin: 0; font-size: var(--app-landing-title); line-height: 1.15; }
+.landing-cta-final .landing-body { text-align: center; }
+
+/* the hero's studio window — the product, drawn in pixels */
+.lvis-hero { display: grid; border: var(--app-hair) solid var(--line); background: var(--surface); }
+.lh-bar { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-block-end: var(--app-hair) solid var(--soft); }
+.lh-bar i { inline-size: var(--land-dot); block-size: var(--land-dot); background: var(--line); }
+.lh-bar span { margin-inline-start: var(--s2); font-size: var(--xs); color: var(--muted); }
+.lh-body { display: flex; min-block-size: var(--land-floor-h); }
+.lh-rail { display: grid; align-content: start; gap: var(--s2); padding: var(--s3); border-inline-end: var(--app-hair) solid var(--soft); }
+.lh-rail i { inline-size: var(--land-rail); block-size: var(--land-rail); background: var(--line); }
+.lh-rail i:first-child { background: var(--accent); }
+.lh-floor { flex: 1; position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); padding: var(--s5); align-content: center; justify-items: center; background-image: radial-gradient(var(--soft) var(--app-hair), transparent var(--app-hair)); background-size: var(--land-grid-dot) var(--land-grid-dot); }
+.lh-desk { inline-size: var(--land-desk); block-size: var(--land-desk); background: var(--mate-1); border: var(--app-hair) solid var(--line); animation: lvis-pop .4s both, lvis-bob 2.6s 1s ease-in-out infinite; }
+.lh-desk.c2 { background: var(--mate-2); }
+.lh-desk.c3 { background: var(--mate-3); }
+.lh-desk.ai { background: var(--accent); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.lh-bub { position: absolute; inset-block-start: var(--s3); inset-inline-end: var(--s3); padding: var(--s1) var(--s2); border: var(--app-hair) solid var(--line); background: var(--raised); font-size: var(--xs); animation: lvis-pop .4s 1.2s both; }
+.lh-bub.b2 { inset-block-start: auto; inset-block-end: var(--s3); inset-inline-end: auto; inset-inline-start: var(--s3); animation-delay: 1.7s; }
+.lh-task { position: absolute; inset-block-end: var(--s3); inset-inline-end: var(--s3); inline-size: var(--land-task-w); display: grid; gap: var(--app-notch); }
+.lh-task b, .lh-task u { display: block; block-size: var(--land-bar); text-decoration: none; background: var(--line); }
+.lh-task b { inline-size: 100%; background: var(--accent); animation: lvis-grow .9s .8s both; }
+.lh-task u { inline-size: 60%; animation: lvis-grow .9s 1.3s both; }
+.lh-clock { position: absolute; inset-block-start: var(--s3); inset-inline-start: var(--s3); inline-size: var(--land-clock); block-size: var(--land-clock); border: var(--app-hair) solid var(--line); border-radius: 50%; }
+.lh-clock i { position: absolute; inset-block-start: var(--app-notch); inset-inline-start: 50%; inline-size: var(--app-stroke); block-size: var(--land-dot); background: var(--accent); transform-origin: 50% 100%; animation: lh-tick 12s steps(12) infinite; }
+
+/* the small scenes inside cards and deep dives */
+.lvis-chips { display: grid; gap: var(--s2); flex: 1; }
+.lvis-chip { justify-self: start; padding: var(--s1) var(--s2); border: var(--app-hair) solid var(--line); background: var(--raised); font-family: var(--mono, monospace); font-size: var(--xs); animation: lvis-pop .4s both; }
+.lvis-chip:nth-child(2) { animation-delay: .25s; }
+.lvis-chip:nth-child(3) { animation-delay: .5s; }
+.lvis-letter { flex: 1; display: grid; gap: var(--s2); padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); animation: lvis-pop .45s both; }
+.lvis-letter b { font-size: var(--sm); }
+.lvis-opt { justify-self: start; padding: 0 var(--s2); border: var(--app-hair) solid var(--accent); color: var(--accent); font-size: var(--xs); }
+.lvis-floorgrid { position: relative; flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); align-self: center; }
+.lvis-floorgrid i { block-size: var(--land-cell); background: var(--line); }
+.lvis-walker { position: absolute; inset-block-start: var(--land-walker-top); inset-inline-start: 0; inline-size: var(--land-walker); block-size: var(--land-walker); background: var(--accent); animation: lvis-walk 4.5s steps(9) infinite; }
+.lvis-doors { flex: 1; display: flex; gap: var(--s2); align-items: flex-end; }
+.lvis-doors span { flex: 1; display: grid; place-items: end center; padding-block-end: var(--s1); block-size: var(--land-door-h); border: var(--app-hair) solid var(--line); border-block-end: var(--app-notch) solid var(--accent); background: var(--raised); font-size: var(--xs); color: var(--muted); animation: lvis-pop .45s both; }
+.lvis-doors span:nth-child(2) { animation-delay: .15s; }
+.lvis-doors span:nth-child(3) { animation-delay: .3s; }
+.lvis-doors span:nth-child(4) { animation-delay: .45s; }
+.lvis-doors.mini span { block-size: var(--land-door-mini); }
+
+@keyframes lvis-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(var(--land-bob) * -1)); } }
+@keyframes lh-tick { to { transform: rotate(360deg); } }
+@keyframes lvis-walk {
+  0% { transform: translate(0, 0); } 25% { transform: translate(var(--land-w1x), var(--land-w1y)); }
+  50% { transform: translate(var(--land-w2x), var(--land-w2y)); } 75% { transform: translate(var(--land-w3x), var(--land-w3y)); }
+  100% { transform: translate(0, 0); }
+}
+
+/* phones: one column, scenes under the words, the nav keeps only what matters */
+@media (max-width: 860px) {
+  .landing-hero { grid-template-columns: 1fr; }
+  .landing-grid, .landing-steps { grid-template-columns: 1fr 1fr; }
+  .landing-deep, .landing-deep.flip { grid-template-columns: 1fr; }
+  .landing-deep.flip .lvis-deep { order: 0; }
+  .landing-facts { grid-template-columns: 1fr 1fr; }
+  .landing-fact:nth-child(3) { border-inline-start: 0; }
+  .landing-fact:nth-child(n+3) { border-block-start: var(--app-hair) solid var(--soft); }
+}
+@media (max-width: 620px) {
+  .landing-links { display: none; }
+  .landing-grid, .landing-steps { grid-template-columns: 1fr; }
+  .lvis-doors span { block-size: var(--land-door-low); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lh-desk, .lh-bub, .lh-task b, .lh-task u, .lh-clock i, .lvis-chip, .lvis-letter,
+  .lvis-walker, .lvis-doors span, .lvis-check, .lvis-pill, .lvis-mate, .lvis-task b,
+  .lvis-task u, .lvis-task em, .lvis-bubble { animation: none; }
+}
 @keyframes lvis-pop { from { opacity: 0; transform: translateY(var(--lvis-lift)) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes lvis-grow { from { transform: scaleX(0); transform-origin: inline-start; } to { transform: scaleX(1); transform-origin: inline-start; } }
 @media (prefers-reduced-motion: reduce) {
