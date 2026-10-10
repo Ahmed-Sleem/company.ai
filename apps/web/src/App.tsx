@@ -29,6 +29,7 @@ import { NetworkView } from './views/NetworkView';
 import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
 import { LandingView } from './views/LandingView';
+import { consumePendingNew, listStudios, newStudio, openStudio, rememberStudio } from './lib/studios';
 import { IntroWizard } from './views/IntroWizard';
 import type { DataStateKind } from './components/DataState';
 
@@ -124,6 +125,13 @@ export function App() {
   useEffect(() => {
     if (introDone && starting) enter();
   }, [introDone, starting, enter]);
+
+  /** R8: the device remembers every company — the active one is re-recorded as its name
+      settles (boot, rename, wizard finish), so the landing's list is always honest. */
+  const demoMode = useStore((s) => s.demoMode);
+  useEffect(() => {
+    if (introDone && !demoMode && company.trim() !== '') rememberStudio(company.trim());
+  }, [introDone, demoMode, company]);
 
   /** REQ-39 (owner, sixth round): a contracted rail is a strip of labels — it never holds an
       open menu, and the company button below is inert until the rail expands. */
@@ -237,18 +245,24 @@ export function App() {
 
   // A forced state (?state=…) is the QA door — it looks straight at the shell's states and
   // never meets the landing.
+  /** R8: the boot right after "New company" skips the picker and opens the wizard. */
+  const [freshStudio] = useState(consumePendingNew);
+
   if ((!introDone || !doorPassed) && !forcedState) {
     const toggleLang = () => setLang(lang === 'en' ? 'ar' : 'en');
-    return starting ? (
+    return starting || freshStudio ? (
       <IntroWizard lang={lang} onLanguage={toggleLang} />
     ) : (
       <LandingView
         lang={lang}
         resumable={introDraft !== null}
         studio={introDone ? company : null}
+        studios={listStudios()}
         onStart={() => setStarting(true)}
         onDemo={() => { chooseDemo(); enter(); }}
         onOpen={enter}
+        onOpenStudio={openStudio}
+        onNewStudio={newStudio}
         onLanguage={toggleLang}
       />
     );

@@ -1,40 +1,54 @@
 /**
- * The landing page (REQ-33) — what a brand-new visitor meets before the product exists for them.
+ * The landing page (REQ-33, rebuilt R8 owner eighth round) — a COMPLETE page that tells the
+ * whole story of the product before a single click: what company.ai is, the team of humans
+ * and AI, the engine that moves the work, the mailbox, the seven rooms, and where the data
+ * lives. Same pixel style as everything else.
  *
- * Same pixel style as everything else, and exactly two doors: start your own company, or
- * look around the labelled demo company first. No save file exists yet at this point;
- * choosing a door is what creates one.
- *
- * REQ-43 (owner, seventh round): the education is three interactive steps with small
- * animated visuals — minimal, clear, to the point. No screenshots anywhere.
+ * The doors: before Start, the page educates. Start opens the picker — every company saved on
+ * this device plus "New company" (which reboots into the wizard). With no companies yet, Start
+ * walks straight into the wizard. The demo door is always there, and so is the language flip.
  */
 import { useState } from 'react';
 import { t, type Lang } from '../lib/i18n';
 import { Icon } from '../components/Icon';
+import type { StudioMeta } from '../lib/studios';
 
-/** REQ-43: three teachable steps, each with a small animated visual — no screenshots. */
-const STEPS = ['found', 'hire', 'run'] as const;
+const VIEW_KEYS = ['landViewTeam', 'landViewTasks', 'landViewInbox', 'landViewComms', 'landViewNetwork', 'landViewWorld', 'landViewSet'] as const;
 
 export function LandingView({
   lang,
   resumable,
   studio,
+  studios,
   onStart,
   onDemo,
   onOpen,
+  onOpenStudio,
+  onNewStudio,
   onLanguage,
 }: {
   lang: Lang;
   /** A draft from an earlier visit turns the start button into "continue where I left off". */
   resumable: boolean;
-  /** REQ-41: when a studio already exists, the landing leads with one door — open it. */
+  /** The company of the active save, when one exists. */
   studio?: string | null;
+  /** R8: every company recorded on this device. */
+  studios: StudioMeta[];
   onStart: () => void;
   onDemo: () => void;
   onOpen?: () => void;
+  onOpenStudio: (id: string) => void;
+  onNewStudio: () => void;
   onLanguage: () => void;
 }) {
-  const [step, setStep] = useState(0);
+  /** Start with companies on the device shows the picker first; without, it starts.
+      With no active save at all (a cleared or brand-new browser) there is nothing to pick
+      between — Start starts. */
+  const [picking, setPicking] = useState(false);
+  const hasSave = typeof localStorage !== 'undefined' && localStorage.getItem('company.ai.save.v1') !== null;
+  // A half-finished wizard always wins over the picker — the draft is the newest intent.
+  const start = () => (studios.length > 0 && hasSave && !resumable ? setPicking(true) : onStart());
+
   return (
     <div className="landing">
       <header className="landing-top">
@@ -51,69 +65,120 @@ export function LandingView({
         <p className="eyebrow">{t('brandSub', lang)}</p>
         <h1 id="page-title" tabIndex={-1}>{t('landingTitle', lang)}</h1>
         <p className="landing-body">{t('landingBody', lang)}</p>
-        {studio && onOpen ? (
-          <div className="row landing-actions">
+        <div className="row landing-actions">
+          {studio && onOpen ? (
             <button type="button" className="btn primary" data-landing="open" onClick={onOpen}>
               <Icon name="play" />{t('landingOpen', lang).replace('{company}', studio)}
             </button>
-          </div>
-        ) : (
-          <>
-            <div className="row landing-actions">
-              <button type="button" className="btn primary" data-landing="start" onClick={onStart}>
-                <Icon name="play" />{resumable ? t('landingResume', lang) : t('landingStart', lang)}
-              </button>
-              <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
-                {t('landingDemo', lang)}
-              </button>
-            </div>
-            <p className="small dim landing-demo-note">{t('landingDemoNote', lang)}</p>
-          </>
-        )}
+          ) : null}
+          <button type="button" className={studio ? 'btn' : 'btn primary'} data-landing="start" onClick={start}>
+            {resumable && !studio ? t('landingResume', lang) : studios.length > 0 ? t('landingStart', lang) : resumable ? t('landingResume', lang) : t('landingStart', lang)}
+          </button>
+          <button type="button" className="btn" data-landing="demo" onClick={onDemo}>
+            {t('landingDemo', lang)}
+          </button>
+        </div>
+        <p className="small dim landing-demo-note">{t('landingDemoNote', lang)}</p>
       </section>
 
-      {/* REQ-43 (owner, seventh round): screenshots are out — the landing teaches the
-          product in three interactive steps, minimal and to the point. */}
-      <section className="landing-steps panel" aria-label={t('landingHow', lang)} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="landing-stepbar" role="tablist" aria-label={t('landingHow', lang)}>
-          {STEPS.map((name, i) => (
-            <button type="button" key={name} role="tab"
-              className={`landing-step${i === step ? ' is-on' : ''}`}
-              aria-selected={i === step} data-landing-step={name}
-              onClick={() => setStep(i)}>
-              <span className="landing-step-n">{i + 1}</span>
-              {t(name === 'found' ? 'stepFound' : name === 'hire' ? 'stepHire' : 'stepRun', lang)}
-            </button>
-          ))}
-        </div>
-        <div className="landing-stepbody" data-landing-visual={STEPS[step]}>
-          {/* Remounting on step change replays the animation — the visual teaches the step. */}
-          {STEPS[step] === 'found' ? (
-            <div className="lvis" key="found">
-              <div className="lvis-check"><i /><b>{lang === 'ar' ? '\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629' : 'Company name'}</b></div>
-              <div className="lvis-check"><i /><b>{lang === 'ar' ? '\u0646\u0648\u0639 \u0627\u0644\u0639\u0645\u0644' : 'Business'}</b></div>
-              <div className="lvis-check"><i /><b>{lang === 'ar' ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u0628\u062f\u0627\u064a\u0629' : 'First team'}</b></div>
-              <div className="lvis-pill">company.ai</div>
-            </div>
-          ) : STEPS[step] === 'hire' ? (
-            <div className="lvis" key="hire">
-              <div className="lvis-mate c1"><span /><small>{lang === 'ar' ? '\u062a\u0635\u0645\u064a\u0645' : 'Design'}</small></div>
-              <div className="lvis-mate c2"><span /><small>{lang === 'ar' ? '\u0647\u0646\u062f\u0633\u0629' : 'Engineering'}</small></div>
-              <div className="lvis-mate c3"><span /><small>{lang === 'ar' ? '\u0645\u0628\u064a\u0639\u0627\u062a' : 'Sales'}</small></div>
-              <div className="lvis-mate ai c4"><span /><small>AI</small></div>
-            </div>
-          ) : (
-            <div className="lvis" key="run">
-              <div className="lvis-task"><b /><u /><em /></div>
-              <div className="lvis-bubble">{lang === 'ar' ? '\u062e\u0644\u0651\u0635\u062a \u0627\u0644\u062a\u0635\u0645\u064a\u0645' : 'Design shipped'}</div>
-              <div className="lvis-bubble right">{lang === 'ar' ? '\u0645\u0648\u0627\u0641\u0642 \u2713' : 'Approved \u2713'}</div>
-            </div>
-          )}
-          <p className="landing-stepbody-text">
-            {t(STEPS[step] === 'found' ? 'stepFoundBody' : STEPS[step] === 'hire' ? 'stepHireBody' : 'stepRunBody', lang)}
-          </p>
-        </div>
+      {/* R8: after Start — every company on this device, and the door to a new one. */}
+      {picking ? (
+        <section className="landing-companies panel" data-landing="companies" aria-label={t('landCompaniesTitle', lang)}>
+          <h2>{t('landCompaniesTitle', lang)}</h2>
+          <ul className="studio-list">
+            {studios.map((s) => (
+              <li key={s.id} className="studio-row">
+                <span className="grow">
+                  <strong>{s.name}</strong>
+                  <small className="dim">{new Date(s.at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</small>
+                </span>
+                <button type="button" className="btn" data-studio={s.id}
+                  onClick={() => (s.name === studio && onOpen ? onOpen() : onOpenStudio(s.id))}>
+                  {t('landOpenC', lang)}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="btn primary" data-landing="new-company" onClick={onNewStudio}>
+            <Icon name="plus" />{t('landNewCompany', lang)}
+          </button>
+        </section>
+      ) : null}
+
+      {/* The story of the product — one full page, section by section. */}
+      <section className="landing-story">
+        <article className="landing-block panel">
+          <div className="lvis" aria-hidden="true">
+            <div className="lvis-check"><i /><b>{lang === 'ar' ? 'اسم الشركة' : 'Company name'}</b></div>
+            <div className="lvis-check"><i /><b>{lang === 'ar' ? 'نوع العمل' : 'Business'}</b></div>
+            <div className="lvis-check"><i /><b>{lang === 'ar' ? 'فريق البداية' : 'First team'}</b></div>
+            <div className="lvis-pill">company.ai</div>
+          </div>
+          <div>
+            <h2>{t('landWhatTitle', lang)}</h2>
+            <p>{t('landWhatBody', lang)}</p>
+          </div>
+        </article>
+
+        <article className="landing-block panel">
+          <div className="lvis" aria-hidden="true">
+            <div className="lvis-mate c1"><span /><small>{lang === 'ar' ? 'تصميم' : 'Design'}</small></div>
+            <div className="lvis-mate c2"><span /><small>{lang === 'ar' ? 'هندسة' : 'Engineering'}</small></div>
+            <div className="lvis-mate c3"><span /><small>{lang === 'ar' ? 'مبيعات' : 'Sales'}</small></div>
+            <div className="lvis-mate ai c4"><span /><small>AI</small></div>
+          </div>
+          <div>
+            <h2>{t('landTeamTitle', lang)}</h2>
+            <p>{t('landTeamBody', lang)}</p>
+          </div>
+        </article>
+
+        <article className="landing-block panel">
+          <div className="lvis" aria-hidden="true">
+            <div className="lvis-task"><b /><u /><em /></div>
+            <div className="lvis-bubble">{lang === 'ar' ? 'خلّصت التصميم' : 'Design shipped'}</div>
+            <div className="lvis-bubble right">{lang === 'ar' ? 'موافق ✓' : 'Approved ✓'}</div>
+          </div>
+          <div>
+            <h2>{t('landWorkTitle', lang)}</h2>
+            <p>{t('landWorkBody', lang)}</p>
+          </div>
+        </article>
+
+        <article className="landing-block panel">
+          <div className="lvis" aria-hidden="true">
+            <div className="lvis-bubble">{lang === 'ar' ? 'نحتاج قرارك…' : 'We need your call…'}</div>
+            <div className="lvis-mate c1"><span /><small>A</small></div>
+            <div className="lvis-mate c2"><span /><small>B</small></div>
+            <div className="lvis-bubble right">{lang === 'ar' ? 'ردّك ↩' : 'Your reply ↩'}</div>
+          </div>
+          <div>
+            <h2>{t('landMailTitle', lang)}</h2>
+            <p>{t('landMailBody', lang)}</p>
+          </div>
+        </article>
+
+        <article className="landing-block panel landing-views">
+          <h2>{t('landViewsTitle', lang)}</h2>
+          <ul>
+            {VIEW_KEYS.map((key) => (
+              <li key={key}><Icon name="check" />{t(key, lang)}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="landing-block panel">
+          <h2>{t('landDataTitle', lang)}</h2>
+          <p>{t('landDataBody', lang)}</p>
+        </article>
       </section>
+
+      <footer className="landing-foot small dim">
+        <span>{t('brand', lang)}</span>
+        <button type="button" className="btn ghost" onClick={onLanguage}>
+          {lang === 'en' ? 'العربية' : 'English'}
+        </button>
+      </footer>
     </div>
   );
 }

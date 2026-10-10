@@ -871,16 +871,22 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .landing-body { margin: 0; color: var(--muted); font-size: var(--lg); max-inline-size: 62ch; }
 .landing-actions { gap: var(--s3); flex-wrap: wrap; }
 .landing-demo-note { margin: 0; max-inline-size: 62ch; }
-/* REQ-43 (owner, seventh round): the landing teaches in three interactive steps with small
-   animated visuals — screenshots are gone. Minimal, clear, to the point. */
-.landing-steps { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s10); padding: var(--s5); display: grid; gap: var(--s4); }
-.landing-stepbar { display: flex; gap: var(--s2); flex-wrap: wrap; }
-.landing-step { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); color: var(--muted); font-size: var(--sm); }
-.landing-step.is-on { color: var(--fg); border-color: var(--accent); background: var(--accent-soft, var(--raised)); }
-.landing-step-n { display: inline-flex; align-items: center; justify-content: center; inline-size: var(--app-badge); block-size: var(--app-badge); border-radius: 50%; background: var(--line); color: var(--fg); font-size: var(--xs); }
-.landing-step.is-on .landing-step-n { background: var(--accent); color: var(--surface); }
-.landing-stepbody { display: grid; gap: var(--s4); }
-.landing-stepbody-text { margin: 0; font-size: var(--base); color: var(--fg); }
+/* R8 (owner, eighth round): the landing is a COMPLETE page — the story of the product in
+   full sections, the company picker after Start, and the same pixel scenes as illustrations. */
+.landing-story { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s10); display: grid; gap: var(--s5); }
+.landing-block { padding: var(--s6); display: grid; gap: var(--s4); }
+.landing-block h2 { margin: 0; font-size: var(--lg); }
+.landing-block p { margin: 0; color: var(--muted); line-height: 1.7; }
+.landing-views ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.landing-views li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--sm); color: var(--muted); }
+.landing-views li .icon { color: var(--accent); flex: none; }
+.landing-companies { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block-start: var(--s6); padding: var(--s5); display: grid; gap: var(--s4); }
+.landing-companies h2 { margin: 0; font-size: var(--lg); }
+.studio-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.studio-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); }
+.studio-row strong { display: block; }
+.studio-row small { font-size: var(--xs); }
+.landing-foot { inline-size: 100%; max-inline-size: var(--app-intro-w); margin-block: var(--s10) var(--s6); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 /* The little teaching scenes — pure markup, animated on mount (remounts per step). */
 .lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: var(--lvis-h); padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }
 .lvis-check { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); animation: lvis-pop .45s both; }

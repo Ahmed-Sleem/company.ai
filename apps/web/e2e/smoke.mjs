@@ -854,12 +854,10 @@ try {
   {
     await page.reload({ waitUntil: 'networkidle' }); // 5i just cleared the save
     await page.waitForSelector('.landing');
-    // REQ-43 (seventh round): the landing teaches in three interactive steps — no screenshots.
-    const stepCount = await page.locator('.landing-step').count();
-    await page.click('[data-landing-step="hire"]');
-    await page.waitForSelector('.landing-stepbody[data-landing-visual="hire"]', { timeout: 5_000 });
-    const visuals = (await page.locator('.lvis-mate').count()) === 4;
-    check('the landing teaches the product in three interactive steps', stepCount === 3 && visuals);
+    // R8 (eighth round): the landing is a complete page telling the whole story.
+    const blocks = await page.locator('.landing-story .landing-block').count();
+    const scenes = await page.locator('.landing-story .lvis').count();
+    check('the landing tells the whole story in full sections', blocks >= 6 && scenes >= 4);
     await page.click('[data-landing=start]');
     await page.waitForSelector('.intro-main');
     await page.click('[data-intro=next]');

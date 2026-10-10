@@ -134,6 +134,9 @@ export interface IntroDraft {
 
 interface SaveState {
   company: CompanyProfile;
+  /** R8: true while the labelled demo company is the one on screen — the landing's
+      company list must only ever contain companies the owner actually created. */
+  demoMode: boolean;
   /** False until the intro is finished or the demo company is chosen (REQ-33). */
   introDone: boolean;
   /** REQ-41: has the landing door been passed THIS session? In memory only — deliberately not
@@ -185,6 +188,7 @@ const fixture = () => ({
   savedAt: null as string | null,
   company: { description: '', answers: [] as { q: string; a: string }[], ...demo.company } as CompanyProfile,
   introDone: false,
+  demoMode: false,
   doorPassed: false,
   introDraft: null as IntroDraft | null,
   operator: { ...demo.operator },
@@ -202,7 +206,7 @@ export const useStore = create<SaveState>()(
       ...fixture(),
       load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
       passDoor: () => set({ doorPassed: true }),
-      reset: () => set(() => ({ ...fixture(), introDone: true, doorPassed: true, savedAt: new Date().toISOString() })),
+      reset: () => set(() => ({ ...fixture(), introDone: true, demoMode: true, doorPassed: true, savedAt: new Date().toISOString() })),
       patchTask: (id, patch) => {
         let out: TaskRow | null = null;
         set((state) => ({
@@ -247,7 +251,7 @@ export const useStore = create<SaveState>()(
       setIntroDraft: (draft) => set(() => ({ introDraft: draft })),
       finishIntro: () => set((state) => {
         const draft = state.introDraft;
-        if (!draft) return { introDone: true, introDraft: null };
+        if (!draft) return { introDone: true, demoMode: false, introDraft: null };
         // Draft people become real ones; the save numbers them the way it numbers everyone
         // it did not ship with (`p-new-N`) — no clock, no dice (namespace lock).
         const max = state.agents.reduce((m, a) => {
@@ -283,6 +287,7 @@ export const useStore = create<SaveState>()(
             operator: { name: draft.operatorName.trim() === '' ? state.operator.name : draft.operatorName.trim(), role: state.operator.role },
             agents,
             introDone: true,
+            demoMode: false,
             introDraft: null,
           };
         }
@@ -297,7 +302,7 @@ export const useStore = create<SaveState>()(
           introDraft: null,
         };
       }),
-      chooseDemo: () => set((state) => ({ ...state, introDone: true, introDraft: null, savedAt: new Date().toISOString() })),
+      chooseDemo: () => set((state) => ({ ...state, introDone: true, demoMode: true, introDraft: null, savedAt: new Date().toISOString() })),
       reopenIntro: () => set((state) => {
         const draftId = new Map<string, string>();
         state.agents.forEach((a, i) => draftId.set(a.id, `d-${i + 1}`));
