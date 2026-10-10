@@ -235,9 +235,11 @@ that a saved plan round-trips through the export file. This phase starts after G
 
 - **Phase H — licences & gates** (unchanged, next): THIRD_PARTY.md provenance for everything
   borrowed so far, npm audit wired into the gate, GitHub Actions CI running verify on push.
-- **Phase I — the agent core**: the tool registry (REQ-53) — one place declares every tool
-  (message_employee, send_mail, update_progress, raise_ask), compiled into each provider's
-  native function-calling format, adapting Vercel AI SDK code (MIT) where it saves ours;
+- **Phase I — the agent core** ✅ done 2026-10-11 (shipped as `a6dcc25`; the registry landed
+  as update_progress / message_employee / ask_owner — ask_owner is the mailbox letter, and the
+  full send_mail with attachments arrives in Phase J on top of the same registry): the tool
+  registry (REQ-53) — one place declares every tool, compiled into each provider's
+  native function-calling format;
   the one-root org tree enforced everywhere (REQ-52); and **prompts v2** — the full, detailed
   system prompt written once in lib/prompt.ts: identity and company, the report contract,
   the tool list with when-to-use guidance, and mail etiquette (mail = deliverables, chat =

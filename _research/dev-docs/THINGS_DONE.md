@@ -1191,3 +1191,22 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   import.meta.url) and, once fixed, went green in the cloud. The demo driver was revived too
   (it predated the landing door; 10/10 again), and the README grew the Credits & licences
   section (REQ-59). Gates: verify 11/11 green local AND in CI, smoke 93/93, demo file 10/10.
+- 11 October 2026 — Phase I completed: the agent core. REQ-53: lib/tools.ts is now the ONE
+  registry — update_progress, message_employee, ask_owner, each declared once (name,
+  when-to-use sentence, JSON schema) and compiled into all three wire formats from that single
+  list (OpenAI tools / Anthropic input_schema / Gemini functionDeclarations); the three
+  answers parse back into one ToolCall shape. lib/toolrun.ts executes calls against the studio
+  and answers the model in words — progress goes through the engine's own writer, messages
+  land in threads (opening one when needed), letters file into the mailbox, and every mistake
+  (bad stage, unknown name, missing options) is explained back to the model instead of being
+  swallowed. The engine cycle became a tool loop (up to three rounds) with the original JSON
+  contract kept as the fallback for platforms without tools; prompts v2 (compileSystemPrompt)
+  now teach the company, the identity, the colleague roster, the tools with when-to-use
+  guidance, and the mail/chat discipline — written once, in the repo, tested. REQ-52: the
+  one-root tree is enforced where the data lives — the store refuses a second root and cycles,
+  the demo obeys its own rule (Marcus reports to Aria), the team editor says both refusals in
+  the owner's language, and a new hire defaults to the existing root. A reset mid-phase had
+  rolled the tree onto the remote lineage, dropping an unpushed local prompt rewrite; prompt v2
+  was rewritten from scratch on the true main and is better for it (the colleague roster helps
+  message_employee aim). Gates: verify 11/11 local, web tests 131/131, smoke 93/93, demo file
+  10/10, company-os-demo.html rebuilt.
