@@ -218,7 +218,7 @@ export function LandingView({
       <section className="landing-facts" aria-label={t('brand', lang)}>
         <div className="landing-fact"><b>4</b><small>{t('landFactDoors', lang)}</small></div>
         <div className="landing-fact"><b>7</b><small>{t('landFactRooms', lang)}</small></div>
-        <div className="landing-fact"><b>3</b><small>{t('landFactTools', lang)}</small></div>
+        <div className="landing-fact"><b>4</b><small>{t('landFactTools', lang)}</small></div>
         <div className="landing-fact"><b>0</b><small>{t('landFactServers', lang)}</small></div>
       </section>
 

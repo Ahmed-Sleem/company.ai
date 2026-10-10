@@ -56,6 +56,35 @@ export const APP_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'send_mail',
+    description:
+      'Deliver finished work to the owner as a mail letter: a subject, a body in plain markdown, ' +
+      'and up to three attachments of text or markdown. This is the deliverables channel — send ' +
+      'it when work is ready for the owner to read or accept. Not for questions (ask_owner) and ' +
+      'not for conversation (message_employee). One open letter at a time; wait for the reply.',
+    parameters: {
+      type: 'object',
+      properties: {
+        subject: { type: 'string', description: 'One clear subject line, like an email subject.' },
+        body: { type: 'string', description: 'The letter, in plain markdown: # heading, - lists, **bold**.' },
+        attachments: {
+          type: 'array',
+          description: 'Optional documents riding with the letter (at most three).',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              kind: { type: 'string', enum: ['text', 'md'] },
+              content: { type: 'string' },
+            },
+            required: ['name', 'kind', 'content'],
+          },
+        },
+      },
+      required: ['subject', 'body'],
+    },
+  },
+  {
     name: 'ask_owner',
     description:
       'Send the owner a letter in their mailbox: one clear question with two to five short ' +
@@ -143,8 +172,10 @@ export function toolsPromptSection(tools: ToolDef[] = APP_TOOLS): string {
     'are attached to the request, answer with ONE JSON object instead:',
     '{"progress": <0-100>, "stage": "progress"|"review"|"done", "note": "<one line>",',
     ' "ask": OPTIONAL {"question": "...", "options": ["...", "..."]}}',
-    'Mail discipline: ask_owner is MAIL — decisions and deliverables for the owner, never',
-    'conversation. Talking to teammates is message_employee. Never mix the two wires.',
+    'Mail discipline: ask_owner and send_mail are MAIL — decisions and deliverables for the',
+    'owner, never conversation. Talking to teammates is message_employee. Never mix the wires.',
+    'And mail is turn-taking: while a letter of yours is open with the owner, write nothing',
+    'new — wait for the reply.' ,
   );
   return lines.join('\n');
 }

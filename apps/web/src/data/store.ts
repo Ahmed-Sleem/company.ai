@@ -69,6 +69,15 @@ export interface DecisionRow {
   body?: string | null;
   options?: string[] | null;
   reply?: string | null;
+  /** REQ-54 (Phase J): deliverables travel with their documents attached. */
+  attachments?: MailAttachment[] | null;
+}
+
+/** A document riding on a mail letter (REQ-54) — plain text or markdown, never an upload. */
+export interface MailAttachment {
+  name: string;
+  kind: 'text' | 'md';
+  content: string;
 }
 
 export interface MessageRow {
@@ -171,8 +180,13 @@ export interface SaveState {
   startThread: (agentId: string, title: string) => void;
   setWorldPlan: (plan: WorldPlan | null) => void;
   patchDecision: (id: string, patch: Partial<DecisionRow>) => DecisionRow | null;
-  /** REQ-46: file a model's ask in the mailbox — numbered from the rows that exist, no dice. */
-  raiseAsk: (input: { agentId: string | null; shortRef: string; title: string; body: string; options: string[] | null }) => void;
+  /** REQ-46: file a model's ask in the mailbox — numbered from the rows that exist, no dice.
+      REQ-54: one open letter per employee — while one is pending or awaited, a second is
+      refused (the lock), and the caller hears about it in words. */
+  raiseAsk: (input: { agentId: string | null; shortRef: string; title: string; body: string; options: string[] | null }) => string | null;
+  /** REQ-54: the deliverable channel — a mail letter with a subject, a markdown body and up
+      to three attachments. Same lock as ask: one open letter per employee. */
+  raiseMail: (input: { agentId: string | null; shortRef: string; subject: string; body: string; attachments: MailAttachment[] | null }) => string | null;
   /** The wizard writes its draft here on every change; the save carries it across reloads. */
   setIntroDraft: (draft: IntroDraft | null) => void;
   /** Finish the intro: the draft becomes the company (REQ-14). Everything stays editable later. */
@@ -346,6 +360,11 @@ export const useStore = create<SaveState>()(
       }),
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
       addMessage: (threadId, from, text) => set((state) => {
+        // REQ-54: when the employee answers the owner's reply in their thread, their open
+        // letter closes itself — mail is turn-taking, and the loop is done.
+        const closedIds = from !== 'you'
+          ? state.decisions.filter((d) => d.agentId === from && d.status === 'answered').map((d) => d.id)
+          : [];
         const at = new Date().toISOString();
         const threadNow = state.threads.find((th) => th.id === threadId);
         // The save is this app's database, so it numbers the message within its thread —
@@ -356,6 +375,9 @@ export const useStore = create<SaveState>()(
           threads: state.threads.map((thread) => thread.id === threadId
             ? { ...thread, messages: [...thread.messages, message], lastMessage: { text, authorKind: from === 'you' ? 'owner' : 'agent' } }
             : thread),
+          decisions: closedIds.length === 0 ? state.decisions : state.decisions.map((d) => closedIds.includes(d.id)
+            ? { ...d, status: 'closed', audit: { ...d.audit, decidedAt: at } }
+            : d),
         };
       }),
       startThread: (agentId, title) => set((state) => {
@@ -371,7 +393,10 @@ export const useStore = create<SaveState>()(
         return { savedAt: new Date().toISOString(), threads: [thread, ...state.threads] };
       }),
       setWorldPlan: (plan) => set({ worldPlan: plan, savedAt: new Date().toISOString() }),
-      raiseAsk: (input) => set((state) => {
+      raiseAsk: (input) => {
+        // REQ-54: the mailbox is a conversation, not a flood — one open letter per employee.
+        if (input.agentId && get().decisions.some((d) => d.agentId === input.agentId && (d.status === 'pending' || d.status === 'answered') && (d.kind === 'ask' || d.kind === 'mail'))) return null;
+        set((state) => {
         // Numbered from the asks that exist, the way the save numbers everything else.
         let max = 0;
         for (const d of state.decisions) {
@@ -395,7 +420,41 @@ export const useStore = create<SaveState>()(
           reply: null,
         };
         return { savedAt: new Date().toISOString(), decisions: [row, ...state.decisions] };
-      }),
+        });
+        const filed = get().decisions.find((d) => d.kind === 'ask' && d.title === input.title && d.status === 'pending');
+        return filed?.id ?? null;
+      },
+      raiseMail: (input) => {
+        // The same one-open-letter lock as ask — mail is a channel with a rhythm, not a hose.
+        if (input.agentId && get().decisions.some((d) => d.agentId === input.agentId && (d.status === 'pending' || d.status === 'answered') && (d.kind === 'ask' || d.kind === 'mail'))) return null;
+        set((state) => {
+          let max = 0;
+          for (const d of state.decisions) {
+            const m = /^mail-(\d+)$/.exec(d.id);
+            if (m) max = Math.max(max, Number(m[1]));
+          }
+          const row: DecisionRow = {
+            id: `mail-${max + 1}`,
+            shortRef: input.shortRef,
+            kind: 'mail',
+            status: 'pending',
+            risk: '',
+            agentId: input.agentId,
+            title: input.subject,
+            titleAr: null,
+            rule: { id: 'mail', observed: 0, threshold: 0, unit: '' },
+            diff: { kind: 'mail', summary: input.body.slice(0, 140), summaryAr: null, before: null, after: null },
+            audit: { raisedAt: new Date().toISOString(), decidedByLabel: null, decidedAt: null },
+            body: input.body,
+            options: null,
+            reply: null,
+            attachments: input.attachments,
+          };
+          return { savedAt: new Date().toISOString(), decisions: [row, ...state.decisions] };
+        });
+        const filed = get().decisions.find((d) => d.kind === 'mail' && d.title === input.subject && d.status === 'pending');
+        return filed?.id ?? null;
+      },
       patchDecision: (id, patch) => {
         let out: DecisionRow | null = null;
         set((state) => ({

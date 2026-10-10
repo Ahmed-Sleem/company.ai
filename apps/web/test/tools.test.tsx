@@ -24,29 +24,30 @@ import {
 } from '../src/lib/tools';
 import { runTool, type ToolContext } from '../src/lib/toolrun';
 import { useStore } from '../src/data/store';
+import { api } from '../src/lib/api';
 
 describe('the registry — one declaration, three wire formats', () => {
-  it('declares the three capabilities every model gets', () => {
-    expect(APP_TOOLS.map((tool) => tool.name)).toEqual(['update_progress', 'message_employee', 'ask_owner']);
+  it('declares the four capabilities every model gets', () => {
+    expect(APP_TOOLS.map((tool) => tool.name)).toEqual(['update_progress', 'message_employee', 'send_mail', 'ask_owner']);
   });
 
   it('compiles the OpenAI shape: type function, JSON-schema parameters', () => {
     const tools = toolsForOpenAI() as { type: string; function: { name: string; parameters: unknown } }[];
-    expect(tools).toHaveLength(3);
+    expect(tools).toHaveLength(4);
     expect(tools[0]!.type).toBe('function');
     expect(tools[0]!.function.parameters).toEqual(APP_TOOLS[0]!.parameters);
   });
 
   it('compiles the Anthropic shape: input_schema carries the same schema', () => {
     const tools = toolsForAnthropic() as { name: string; input_schema: unknown }[];
-    expect(tools[2]!.name).toBe('ask_owner');
-    expect(tools[2]!.input_schema).toEqual(APP_TOOLS[2]!.parameters);
+    expect(tools[3]!.name).toBe('ask_owner');
+    expect(tools[3]!.input_schema).toEqual(APP_TOOLS[3]!.parameters);
   });
 
   it('compiles the Gemini shape: one functionDeclarations block', () => {
     const tools = toolsForGemini() as { functionDeclarations: { name: string }[] }[];
     expect(tools).toHaveLength(1);
-    expect(tools[0]!.functionDeclarations.map((d) => d.name)).toEqual(['update_progress', 'message_employee', 'ask_owner']);
+    expect(tools[0]!.functionDeclarations.map((d) => d.name)).toEqual(['update_progress', 'message_employee', 'send_mail', 'ask_owner']);
   });
 
   it('the prompt section teaches every tool and the JSON fallback', () => {
@@ -99,6 +100,9 @@ function context(overrides: Partial<ToolContext> = {}): ToolContext {
 describe('runTool — the studio really moves', () => {
   beforeEach(() => {
     useStore.getState().chooseDemo();
+    // the demo's own letters are history for these tests — the mailbox starts clear so the
+    // REQ-54 lock does not fire where the test is about something else
+    useStore.setState({ decisions: [] });
   });
 
   it('update_progress writes through the engine\'s own writer, clamped', () => {
@@ -246,5 +250,84 @@ describe('runTick — the standard tool path, no network', () => {
     runTick('en', true);
     await vi.waitFor(() => expect(completion).toHaveBeenCalledTimes(2));
     await vi.waitFor(() => expect(useStore.getState().tasks[0]!.progress).toBeGreaterThan(10));
+  });
+});
+
+/* ── REQ-54: the deliverables channel and its lock ─────────────────────────────────────── */
+
+describe('send_mail — deliverables by mail', () => {
+  beforeEach(() => {
+    useStore.getState().chooseDemo();
+    useStore.setState({ decisions: [] });
+  });
+
+  it('files a letter with a subject, a markdown body and its attachments', () => {
+    const before = useStore.getState().decisions.length;
+    const result = runTool({ id: '1', name: 'send_mail', args: {
+      subject: 'Launch page draft',
+      body: '# Draft\n\nThe copy is **ready** for review.',
+      attachments: [{ name: 'copy.md', kind: 'md', content: '# Copy\n\n- hero\n- faq' }],
+    } }, context());
+    expect(result).toContain('mailbox');
+    const decisions = useStore.getState().decisions;
+    expect(decisions).toHaveLength(before + 1);
+    const mail = decisions.find((d) => d.kind === 'mail');
+    expect(mail?.title).toBe('Launch page draft');
+    expect(mail?.attachments?.[0]?.name).toBe('copy.md');
+  });
+
+  it('refuses a letter without a subject, a bad attachment, or four attachments', () => {
+    const ctx = context();
+    expect(runTool({ id: '1', name: 'send_mail', args: { subject: '', body: 'x' } }, ctx)).toContain('subject');
+    expect(runTool({ id: '1', name: 'send_mail', args: { subject: 's', body: 'b', attachments: [{ name: '', kind: 'md', content: 'x' }] } }, ctx)).toContain('attachment');
+    expect(runTool({ id: '1', name: 'send_mail', args: { subject: 's', body: 'b', attachments: [
+      { name: 'a', kind: 'md', content: 'x' }, { name: 'b', kind: 'text', content: 'x' },
+      { name: 'c', kind: 'md', content: 'x' }, { name: 'd', kind: 'md', content: 'x' },
+    ] } }, ctx)).toContain('three');
+    expect(useStore.getState().decisions.some((d) => d.kind === 'mail')).toBe(false);
+  });
+
+  it('one open letter per employee — the lock answers the second attempt in words', () => {
+    const ctx = context();
+    const first = runTool({ id: '1', name: 'ask_owner', args: { question: 'Tone?', options: ['A', 'B'] } }, ctx);
+    expect(first).toContain('mailbox');
+    const second = runTool({ id: '2', name: 'send_mail', args: { subject: 'Draft', body: 'ready' } }, context());
+    expect(second).toContain('wait for the reply');
+    const third = runTool({ id: '3', name: 'ask_owner', args: { question: 'Again?', options: ['A', 'B'] } }, context());
+    expect(third).toContain('wait for the reply');
+  });
+
+  it('the loop closes when the employee answers the owner\'s reply in their thread', () => {
+    const ctx = context();
+    runTool({ id: '1', name: 'ask_owner', args: { question: 'Tone?', options: ['A', 'B'] } }, ctx);
+    const letter = useStore.getState().decisions.find((d) => d.kind === 'ask' && d.status === 'pending')!;
+    api.answerDecision(letter.id, 'Friendly.');
+    expect(useStore.getState().decisions.find((d) => d.id === letter.id)!.status).toBe('answered');
+    // still open while the owner waits — the lock holds
+    expect(runTool({ id: '2', name: 'send_mail', args: { subject: 's', body: 'b' } }, context())).toContain('wait');
+    // the employee's next word in their thread closes the letter and frees the wire
+    const thread = useStore.getState().threads.find((th) => th.agentId === 'aria');
+    useStore.getState().addMessage(thread!.id, 'aria', 'Noted — going friendly.');
+    expect(useStore.getState().decisions.find((d) => d.id === letter.id)!.status).toBe('closed');
+    expect(runTool({ id: '3', name: 'send_mail', args: { subject: 'Next draft', body: 'ready' } }, context())).toContain('mailbox');
+  });
+});
+
+describe('the lock is about letters, not rule approvals', () => {
+  beforeEach(() => {
+    useStore.getState().chooseDemo();
+    useStore.setState({ decisions: [] });
+  });
+
+  it('a pending rule decision does not lock an employee\'s mailbox', () => {
+    // a rule decision in zara's name (kind 'access', like the demo's own) must not stop a letter
+    useStore.setState({ decisions: [{
+      id: 'dec-90', shortRef: 'T-90', kind: 'access', status: 'pending', risk: '', agentId: 'aria',
+      title: 'x', titleAr: null, rule: { id: 'r', observed: 1, threshold: 1, unit: '' },
+      diff: { kind: 'access', summary: 's', before: null, after: null },
+      audit: { raisedAt: new Date().toISOString(), decidedByLabel: null, decidedAt: null },
+    }] });
+    const result = runTool({ id: '1', name: 'ask_owner', args: { question: 'Tone?', options: ['A', 'B'] } }, context());
+    expect(result).toContain('mailbox');
   });
 });

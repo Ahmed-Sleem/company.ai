@@ -33,6 +33,11 @@ export const STRINGS = {
   mailReplyPlaceholder: { en: 'Write your answer…', ar: 'اكتب ردك…' },
   mailSend: { en: 'Send', ar: 'أرسل' },
   mailReadMore: { en: 'Read more', ar: 'اقرأ المزيد' },
+  /* REQ-54 (Phase J): the deliverables channel — mail reads like mail, and it locks. */
+  mailMailTag: { en: 'deliverable', ar: 'تسليم' },
+  mailAwaiting: { en: 'awaiting {name}', ar: 'بانتظار {name}' },
+  mailYouSaid: { en: 'You replied:', ar: 'رددتَ:' },
+  mailLockNote: { en: 'The thread answers next — this letter closes when your employee replies.', ar: 'المحادثة تجيب تاليًا — تُغلق هذه الرسالة عندما يرد موظفك.' },
   /* REQ-52: the one-root tree, explained where it is refused. */
   teamErrSecondRoot: { en: 'One root only — this company already has its top manager. Choose who this person reports to.', ar: 'جذر واحد فقط — لدى الشركة مديرها الأعلى بالفعل. اختر لمن يُقدّم هذا الشخص تقاريره.' },
   teamErrCycle: { en: 'That would close a loop — nobody can report into their own team.', ar: 'هذا يغلق حلقة — لا يمكن أن يُقدّم أحد تقاريره لفريقه الخاص.' },

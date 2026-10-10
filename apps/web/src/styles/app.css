@@ -96,6 +96,7 @@
   --land-w2y:48px;
   --land-w3x:90px;
   --land-w3y:8px;
+  --mail-attach-h:240px;
   --good:#9ece6a;
   --mate-1:#7aa2f7;
   --mate-2:#9ece6a;
@@ -922,6 +923,20 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .studio-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); }
 .studio-row strong { display: block; }
 .studio-row small { font-size: var(--xs); }
+/* REQ-54 (Phase J): the mail body, the attachments, the visible lock. */
+.markdown { display: grid; gap: var(--s2); }
+.markdown p { margin: 0; }
+.markdown h4 { margin: var(--s1) 0 0; }
+.markdown ul { margin: 0; padding-inline-start: var(--s4); display: grid; gap: var(--s1); }
+.markdown code { padding: 0 var(--s1); border: var(--app-hair) solid var(--line); background: var(--raised); }
+.mail-text.markdown { color: var(--text); }
+.mail-attachments { display: grid; gap: var(--s2); }
+.mail-attach { display: grid; gap: var(--s2); }
+.mail-attach .btn { justify-content: flex-start; }
+.mail-attach-body { margin: 0; padding: var(--s3); border: var(--app-hair) solid var(--line); background: var(--raised); white-space: pre-wrap; max-block-size: var(--mail-attach-h); overflow: auto; }
+.mail-reply-given { margin: 0; }
+.mail-lock-note { margin: 0; }
+.tag.warn { border-color: var(--warn, var(--mate-3)); color: var(--warn, var(--mate-3)); }
 .landing-foot { inline-size: 100%; max-inline-size: var(--land-w); margin-block: var(--s10) var(--s6); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 /* The little teaching scenes — pure markup, animated on mount (remounts per step). */
 .lvis { display: flex; align-items: flex-end; gap: var(--s3); min-block-size: var(--lvis-h); padding: var(--s4); border: var(--app-hair) solid var(--soft); background: var(--surface); }

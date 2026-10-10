@@ -15,6 +15,8 @@ import { DataState, type DataStateKind } from '../components/DataState';
 import { Badge, toneOf } from '../components/Badge';
 import { Icon } from '../components/Icon';
 import { Avatar } from '../components/Avatar';
+import { Markdown } from '../components/Markdown';
+import type { MailAttachment } from '../data/store';
 import { useStore } from '../data/store';
 import { dateTime, localized } from '../lib/format';
 
@@ -28,6 +30,9 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [openId, setOpenId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const agents = useStore((s) => s.agents);
+  /** Phase J: the mailbox is LIVE — a letter filed by a model mid-cycle appears without a
+      reload, and a thread's reply closes its letter in front of the owner's eyes. */
+  const live = useStore((s) => s.decisions);
 
   const load = useCallback(() => {
     api.decisions().then((r) => setDecisions(r.decisions)).catch(() => setError(true));
@@ -38,8 +43,14 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     load();
   }, [forcedState, load]);
 
-  const pending = decisions?.filter((d) => d.status === 'pending') ?? [];
-  const history = decisions?.filter((d) => d.status !== 'pending') ?? [];
+  useEffect(() => {
+    if (!error) setDecisions(live);
+  }, [live, error]);
+
+  /** REQ-54: an answered letter stays open until the employee's reply closes the loop. */
+  const isOpen = (d: Decision) => d.status === 'pending' || d.status === 'answered';
+  const pending = decisions?.filter(isOpen) ?? [];
+  const history = decisions?.filter((d) => !isOpen(d)) ?? [];
 
   const agentOf = (d: Decision) => agents.find((a) => a.id === d.agentId) ?? null;
 
@@ -97,13 +108,27 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                       <span className="mail-subject">{localized(d.title, d.titleAr, lang)}</span>
                       <span className="grow" />
                       {d.kind === 'ask' ? <span className="tag">{t('mailAskTag', lang)}</span> : null}
+                      {d.kind === 'mail' ? <span className="tag">{t('mailMailTag', lang)}</span> : null}
+                      {d.status === 'answered' ? <span className="tag warn" data-mail-awaiting={d.id}>{t('mailAwaiting', lang).replace('{name}', who)}</span> : null}
                       {/* R8: the affordance the owner asked for — an actual button word. */}
                       <span className="mail-more">{open ? t('mailClose', lang) : t('mailReadMore', lang)}</span>
                       <time className="mail-time" dateTime={d.audit.raisedAt}>{dateTime(d.audit.raisedAt, lang)}</time>
                     </button>
                     {open ? (
                       <div className="mail-body">
-                        {d.kind === 'ask' ? (
+                        {d.status === 'answered' ? (
+                          <>
+                            <p className="mail-text">{d.body ?? localized(d.diff.summary, d.diff.summaryAr, lang)}</p>
+                            <p className="small dim mail-reply-given">{t('mailYouSaid', lang)} {d.reply}</p>
+                            <p className="small dim mail-lock-note">{t('mailLockNote', lang)}</p>
+                          </>
+                        ) : d.kind === 'mail' ? (
+                          <MailLetter body={d.body ?? ''} attachments={d.attachments ?? null}
+                            busy={busy} onDecide={() => decide(d.id, 'approve')}
+                            placeholder={t('mailReplyPlaceholder', lang)} sendLabel={t('mailSend', lang)}
+                            acceptLabel={t('approve', lang)} lang={lang}
+                            onAnswer={(text) => answer(d.id, text)} />
+                        ) : d.kind === 'ask' ? (
                           <>
                             <p className="mail-text">{d.body ?? localized(d.diff.summary, d.diff.summaryAr, lang)}</p>
                             {d.options && d.options.length > 0 ? (
@@ -192,6 +217,55 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           ) : null}
         </DataState>
       </div>
+    </>
+  );
+}
+
+/**
+ * REQ-54 (Phase J): a deliverable reads like mail — a markdown body, attachments that open
+ * in place, and the two owner moves: accept it, or ask for changes in your own words.
+ */
+function MailLetter({ body, attachments, busy, onDecide, onAnswer, acceptLabel, placeholder, sendLabel, lang }: {
+  body: string;
+  attachments: MailAttachment[] | null;
+  busy: string | null;
+  onDecide: () => void;
+  onAnswer: (text: string) => void;
+  acceptLabel: string;
+  placeholder: string;
+  sendLabel: string;
+  lang: Lang;
+}) {
+  const [openAttach, setOpenAttach] = useState<number | null>(null);
+  const [reply, setReply] = useState('');
+  return (
+    <>
+      <Markdown text={body} className="mail-text markdown" />
+      {attachments && attachments.length > 0 ? (
+        <div className="mail-attachments">
+          {attachments.map((att, i) => (
+            <div key={`${att.name}-${i}`} className="mail-attach">
+              <button type="button" className="btn" data-mail-attach={i}
+                aria-expanded={openAttach === i}
+                onClick={() => setOpenAttach(openAttach === i ? null : i)}>
+                <Icon name="inbox" /><span>{att.name}</span>
+                <span className="small dim">{openAttach === i ? t('mailClose', lang) : t('mailReadMore', lang)}</span>
+              </button>
+              {openAttach === i ? <pre className="mail-attach-body">{att.content}</pre> : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <div className="actions">
+        <button className="btn primary" type="button" disabled={busy !== null}
+          data-mail-decide="approve" onClick={onDecide}>
+          <Icon name="check" />{acceptLabel}
+        </button>
+      </div>
+      <form className="mail-reply" onSubmit={(e) => { e.preventDefault(); if (reply.trim() !== '') { onAnswer(reply.trim()); setReply(''); } }}>
+        <input value={reply} placeholder={placeholder} aria-label={placeholder} onChange={(e) => setReply(e.target.value)} />
+        <button type="submit" className="btn" disabled={busy !== null || reply.trim() === ''}>{sendLabel}</button>
+      </form>
     </>
   );
 }
