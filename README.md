@@ -213,6 +213,8 @@ Reuse boundaries and licence traps: `_research/09-reuse-and-licensing-map.md` an
 
 ## Credits & licences
 
+The integrations desk (Phase K) speaks the **Model Context Protocol** — client hand-rolled from the public specification (github.com/modelcontextprotocol/specification); reference servers linked, never bundled (github.com/modelcontextprotocol/servers). Full provenance lives in THIRD_PARTY.md.
+
 This project is free and non-commercial, and it says thank you out loud. The full licence ledger —
 every dependency, every vendored file, every adapted idea, with its licence and how it entered —
 lives in **[THIRD_PARTY.md](THIRD_PARTY.md)**, enforced by a gate that fails the build when a

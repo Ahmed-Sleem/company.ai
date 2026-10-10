@@ -10,7 +10,7 @@
 import type { AgentRow, SaveState } from '../data/store';
 import type { Lang } from './i18n';
 import { localized } from './format';
-import { toolsPromptSection } from './tools';
+import { APP_TOOLS, integrationToolDefs, toolsPromptSection } from './tools';
 
 export function compileSystemPrompt(save: SaveState, agent: AgentRow, lang: Lang): string {
   const company = save.company;
@@ -36,7 +36,7 @@ export function compileSystemPrompt(save: SaveState, agent: AgentRow, lang: Lang
     );
   }
   lines.push('');
-  lines.push(toolsPromptSection());
+  lines.push(toolsPromptSection([...APP_TOOLS, ...integrationToolDefs(save.integrations)]));
   lines.push(STAGES);
   lines.push('');
   lines.push('In chat with a colleague or the owner, answer briefly, in character, as a teammate would.');

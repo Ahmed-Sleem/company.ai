@@ -1242,3 +1242,14 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   title (tokenised). Tests 142/142, smoke 101/101, gate 11/11, demo 10/10; npm audit forced a
   patched esbuild via root overrides (drizzle-kit's dead esm-loader chain), db:generate
   verified.
+- 11 October 2026 — Phase K completed: integrations (REQ-55). The studio became an MCP
+  client — a hand-rolled, dependency-free streamable-HTTP client (JSON-RPC 2.0, session
+  headers, SSE answers) written against the public specification; a Notion adapter and a
+  Google Drive adapter call their REST APIs with the owner's own tokens. The Settings desk
+  lists a GitHub reference shelf, takes a repo + endpoint/token, and enforces the owner's
+  round-eight rule where the data lives: a server's home must be on github.com. Connect is
+  the test — credentials proven, tools discovered — and connected tools join the standard
+  registry (REQ-53) namespaced per row, lent to every model's function-calling and the JSON
+  fallback prompt alike, executed through the engine's awaited tool loop. Credits in
+  THIRD_PARTY.md and README. Tests 151/151 (nine new), smoke 104/104 (three new, the connect
+  proven against a routed fake server), gate 11/11, demo 10/10.

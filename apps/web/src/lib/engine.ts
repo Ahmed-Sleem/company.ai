@@ -23,8 +23,8 @@ import { isWorkTime } from './schedule';
 import { localized } from './format';
 import { compileSystemPrompt } from './prompt';
 import { chatCompletion, chatTurn, type ModelConnection, type Turn, type TurnReply } from './providers';
-import { APP_TOOLS } from './tools';
-import { runTool } from './toolrun';
+import { APP_TOOLS, integrationToolDefs } from './tools';
+import { runToolAsync } from './toolrun';
 import type { AgentRow, TaskRow } from '../data/store';
 import { canTransition, type TaskStage } from '@company/contracts';
 
@@ -173,8 +173,10 @@ async function toolCycle(
   const turns: Turn[] = [{ role: 'user', text: ask }];
   for (let round = 0; round < 3; round += 1) {
     let reply: TurnReply;
+    // Phase K (REQ-55): connected integrations lend their tools to the same registry.
+    const tools = [...APP_TOOLS, ...integrationToolDefs(useStore.getState().integrations)];
     try {
-      reply = await chatTurn(conn, system, turns, APP_TOOLS);
+      reply = await chatTurn(conn, system, turns, tools);
     } catch {
       return false;
     }
@@ -187,7 +189,7 @@ async function toolCycle(
       return true;
     }
     for (const call of reply.toolCalls) {
-      const result = runTool(call, {
+      const result = await runToolAsync(call, {
         state: useStore.getState(),
         caller: owner,
         task,

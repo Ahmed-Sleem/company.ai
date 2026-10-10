@@ -10,6 +10,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import demo from './demo.json';
 import type { ModelConnection } from '../lib/providers';
+import { isGitHubRepo } from '../lib/integrations';
+import type { IntegrationRow } from '../lib/integrations';
 import type { Plan as WorldPlan } from '../world/layout.data';
 
 export type { WorldPlan };
@@ -158,6 +160,8 @@ export interface SaveState {
   operator: { name: string; role: string };
   agents: AgentRow[];
   tasks: TaskRow[];
+  /** Phase K (REQ-55): the doors the owner opened into the outside world. */
+  integrations: IntegrationRow[];
   decisions: DecisionRow[];
   threads: ThreadRow[];
   models: ModelRow[];
@@ -176,6 +180,10 @@ export interface SaveState {
     model: ModelConnection | null;
   }) => AgentRow | null;
   addTask: (task: TaskRow) => void;
+  /** Phase K: register an integration row; the save numbers them `ix-N`. */
+  addIntegration: (input: { kind: 'mcp' | 'notion' | 'drive'; label: string; repo: string; endpoint?: string; secret?: string }) => IntegrationRow | null;
+  patchIntegration: (id: string, patch: Partial<IntegrationRow>) => void;
+  removeIntegration: (id: string) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
   startThread: (agentId: string, title: string) => void;
   setWorldPlan: (plan: WorldPlan | null) => void;
@@ -205,6 +213,7 @@ let demoSession = false;
 const DEMO_KEY = 'company.ai.demo.v1';
 
 const fixture = () => ({
+  integrations: [] as IntegrationRow[],
   savedAt: null as string | null,
   company: { description: '', answers: [] as { q: string; a: string }[], ...demo.company } as CompanyProfile,
   introDone: false,
@@ -379,6 +388,35 @@ export const useStore = create<SaveState>()(
         };
       }),
       addTask: (task) => set((state) => ({ savedAt: new Date().toISOString(), tasks: [task, ...state.tasks] })),
+      addIntegration: (input) => {
+        // the owner's round-eight rule, enforced where the data lives: a server's home is GitHub.
+        if (!isGitHubRepo(input.repo)) return null;
+        const max = get().integrations.reduce((m, r) => {
+          const n = r.id.startsWith('ix-') ? Number(r.id.slice(3)) : 0;
+          return Number.isFinite(n) && n > m ? n : m;
+        }, 0);
+        const row: IntegrationRow = {
+          id: `ix-${max + 1}`,
+          kind: input.kind,
+          label: input.label,
+          repo: input.repo.trim(),
+          endpoint: input.endpoint?.trim() || undefined,
+          secret: input.secret?.trim() || undefined,
+          status: 'idle',
+          note: '',
+          tools: [],
+        };
+        set((state) => ({ savedAt: new Date().toISOString(), integrations: [...state.integrations, row] }));
+        return row;
+      },
+      patchIntegration: (id, patch) => set((state) => ({
+        savedAt: new Date().toISOString(),
+        integrations: state.integrations.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+      })),
+      removeIntegration: (id) => set((state) => ({
+        savedAt: new Date().toISOString(),
+        integrations: state.integrations.filter((r) => r.id !== id),
+      })),
       addMessage: (threadId, from, text) => set((state) => {
         // REQ-54: when the employee answers the owner's reply in their thread, their open
         // letter closes itself — mail is turn-taking, and the loop is done.
@@ -531,6 +569,7 @@ export const useStore = create<SaveState>()(
         threads: state.threads,
         worldPlan: state.worldPlan,
         models: state.models,
+        integrations: state.integrations,
       }),
     },
   ),

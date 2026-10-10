@@ -108,6 +108,23 @@ export const APP_TOOLS: ToolDef[] = [
 
 /* ── the three wire formats, compiled from the one registry ─────────────────────────────── */
 
+/** Phase K (REQ-55): the tools a connected integration lends the models — one standard
+    registry entry per tool, namespaced so two integrations can never collide. */
+export function integrationToolDefs(rows: { id: string; label: string; status: string; tools: { name: string; description: string; inputSchema?: unknown }[] }[]): ToolDef[] {
+  const defs: ToolDef[] = [];
+  for (const row of rows) {
+    if (row.status !== 'on') continue;
+    for (const t of row.tools) {
+      defs.push({
+        name: `ix__${row.id}__${t.name}`,
+        description: `[${row.label}] ${t.description}`,
+        parameters: (t.inputSchema as Record<string, unknown>) ?? { type: 'object', properties: {} },
+      });
+    }
+  }
+  return defs;
+}
+
 export function toolsForOpenAI(tools: ToolDef[] = APP_TOOLS): unknown[] {
   return tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters } }));
 }

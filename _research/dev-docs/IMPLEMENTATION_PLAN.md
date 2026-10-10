@@ -248,7 +248,7 @@ that a saved plan round-trips through the export file. This phase starts after G
   markdown body, attachments: text/md/image), the inbox as a real mail experience (research
   Gmail/Hey/Superhuman patterns and copy the good parts), approve/reply with the one-pending-
   reply lock, and the prompt education that keeps mail out of chat.
-- **Phase K — integrations** (REQ-55): the gateway becomes an MCP client
+- **Phase K — integrations** ✅ done 2026-10-11: the studio becomes an MCP client
   (@modelcontextprotocol/sdk, MIT); Notion (@notionhq/client, MIT) and Google Drive
   (googleapis, Apache-2.0 / the archived gdrive reference server) as the first adapters,
   surfaced to the ROOT MANAGER as tools; per-integration connect flow in Settings; every

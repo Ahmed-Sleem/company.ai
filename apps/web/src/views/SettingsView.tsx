@@ -21,7 +21,112 @@ import { downloadSave, parseSave, resetSave } from '../lib/savefile';
 import { useStore } from '../data/store';
 import { Icon } from '../components/Icon';
 import { applyCustomAccent, deriveAccent, validHex } from '../lib/accent';
+import { connectIntegration, isGitHubRepo, MCP_SHELF, type IntegrationKind } from '../lib/integrations';
 import { palettes } from '@company/tokens';
+
+
+/**
+ * Phase K (REQ-55): the integrations desk. A server's home must be on GitHub (the owner's
+ * round-eight rule) — the studio talks MCP streamable-HTTP to wherever the owner runs that
+ * code, or straight to Notion / Google Drive with the owner's own token. Connect is the test:
+ * credentials are proven and the tool list discovered before anything reaches a model.
+ */
+function IntegrationsSetting({ lang }: { lang: Lang }) {
+  const integrations = useStore((s) => s.integrations);
+  const addIntegration = useStore((s) => s.addIntegration);
+  const patchIntegration = useStore((s) => s.patchIntegration);
+  const removeIntegration = useStore((s) => s.removeIntegration);
+  const [kind, setKind] = useState<IntegrationKind>('mcp');
+  const [label, setLabel] = useState('');
+  const [repo, setRepo] = useState('');
+  const [endpoint, setEndpoint] = useState('');
+  const [secret, setSecret] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const connect = async (id: string) => {
+    const row = useStore.getState().integrations.find((r) => r.id === id);
+    if (!row) return;
+    setBusy(id);
+    try {
+      const res = await connectIntegration(row);
+      patchIntegration(id, { status: 'on', tools: res.tools, note: res.note });
+    } catch (err) {
+      patchIntegration(id, { status: 'error', note: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const add = () => {
+    setError('');
+    if (!isGitHubRepo(repo)) { setError(t('ixGithubOnly', lang)); return; }
+    const row = addIntegration({
+      kind,
+      label: label.trim() || repo.split('/').filter(Boolean)[1] || 'integration',
+      repo,
+      endpoint: kind === 'mcp' ? endpoint || undefined : undefined,
+      secret: kind === 'mcp' ? undefined : secret || undefined,
+    });
+    if (!row) { setError(t('ixGithubOnly', lang)); return; }
+    setLabel(''); setRepo(''); setEndpoint(''); setSecret('');
+    void connect(row.id);
+  };
+
+  return (
+    <div className="ix">
+      <p className="small dim">{t('integrationsNote', lang)}</p>
+      <div className="ix-shelf">
+        {MCP_SHELF.map((shelf) => (
+          <a key={shelf.repo} href={shelf.repo} target="_blank" rel="noreferrer" className="ix-shelf-link">
+            {shelf.repo.replace('https://github.com/', 'github.com/')} · {shelf.note}
+          </a>
+        ))}
+      </div>
+      <div className="form-grid ix-form">
+        <select data-ix="kind" value={kind} onChange={(e) => setKind(e.target.value as IntegrationKind)} aria-label={t('ixKind', lang)}>
+          <option value="mcp">MCP server</option>
+          <option value="notion">Notion</option>
+          <option value="drive">Google Drive</option>
+        </select>
+        <input data-ix="label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('ixLabel', lang)} />
+        <input data-ix="repo" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder={t('ixRepo', lang)} />
+        {kind === 'mcp' ? (
+          <input data-ix="endpoint" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder={t('ixEndpoint', lang)} />
+        ) : (
+          <input data-ix="secret" type="password" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder={t('ixSecret', lang)} />
+        )}
+        <button type="button" className="btn" data-ix="add" onClick={add}><Icon name="plus" />{t('ixAdd', lang)}</button>
+      </div>
+      {error ? <p className="field-error" data-ix="error" role="alert">{error}</p> : null}
+      {integrations.length === 0 ? <p className="small dim" data-ix="none">{t('ixNone', lang)}</p> : (
+        <ul className="ix-list">
+          {integrations.map((row) => (
+            <li key={row.id} className="ix-row" data-ix-row={row.id}>
+              <div className="ix-head">
+                <b>{row.label}</b>
+                <span className={`status-dot ${row.status === 'error' ? 'error' : row.status === 'idle' ? 'idle' : ''}`} data-ix-status={row.status} />
+                <small className="dim">{row.kind}{row.endpoint ? ` · ${row.endpoint}` : ''}</small>
+              </div>
+              {row.note ? <p className="small dim" data-ix-note>{row.note}</p> : null}
+              {row.tools.length > 0 ? (
+                <div className="ix-tools" data-ix-tools>{row.tools.map((tool) => <span key={tool.name}>{tool.name}</span>)}</div>
+              ) : null}
+              <div className="group">
+                <button type="button" className="btn small" data-ix="connect" disabled={busy === row.id} onClick={() => void connect(row.id)}>
+                  <Icon name="play" />{t('ixConnect', lang)}
+                </button>
+                <button type="button" className="btn small" data-ix="remove" onClick={() => removeIntegration(row.id)}>
+                  <Icon name="x" />{t('ixRemove', lang)}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /**
  * The palette control. A swatch shows the preset's accent, the pressed state is announced rather
@@ -340,6 +445,12 @@ export function SettingsView({ lang, forcedState, onHelp }: { lang: Lang; forced
                     <Icon name="play" />{t('tickTitle', lang)}
                   </button>
                 </div>
+              </section>
+
+
+              <section className="panel panel-pad settings-section">
+                <h2>{t('integrationsTitle', lang)}</h2>
+                <IntegrationsSetting lang={lang} />
               </section>
 
               <section className="panel panel-pad settings-section">

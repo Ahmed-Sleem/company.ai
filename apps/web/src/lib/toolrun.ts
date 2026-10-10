@@ -12,6 +12,7 @@ import type { AgentRow, MailAttachment, SaveState, TaskRow } from '../data/store
 import type { Lang } from './i18n';
 import { localized } from './format';
 import type { ToolCall } from './tools';
+import { callIntegrationTool } from './integrations';
 
 /** Everything a tool call may need to know about the studio it lands in. */
 export interface ToolContext {
@@ -24,6 +25,22 @@ export interface ToolContext {
   /** How the caller's progress report is written — the engine's own writer, so the tool path
       and the JSON-contract path land in exactly the same place. */
   report: (input: { progress: number; stage: string; note: string }) => void;
+}
+
+/** Phase K (REQ-55): integration calls are network-shaped, so the engine awaits this one —
+    app tools fall straight through to the synchronous registry. */
+export async function runToolAsync(call: ToolCall, ctx: ToolContext): Promise<string> {
+  if (call.name.startsWith('ix__')) {
+    const parts = call.name.split('__');
+    const row = ctx.state.integrations.find((r) => r.id === parts[1]);
+    if (!row) return 'That integration is not connected anymore.';
+    try {
+      return await callIntegrationTool(row, parts.slice(2).join('__'), call.args);
+    } catch (err) {
+      return `The integration could not run the tool: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+  return runTool(call, ctx);
 }
 
 /** One tool call, executed. Returns the words the model sees as the tool's result. */

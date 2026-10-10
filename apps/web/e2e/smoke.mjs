@@ -764,6 +764,35 @@ try {
   const helpSections = await page.locator('.help-section').count();
   const helpKeys = await page.locator('.help-keyrow').count();
   await page.keyboard.press('Escape');
+  // Phase K (REQ-55): the integrations desk — a server's home must be on GitHub, and a door
+  // that cannot be opened says so in the owner's words instead of failing silently.
+  await page.click('[data-nav=settings]');
+  await page.waitForSelector('[data-ix=repo]');
+  await page.fill('[data-ix=repo]', 'https://evil.example/server');
+  await page.click('[data-ix=add]');
+  check('an integration whose home is not GitHub is refused, in words (REQ-55)',
+    ((await page.textContent('[data-ix=error]')) ?? '').includes('GitHub'));
+  // a real handshake against a fake server, routed in the page — no network, no failures:
+  await page.route('http://mcp.test/mcp', (route) => {
+    const body = JSON.parse(route.request().postData() ?? '{}');
+    const result = body.method === 'initialize'
+      ? { protocolVersion: '2025-06-18', serverInfo: { name: 'smoke-server' } }
+      : body.method === 'tools/list'
+        ? { tools: [{ name: 'echo', description: 'echoes' }] }
+        : { content: [{ type: 'text', text: 'ok' }] };
+    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: body.id, result }) });
+  });
+  await page.fill('[data-ix=repo]', 'https://github.com/modelcontextprotocol/servers');
+  await page.fill('[data-ix=endpoint]', 'http://mcp.test/mcp');
+  await page.click('[data-ix=add]');
+  await page.waitForSelector('[data-ix-status="on"]', { timeout: 20_000 });
+  const ixTools = (await page.textContent('[data-ix-tools]')) ?? '';
+  check('a connected MCP server lends its tools to the studio (REQ-55)',
+    ixTools.includes('echo'), `tools: ${ixTools.trim()}`);
+  await page.click('[data-ix=remove]');
+  check('removing an integration clears the desk (REQ-55)', (await page.$$('[data-ix-row]')).length === 0);
+  await page.unroute('http://mcp.test/mcp');
+
   check('the Help window opens with its sections and its shortcut table',
     helpSections === 7 && helpKeys >= 8);
 

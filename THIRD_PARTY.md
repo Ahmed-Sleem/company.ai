@@ -165,3 +165,12 @@ only — the standing MPL note applies) · `jsdom` (MIT) · `@testing-library/re
 `scripts/checks/npm-audit.mjs` (verify step 11) runs `npm audit` over the whole workspace and
 fails the gate on any **high or critical** advisory; moderates are printed as warnings. If the
 registry is unreachable the step says so and skips — it never fakes a pass.
+- **The Model Context Protocol** (Phase K, REQ-55): the studio's integrations speak MCP
+  streamable-HTTP through a hand-rolled, dependency-free client (`apps/web/src/lib/mcp.ts`)
+  written against the public protocol — reference: github.com/modelcontextprotocol/specification
+  (Anthropic, open specification), and the reference server collection at
+  github.com/modelcontextprotocol/servers plus github.com/suekou/mcp-server-notion, which the
+  integrations desk links as its reference shelf. **No SDK code is bundled**; the wire format
+  (JSON-RPC 2.0, session headers, SSE responses) was re-implemented from the specification and
+  is unit-tested against fake servers. Notion and Google Drive adapters call their public REST
+  APIs directly with the owner's own tokens (the APIs' own terms apply).

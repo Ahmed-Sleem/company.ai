@@ -1154,6 +1154,18 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 /* the stacked-panel rhythm must not leak into grid rows (it shifted every card but the first) */
 .landing-grid .panel + .panel, .landing-steps .panel + .panel { margin-block-start: 0; }
 
+/* ── Phase K: the integrations desk ─────────────────────────────────────────────────────── */
+.ix { display: grid; gap: var(--s4); }
+.ix-shelf { display: grid; gap: var(--s2); }
+.ix-shelf-link { color: var(--muted); font-size: var(--sm); text-decoration: none; border-block-end: var(--app-hair) solid transparent; justify-self: start; }
+.ix-shelf-link:hover { color: var(--text); border-color: var(--accent); }
+.ix-form .btn { align-self: end; justify-self: start; }
+.ix-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
+.ix-row { border: var(--app-hair) solid var(--soft); background: var(--raised); padding: var(--s4); display: grid; gap: var(--s3); }
+.ix-head { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.ix-tools { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.ix-tools span { font-size: var(--xs); color: var(--muted); border: var(--app-hair) solid var(--line); background: var(--bg); padding: var(--s1) var(--s2); }
+
 /* ── inbox as a deck of slides (owner C9) ────────────────────────────────────────────────── */
 /* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */
 .help-sections { display: grid; gap: var(--s2); }
