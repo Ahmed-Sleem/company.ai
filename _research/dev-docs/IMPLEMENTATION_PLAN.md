@@ -258,6 +258,10 @@ that a saved plan round-trips through the export file. This phase starts after G
 - **Phase M — history** ✅ done 2026-10-12: Dexie.js (Apache-2.0) transcript store — every call's
   exact system/user/tool inputs and model outputs per employee — and the new-tab History
   viewer (virtualised list for size).
+- **The standing audit** (owner round fourteen, 2026-10-12): `_research/dev-docs/AUDIT_PLAN.md` —
+  every part of the product audited from the beginning in sixteen phases, one per round, the
+  landing first (owner: it still needs a lot). Each phase: eight passes, findings logged, fixes
+  committed and pushed before the phase closes. Phase 1 = the landing.
 - Sprites & world-builder stay plan-only after M (owner's earlier hold), and REQ-58 (help
   completeness) rides along with every phase.
 

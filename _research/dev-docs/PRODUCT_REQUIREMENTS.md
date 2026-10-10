@@ -219,14 +219,17 @@ Required, scheduled into phases (MANDATORY — nothing may be dropped):
   @modelcontextprotocol/sdk MIT) hosted by the gateway service; candidates from
   modelcontextprotocol/servers and the official SDKs (@notionhq/client MIT,
   googleapis Apache-2.0). Every borrowed repo lands in THIRD_PARTY.md and the README
-  credits. (Phase K)
+  credits. (Phase K) — ✅ done 2026-10-11 (`e2621e9`): hand-rolled streamable-HTTP MCP client,
+  Notion + Drive REST adapters, GitHub-only rule in the store, tools lent to the registry.
 - REQ-56 Messenger upgrades: WhatsApp-style seen stamps (sent → delivered → seen) and
   scheduling — send ten messages and the model sees the first and starts work; the system
-  delivers the rest one per model turn. (Phase L)
+  delivers the rest one per model turn. (Phase L) — ✅ done 2026-10-12 (`aedc2a1`): stamps on
+  every owner message, queue + one-per-turn scheduler living in the store.
 - REQ-57 Per-employee history: a History button on every employee opening a NEW TAB with the
   complete, exact context from the moment they started — every input and output. Stored in
   IndexedDB via Dexie.js (Apache-2.0) for performance at size; viewer adapted/credit-listed.
-  (Phase M)
+  (Phase M) — ✅ done 2026-10-12 (`c6db749`): exact transcripts in IndexedDB, windowed
+  new-tab viewer, team profile + chat head doors.
 - REQ-58 Help-window completeness is an obligation: every phase that adds a capability adds
   its explanation and shortcuts to the Help window in the same commit.
 - REQ-59 README credits: the repo's README lists every borrowed piece of code with its

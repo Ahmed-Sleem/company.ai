@@ -351,3 +351,22 @@ Comments (the work list):
   me, tell me whats next… what about the prompts… i want them detailed complete prompts to
   make sure the models understand clearly everything, what about using things from github
   what will you use, choose suitable things easy to integrate"
+
+## Round twelve (2026-10-12) — comms column + next phase
+- "this text : Teammates, needs pading to not touch the sarch bar , and needs to be fixed
+  with it , and also the poeple scroll under the search bar please fix that make the
+  scrolling part after teh fixed top baner that have the top bar" — done: one fixed banner
+  (heading + search, padded), the list scrolls only beneath it.
+- "continue the next phase" — Phase L shipped in the same commit.
+
+## Round thirteen (2026-10-12) — Phase M + README audit
+- "do the next phase and audit hte readme of the repo bec it was old it might not reflect
+  the current product and the screens is old too" — Phase M shipped; README rewritten with
+  fresh captures of the real product.
+
+## Round fourteen (2026-10-12) — the standing audit
+- "now do anything left , do fast audit fix any left thing , then after that , do a full
+  audit plan , to audit each thing in the product , from beingig , improve anything needs ,
+  and i think the landing page still needs alot , but create teh plan , then we audit
+  everything in phases" — quick fixes this turn; the phased audit plan lives in
+  _research/dev-docs/AUDIT_PLAN.md; the phases run one per round from now on.
