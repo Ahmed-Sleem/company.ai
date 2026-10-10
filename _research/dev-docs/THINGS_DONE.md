@@ -1297,3 +1297,15 @@ The owner opened the live link on his phone and called it corrupted. It was, and
 * Phase 2 (wizard & doors) audited: validation words, draft resume, portrait picker and the
   manager list all read clean in code and smoke; the narrow-width rules now cover the wizard
   bar too. Findings logged in AUDIT_PLAN.md.
+
+## Round seventeen (2026-10-12) — Phase 3 (the shell) + the security pass
+* ONE menu button in the topbar: on a phone it opens the drawer, elsewhere it contracts or
+  expands the rail — the side-by-side pair the owner saw is gone (REQ-63).
+* `::selection` is transparent product-wide: search boxes (and everything else) show no blue
+  overlay when text is selected.
+* Security pass: no innerHTML/eval anywhere (verified by grep); the markdown reader renders
+  React nodes only; diary tabs open with noopener; the export file scrubs model keys and
+  integration tokens (unit-tested) while the on-device save keeps them by design; the app
+  shell now serves a CSP meta (script-src self, no objects, base-uri locked, loopback kept
+  only so owner-run MCP servers stay reachable); npm audit stays clean in the gate.
+* Phase 3 findings logged in AUDIT_PLAN.md; palette, help and statusbar re-checked clean.

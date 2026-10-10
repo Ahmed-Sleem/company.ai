@@ -171,6 +171,15 @@ try {
     await page.waitForSelector('.sidebar');
   }
 
+  // round seventeen (owner): ONE menu button, and selection paints no blue
+  check('round 17 — one menu button in the topbar, not two',
+    (await page.locator('.topbar [data-action=rail]').count()) === 1);
+  check('round 17 — selecting text paints no browser blue anywhere',
+    await page.evaluate(() => {
+      const el = document.querySelector('input') ?? document.body;
+      return getComputedStyle(el, '::selection').backgroundColor === 'rgba(0, 0, 0, 0)';
+    }));
+
   // 1 — shell
   const navIds = await page.$$eval('[data-nav]', (nodes) => nodes.map((n) => n.getAttribute('data-nav')));
   check('the shell renders the six designer views plus the owner’s World Map — team, tasks, inbox, comms, network, world, settings',
@@ -837,7 +846,8 @@ try {
   check('an integration whose home is not GitHub is refused, in words (REQ-55)',
     ((await page.textContent('[data-ix=error]')) ?? '').includes('GitHub'));
   // a real handshake against a fake server, routed in the page — no network, no failures:
-  await page.route('http://mcp.test/mcp', (route) => {
+  // round 17: the mock lives on loopback — the shell's CSP allows https and loopback only
+  await page.route('http://127.0.0.1:9/mcp', (route) => {
     const body = JSON.parse(route.request().postData() ?? '{}');
     const result = body.method === 'initialize'
       ? { protocolVersion: '2025-06-18', serverInfo: { name: 'smoke-server' } }
@@ -847,7 +857,7 @@ try {
     void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: body.id, result }) });
   });
   await page.fill('[data-ix=repo]', 'https://github.com/modelcontextprotocol/servers');
-  await page.fill('[data-ix=endpoint]', 'http://mcp.test/mcp');
+  await page.fill('[data-ix=endpoint]', 'http://127.0.0.1:9/mcp');
   await page.click('[data-ix=add]');
   await page.waitForSelector('[data-ix-status="on"]', { timeout: 20_000 });
   const ixTools = (await page.textContent('[data-ix-tools]')) ?? '';
@@ -855,7 +865,7 @@ try {
     ixTools.includes('echo'), `tools: ${ixTools.trim()}`);
   await page.click('[data-ix=remove]');
   check('removing an integration clears the desk (REQ-55)', (await page.$$('[data-ix-row]')).length === 0);
-  await page.unroute('http://mcp.test/mcp');
+  await page.unroute('http://127.0.0.1:9/mcp');
 
   check('the Help window opens with its sections and its shortcut table',
     helpSections === 8 && helpKeys >= 8); // round fifteen: the diary section joins (REQ-58)
@@ -886,7 +896,7 @@ try {
     // the prototype's phone answer: the sidebar is a drawer, opened by the hamburger — not a strip
     const closed = await phone.evaluate(() => {
       const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
-      const burger = document.querySelector('.mobile-nav');
+      const burger = document.querySelector('[data-action=rail]'); // round 17: one menu button
       const heading = document.querySelector('.main h1, .main h2, .pagehead')?.getBoundingClientRect() ?? null;
       return {
         offscreen: sidebar.right <= 1,
@@ -898,7 +908,7 @@ try {
     check('on a phone the sidebar waits off-screen and the hamburger shows', closed.offscreen && closed.burger, JSON.stringify(closed));
     check('so the screen itself starts on the first screenful', closed.headingTop !== null && closed.headingTop < 400, `heading at ${closed.headingTop}px`);
     check('and nothing runs off the side of a phone', closed.overflow <= 2, `overflow ${closed.overflow}px`);
-    await phone.click('.mobile-nav');
+    await phone.click('[data-action=rail]');
     await phone.waitForFunction(() => document.body.classList.contains('nav-open') &&
       document.querySelector('.sidebar').getBoundingClientRect().left >= 0, null, { timeout: 5_000 });
     const open = await phone.evaluate(() => {

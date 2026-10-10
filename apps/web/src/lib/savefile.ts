@@ -9,12 +9,17 @@ export const SAVE_VERSION = 1;
 export const SAVE_FILENAME = 'company.ai-save.json';
 
 export function savePayload() {
-  const { company, operator, agents, tasks, decisions, threads, models } = useStore.getState();
+  const { company, operator, agents, tasks, decisions, threads, models, integrations } = useStore.getState();
+  // Round seventeen (security): the file you download never carries your model keys or
+  // integration tokens — those stay on this device. Import re-enters them in Settings.
   return {
     product: SAVE_PRODUCT,
     version: SAVE_VERSION,
     exportedAt: new Date().toISOString(),
-    company, operator, agents, tasks, decisions, threads, models,
+    company, operator,
+    agents: agents.map((a) => (a.model ? { ...a, model: { ...a.model, key: '' } } : a)),
+    tasks, decisions, threads, models,
+    integrations: integrations.map((r) => ({ ...r, secret: '' })),
   };
 }
 

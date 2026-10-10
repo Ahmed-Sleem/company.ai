@@ -90,6 +90,12 @@ export function App() {
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  /** Round seventeen: ONE menu button — on a phone it opens the drawer, on wider screens it
+      contracts/expands the rail. The layout flag follows the viewport so its label is honest. */
+  const [phoneLayout, setPhoneLayout] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      && window.matchMedia('(max-width: 800px)').matches,
+  );
   const company = useStore((s) => s.company.name);
   // Phase D (REQ-33): until the intro is finished — or the demo company chosen — the product
   // shows its front door instead of the shell. The save file does not even exist yet.
@@ -129,6 +135,14 @@ export function App() {
 
   useEffect(() => {
     applyPalette(readPalette());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(max-width: 800px)');
+    const onChange = (event: MediaQueryListEvent) => setPhoneLayout(event.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
 
   /** The intro finishing walks the owner straight into their new studio (REQ-41). */
@@ -366,25 +380,21 @@ export function App() {
       <div className="app">
         <header className="topbar" id="topbar">
           <div className="row">
+            {/* Round seventeen (owner): there were two menu buttons side by side — one for
+                the rail, one for the phone drawer. Now ONE button: on a phone it opens the
+                drawer, anywhere else it contracts or expands the rail. */}
             <button
               type="button"
-              className="btn ghost iconbtn rail-toggle"
+              className="btn ghost iconbtn menu-toggle"
               data-action="rail"
               aria-controls="sidebar"
-              aria-expanded={!rail}
-              aria-label={rail ? t('expandRail', lang) : t('collapseRail', lang)}
-              title={rail ? t('expandRail', lang) : t('collapseRail', lang)}
-              onClick={() => saveAttr(RAIL, !rail)}
-            >
-              <Icon name="menu" />
-            </button>
-            <button
-              type="button"
-              className="btn ghost iconbtn mobile-nav"
-              aria-controls="sidebar"
-              aria-expanded={navOpen}
-              aria-label={t('openNav', lang)}
-              onClick={() => setNavOpen(true)}
+              aria-expanded={phoneLayout ? navOpen : !rail}
+              aria-label={phoneLayout ? t('openNav', lang) : rail ? t('expandRail', lang) : t('collapseRail', lang)}
+              title={phoneLayout ? t('openNav', lang) : rail ? t('expandRail', lang) : t('collapseRail', lang)}
+              onClick={() => {
+                if (phoneLayout) setNavOpen(true);
+                else saveAttr(RAIL, !rail);
+              }}
             >
               <Icon name="menu" />
             </button>

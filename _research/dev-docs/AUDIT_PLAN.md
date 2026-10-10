@@ -143,4 +143,20 @@ checks, gate coverage of everything above, the captures script as a CI artefact.
   speaks in owner words, the draft resumes from the window, portrait and manager controls read
   clean at phone width.
 
-Phase 3 (shell: topbar, rail, palette, help, statusbar) runs next round, by this protocol.
+### Phase 3 findings (round seventeen, 2026-10-12)
+
+- **A3-1 (owner bug, fixed, REQ-63):** two menu buttons sat side by side in the topbar (rail
+  toggle + phone drawer). Replaced by one adaptive button; the smoke counts it at desktop
+  width and exercises it as the drawer opener on the phone.
+- **A3-2 (owner bug, fixed, REQ-63):** selecting text in the search boxes painted the
+  browser's blue. `::selection` is transparent product-wide; the smoke asserts the computed
+  selection colour.
+- **A3-3 (security, fixed, REQ-63):** the export file carried model keys and integration
+  tokens — it scrubs both now (unit-tested), the diary tabs open noopener, and the shell
+  ships a CSP meta. Grep confirms no innerHTML/eval/document.write in product code; the
+  markdown reader is React-nodes-only.
+- **A3-4 (checked, clean):** palette matches as-you-type with the token-checked colours; the
+  Help window's eight sections match the shipped features (REQ-58); the statusbar's people /
+  open-tasks / waiting counts read from the store, not from air.
+
+Phase 4 (team: roster, profile, editor, history door) runs next round, by this protocol.

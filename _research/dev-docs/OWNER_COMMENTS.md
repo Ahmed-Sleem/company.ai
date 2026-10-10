@@ -385,3 +385,10 @@ Comments (the work list):
   click Start my company (the one in the top menu) should be a pop up window in the middle of
   screen" and "continue auditing" and "make sure that the whole thing is fully adaptive to
   different view port sizes" — shipped as REQ-62; the audit moved to Phase 2.
+
+## Round seventeen (2026-10-12) — the search selection, the two buttons, the security
+- "the search text box still have on select overlay blue color , remove it , it should not
+  have any effect on select" and "now there are two buttons beside each others to contract or
+  expand teh menu , please fix that" and "make sure all rules are followed … make sure the
+  security is fine , everything is perfect" — shipped as REQ-63 plus the security pass; the
+  audit ran Phase 3 (the shell).

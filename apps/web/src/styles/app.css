@@ -214,6 +214,8 @@ body {
 .palette-field input { flex: 1; min-inline-size: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--base); }
 .palette-field input:focus { outline: none; }
 /* R8 (owner): no blue slab when text is selected in the palette field. */
+/* round seventeen (owner): selecting text never paints the browser's blue — anywhere. */
+::selection { background: transparent; }
 .palette-field input::selection { background: transparent; }
 .palette-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: grid; gap: var(--app-palette-gap); align-content: start; }
 .palette-list button { display: flex; align-items: center; gap: var(--s2); inline-size: 100%; background: none; border: 0; color: var(--text); font: inherit; font-size: var(--sm); text-align: start; padding: var(--s2); cursor: pointer; }
@@ -224,7 +226,6 @@ body {
 .top-actions { display: flex; align-items: center; gap: var(--s2); }
 .notification { position: relative; }
 .notification .unread { position: absolute; inset-block-start: var(--sh-unread); inset-inline-end: var(--sh-unread); inline-size: var(--sh-unread); block-size: var(--sh-unread); background: var(--accent); }
-.mobile-nav { display: none; }
 .nav-close { display: none; }
 .nav-scrim { display: none; }
 
@@ -1417,8 +1418,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 
 /* every pixel icon keeps its 18px box — the demo's `.icon` measure, named */
 .icon { inline-size: var(--sh-icon); block-size: var(--sh-icon); flex-shrink: 0; }
-/* the phone-only controls stay gone on desktop (the later `.iconbtn` rule sets display) */
-.mobile-nav { display: none; }
+/* round seventeen: ONE menu button in the topbar — the drawer's close stays phone-only */
 .nav-close { display: none; }
 
 /* pixel type for the chrome, the prototype's rule: hierarchy gets the bitmap face, never Arabic */
@@ -1457,8 +1457,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   .nav-scrim { position: fixed; inset: 0; border: 0; background: var(--sh-scrim); z-index: 29; }
   body.nav-open .nav-scrim { display: block; }
   .app { margin-inline-start: 0; }
-  .mobile-nav { display: inline-grid; }
-  .rail-toggle { display: none; }
   .topbar { padding-inline: var(--s4); block-size: var(--sh-topbar-m); }
   .crumb-title { font-family: var(--pixel); font-size: var(--lg); letter-spacing: var(--track-tight); }
 :root[lang='ar'] .crumb-title { font-family: var(--font); letter-spacing: 0; }

@@ -121,7 +121,7 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
           <>
             {/* Phase M (REQ-57): the person's model diary opens in its own tab. */}
             <button type="button" className="btn" data-team="history"
-              onClick={() => window.open(`${location.pathname}#history/${profile.id}`, '_blank')}>
+              onClick={() => window.open(`${location.pathname}#history/${profile.id}`, '_blank', 'noopener')}>
               <Icon name="file" />{t('historyOpen', lang)}
             </button>
             <button type="button" className="btn" data-team="edit"

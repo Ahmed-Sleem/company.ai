@@ -246,6 +246,11 @@ Required, scheduled into phases (MANDATORY — nothing may be dropped):
   the top menu's single "Start my company" button opens the companies window as a centred popup;
   and the whole product (landing, window, wizard, every shell view) shows no horizontal overflow
   from 320px to 2200px.
+- REQ-63 One menu button, calm selection, safe export (owner, round seventeen): the topbar has
+  exactly one menu button (drawer on phones, rail toggle elsewhere); text selection paints no
+  browser blue anywhere; the downloaded save never carries model keys or integration tokens;
+  the app shell ships a Content-Security-Policy (no inline scripts, no objects, loopback
+  allowed only for owner-run MCP servers).
 
 Research conclusions behind REQ-53..55 (2026-10-11): MCP is the de-facto standard for
 connecting agents to tools (Linux-Foundation-governed, ~97M monthly SDK downloads, adopted
