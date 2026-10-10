@@ -88,7 +88,8 @@ export function App() {
   const introDone = useStore((s) => s.introDone);
   const introDraft = useStore((s) => s.introDraft);
   const chooseDemo = useStore((s) => s.chooseDemo);
-  const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState(false);  /** R8: the boot right after "New company" skips the picker and opens the wizard. */
+  const [freshStudio] = useState(consumePendingNew);
   /** REQ-41: the landing is the front door on EVERY fresh load. Passing it lives in memory
       only (the store keeps it out of the save on purpose), so a reload meets the door again —
       and one click gives the studio back, exactly where it was left. */
@@ -123,8 +124,18 @@ export function App() {
 
   /** The intro finishing walks the owner straight into their new studio (REQ-41). */
   useEffect(() => {
-    if (introDone && starting) enter();
-  }, [introDone, starting, enter]);
+    // Both wizard doors must walk the owner in when the intro completes: the Start button
+    // (starting) AND the post-"New company" auto-open (freshStudio) — without this the
+    // fresh-studio wizard finished and silently fell back to the landing (owner, R9).
+    if (introDone && (starting || freshStudio)) enter();
+  }, [introDone, starting, freshStudio, enter]);
+
+  /** R8: the device remembers every company — the active one is re-recorded as its name
+      settles (boot, rename, wizard finish), so the landing's list is always honest. */
+  const demoMode = useStore((s) => s.demoMode);
+  useEffect(() => {
+    if (introDone && !demoMode && company.trim() !== '') rememberStudio(company.trim());
+  }, [introDone, demoMode, company]);
 
   /** R8: the device remembers every company — the active one is re-recorded as its name
       settles (boot, rename, wizard finish), so the landing's list is always honest. */
