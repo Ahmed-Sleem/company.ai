@@ -244,7 +244,7 @@ that a saved plan round-trips through the export file. This phase starts after G
   system prompt written once in lib/prompt.ts: identity and company, the report contract,
   the tool list with when-to-use guidance, and mail etiquette (mail = deliverables, chat =
   conversation). Every prompt lives in the repo, testable, one source.
-- **Phase J — the mail app** (REQ-54): send-mail tool with structured payloads (subject,
+- **Phase J — the mail app** ✅ done 2026-10-11 (shipped as `4836de0`): send-mail tool with structured payloads (subject,
   markdown body, attachments: text/md/image), the inbox as a real mail experience (research
   Gmail/Hey/Superhuman patterns and copy the good parts), approve/reply with the one-pending-
   reply lock, and the prompt education that keeps mail out of chat.

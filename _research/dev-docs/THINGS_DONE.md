@@ -1210,3 +1210,20 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   was rewritten from scratch on the true main and is better for it (the colleague roster helps
   message_employee aim). Gates: verify 11/11 local, web tests 131/131, smoke 93/93, demo file
   10/10, company-os-demo.html rebuilt.
+- 11 October 2026 — Round ten: the landing became a FULL PRODUCT page (owner: "like the top
+  products — GPT, Claude — complete, with structure"). Sticky product bar with the page's own
+  map; two-column hero whose right half is the studio drawn in pixels (rail, desks, AI
+  hexagon, live bubbles, ticking clock); an honest facts strip (4 model doors · 7 rooms ·
+  4 tools · 0 servers — nothing invented); six-card feature grid; the three moves; four
+  alternating deep dives; the privacy promise; a six-question FAQ in native details; the final
+  call; bilingual throughout; every scene CSS, reduced-motion respected; the doors keep their
+  names and the smoke suite gained the shape check — red first, then green (94/94). The
+  raw-values gate taught the page token discipline (--land-*). Shipped as a32b84b.
+- 11 October 2026 — Phase J completed: the mail app (REQ-54). send_mail joined the registry —
+  subject, markdown body, up to three text/md attachments — so deliverables travel the same
+  standard protocol as everything else; the inbox renders them like mail: a safe markdown
+  reader (React nodes only), attachments that expand in place, accept or reply as the two
+  moves. Mail got its rhythm: the one-open-letter lock (letters only — rule approvals never
+  lock) refuses a second open letter in words; an answered letter stays open but locked,
+  "awaiting {name}", until the employee's next word in their thread closes it; and the inbox
+  is live — letters appear and close without reloads. Tests 139/139, gate 11/11, demo 10/10.
