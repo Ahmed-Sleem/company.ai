@@ -231,6 +231,34 @@ inside their room and desks inside the plan. New checks observed failing first: 
 that drags a new sprite from the catalogue onto the floor on a touch viewport, and a unit test
 that a saved plan round-trips through the export file. This phase starts after G, never before.
 
+## §9.8 · Round eight phase ladder (2026-10-11 — REQ-52..59; MANDATORY, nothing drops)
+
+- **Phase H — licences & gates** (unchanged, next): THIRD_PARTY.md provenance for everything
+  borrowed so far, npm audit wired into the gate, GitHub Actions CI running verify on push.
+- **Phase I — the agent core**: the tool registry (REQ-53) — one place declares every tool
+  (message_employee, send_mail, update_progress, raise_ask), compiled into each provider's
+  native function-calling format, adapting Vercel AI SDK code (MIT) where it saves ours;
+  the one-root org tree enforced everywhere (REQ-52); and **prompts v2** — the full, detailed
+  system prompt written once in lib/prompt.ts: identity and company, the report contract,
+  the tool list with when-to-use guidance, and mail etiquette (mail = deliverables, chat =
+  conversation). Every prompt lives in the repo, testable, one source.
+- **Phase J — the mail app** (REQ-54): send-mail tool with structured payloads (subject,
+  markdown body, attachments: text/md/image), the inbox as a real mail experience (research
+  Gmail/Hey/Superhuman patterns and copy the good parts), approve/reply with the one-pending-
+  reply lock, and the prompt education that keeps mail out of chat.
+- **Phase K — integrations** (REQ-55): the gateway becomes an MCP client
+  (@modelcontextprotocol/sdk, MIT); Notion (@notionhq/client, MIT) and Google Drive
+  (googleapis, Apache-2.0 / the archived gdrive reference server) as the first adapters,
+  surfaced to the ROOT MANAGER as tools; per-integration connect flow in Settings; every
+  repo credited in THIRD_PARTY.md + README (REQ-59).
+- **Phase L — the messenger** (REQ-56): seen stamps (sent/delivered/seen) and the turn
+  scheduler — a batch of messages queues and releases one per model turn.
+- **Phase M — history** (REQ-57): Dexie.js (Apache-2.0) transcript store — every call's
+  exact system/user/tool inputs and model outputs per employee — and the new-tab History
+  viewer (virtualised list for size).
+- Sprites & world-builder stay plan-only after M (owner's earlier hold), and REQ-58 (help
+  completeness) rides along with every phase.
+
 ## §10 · Live URLs (owner asked where to watch)
 
 - `https://ahmed-sleem.github.io/company.ai/` — today: the frozen one-file app (seed data).

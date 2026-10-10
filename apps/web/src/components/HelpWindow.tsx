@@ -50,6 +50,18 @@ export function HelpWindow({ open, lang, onClose }: { open: boolean; lang: Lang;
           <p>{t('helpModelsBody', lang)}</p>
         </details>
         <details className="help-section">
+          <summary>{t('helpBuildTitle', lang)}</summary>
+          <p>{t('helpBuildBody', lang)}</p>
+        </details>
+        <details className="help-section">
+          <summary>{t('helpMailTitle', lang)}</summary>
+          <p>{t('helpMailBody', lang)}</p>
+        </details>
+        <details className="help-section">
+          <summary>{t('helpStudiosTitle', lang)}</summary>
+          <p>{t('helpStudiosBody', lang)}</p>
+        </details>
+        <details className="help-section">
           <summary>{t('helpDataTitle', lang)}</summary>
           <p>{t('helpDataBody', lang)}</p>
         </details>

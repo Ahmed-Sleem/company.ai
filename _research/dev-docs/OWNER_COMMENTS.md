@@ -295,3 +295,59 @@ Comments (the work list):
 - R7-11 one Help window from Settings (and the top menu): expandable tabs with every
   explanation and shortcut — graph double-click/drag, world gestures, keys — organised, all in
   one place. → REQ-48
+
+## Round eight — 2026-10-11 (owner, verbatim highlights)
+
+- "the landing page is very bad, i want a whole complete page, in the same style, telling
+  about the whole project, not small slider, i want complete webpage"
+- "in the search text box remove the blue overlay in selecting, just remove that, keep
+  everything as it is"
+- "remove that from inbox: 1 waiting for you" / "add button to read more"
+- "the chat is perfect but center the text add padding top and so on to be centered also
+  remove the placeholder"
+- "in world view i should [not] be able to select or resize or drag anything except when i
+  open the build toggle"
+- "the hierarchy must be tree with one root, must be one root model at the top" — may change
+  the plan; think and search carefully.
+- "also still the wizard of creating my company not there yet" — and: "when opened the
+  landing page i should [see] all the created companies i have on this device and the option
+  to create new one, all after i click start, before clicking start it should be a webpage
+  telling about the project educate the user clearly on what is that exactly"
+- "one root one manager this manager also i want to add to it integrations, all from github
+  not from scratch… search what integrations can we add, available on github to have the code
+  and adapt it directly, search extensively, i think some people will need to connect the
+  model to notion or google drive i dont know"
+- "the derivables from the models should [be] sent to the user in the inbox, inbox still
+  needs a lot of search to know how the user experience in the mail is and copy it, it should
+  be exactly like a mail app between the user and the models, but i want to change some
+  things: user can approve, or reply, and he cannot reply again before the model send the new
+  version or the model reply the email again, and in the system prompts you must educate the
+  model that the email is not for chatting, for chatting we can use the conversations, email
+  for outputs product, like images or md files or so on even normal text if needed, the model
+  call the tool of sending, like produce the special structured text for that in the outputs
+  and use it to send things, in all the tools and options in this app use the standard tool
+  protocol with the models, tell them the available tools and so on, so they can use them
+  like any agent work… if model need to talk to other one, this is a tool… you can search to
+  know exactly how to create this agent env, or you can use something premade from github and
+  adapt the code and double check it to make sure all work"
+- "the messaging app should have seen option and scheduling, like if i send ten messages to a
+  model he see the first and start work, the system should schedule to send the rest of them
+  (9) in the next turn and so on, and the seen stamp like whatsapp or something should
+  indicate that"
+- "continue the next phase"
+- "recheck all the recent sent requirements in this chat and make sure you done of them,
+  things you miss you can schedule them into next phases… BUT IT IS MANDATORY TO DO THEM IN
+  SOME PHASE, YOU SHOULD NOT MISS ANYTHING"
+- "in each employee (model) i should have a history button to see all the history, the full
+  history of this model, the full context from the point he starts work, what is the complete
+  input outputs he do, exactly, and that open in new tab, for the history use something to
+  manage it, something suitable and with great performance and results, you can find a lot in
+  github and adapt the codes too, we are open to use anything bec this project is free it is
+  not commercial and we will tell all the credits in the repo readme for each thing we use if
+  needed"
+- "improve the help window, but all needed details in it, make sure you do not miss anything
+  at all"
+- "take your time, search and think, add things to requirements and plan, and get back to
+  me, tell me whats next… what about the prompts… i want them detailed complete prompts to
+  make sure the models understand clearly everything, what about using things from github
+  what will you use, choose suitable things easy to integrate"

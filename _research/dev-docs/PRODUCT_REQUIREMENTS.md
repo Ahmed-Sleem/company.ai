@@ -181,3 +181,60 @@ IDs are stable. The plan (`IMPLEMENTATION_PLAN.md`) and the tests refer back to 
 
 All six shipped the same night (see THINGS_DONE, round seven): gates verify 10/10, smoke
 93/93, web tests 107/107.
+
+## §14 · Eighth round (2026-10-11)
+
+Done in the round itself:
+- REQ-49 The landing is a COMPLETE page in the same pixel style — hero, what it is, the team,
+  the engine, the mailbox, the seven rooms, your data — full sections with pixel scenes, no
+  slider, educating the visitor before any click.
+- REQ-50 Every company lives on the device: Start lists all created companies (name + date)
+  with Open buttons plus "New company"; New company archives the current save and reboots
+  into the wizard — the wizard is always reachable. The demo is never listed (demoMode).
+- REQ-51 The round's small corrections: no blue selection slab in the palette field; the
+  inbox's "waiting for you" strip removed; explicit "Read more" button on every letter; the
+  conversation is a centred column with top padding and the composer has no placeholder;
+  the world allows NO select/resize/drag outside the Build toggle (and closing Build drops
+  every selection). Help window grew three sections (Building the world, Mail vs chat, Your
+  companies).
+
+Required, scheduled into phases (MANDATORY — nothing may be dropped):
+- REQ-52 One-root hierarchy: the org chart is a tree with exactly ONE root — the root model
+  (the owner's second-in-command) at the top; every employee descends from it; cycles and
+  second roots are refused by the engine and the forms. (Phase I)
+- REQ-53 Standard tool protocol: every capability the app gives a model is a declared tool
+  (JSON Schema, one registry): message another employee, send mail to the owner, update task
+  progress, raise an ask, and later the integrations. Providers use their native function
+  calling (OpenAI tools / Anthropic tool use / Gemini functionDecls) — adapted from the
+  Vercel AI SDK (MIT) where it saves code; endpoints without tool support fall back to the
+  structured-JSON contract. Prompts list the available tools. (Phase I)
+- REQ-54 Mail is for deliverables, chat is for talking: models send outputs (markdown,
+  images, files, text) through a send-mail tool — never through the conversation threads.
+  The inbox becomes a true mail app between the owner and the models (research the great
+  mail UX and copy it): approve, or reply — and the owner cannot reply again until the model
+  sends the next version/answer (one pending reply at a time). System prompts teach the
+  difference explicitly. (Phase J)
+- REQ-55 Integrations for the root manager, all adapted from GitHub (not from scratch):
+  Notion and Google Drive first, via MCP (Model Context Protocol — the open standard,
+  @modelcontextprotocol/sdk MIT) hosted by the gateway service; candidates from
+  modelcontextprotocol/servers and the official SDKs (@notionhq/client MIT,
+  googleapis Apache-2.0). Every borrowed repo lands in THIRD_PARTY.md and the README
+  credits. (Phase K)
+- REQ-56 Messenger upgrades: WhatsApp-style seen stamps (sent → delivered → seen) and
+  scheduling — send ten messages and the model sees the first and starts work; the system
+  delivers the rest one per model turn. (Phase L)
+- REQ-57 Per-employee history: a History button on every employee opening a NEW TAB with the
+  complete, exact context from the moment they started — every input and output. Stored in
+  IndexedDB via Dexie.js (Apache-2.0) for performance at size; viewer adapted/credit-listed.
+  (Phase M)
+- REQ-58 Help-window completeness is an obligation: every phase that adds a capability adds
+  its explanation and shortcuts to the Help window in the same commit.
+- REQ-59 README credits: the repo's README lists every borrowed piece of code with its
+  licence — the project is free and non-commercial, and the credits are part of it.
+
+Research conclusions behind REQ-53..55 (2026-10-11): MCP is the de-facto standard for
+connecting agents to tools (Linux-Foundation-governed, ~97M monthly SDK downloads, adopted
+by OpenAI/Google/Microsoft); function calling is the model-level mechanism and MCP the
+integration-level one — they compose. So: internal app capabilities = declared tools via
+native function calling; external services = MCP servers behind the gateway. Dexie.js is
+the standard high-performance IndexedDB wrapper for the history store.

@@ -708,7 +708,7 @@ try {
   const helpKeys = await page.locator('.help-keyrow').count();
   await page.keyboard.press('Escape');
   check('the Help window opens with its sections and its shortcut table',
-    helpSections === 4 && helpKeys >= 8);
+    helpSections === 7 && helpKeys >= 8);
 
   // 7 — hygiene
   // 5h — a phone. The owner opened the live link on his and it was unusable: the sidebar kept its
