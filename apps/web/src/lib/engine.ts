@@ -24,6 +24,7 @@ import { localized } from './format';
 import { compileSystemPrompt } from './prompt';
 import { chatCompletion, chatTurn, type ModelConnection, type Turn, type TurnReply } from './providers';
 import { APP_TOOLS, integrationToolDefs } from './tools';
+import { recordCall } from './history';
 import { runToolAsync } from './toolrun';
 import type { AgentRow, TaskRow } from '../data/store';
 import { canTransition, type TaskStage } from '@company/contracts';
@@ -177,6 +178,18 @@ async function toolCycle(
     const tools = [...APP_TOOLS, ...integrationToolDefs(useStore.getState().integrations)];
     try {
       reply = await chatTurn(conn, system, turns, tools);
+      // Phase M (REQ-57): the exact cycle call — inputs, tool uses, output — into the diary.
+      void recordCall({
+        agentId: owner.id,
+        at: new Date().toISOString(),
+        purpose: 'cycle',
+        provider: conn.provider,
+        model: conn.model,
+        system,
+        input: JSON.stringify(turns.map((x) => (x.role === 'tool' ? { role: x.role, name: x.name, result: x.result } : { role: x.role, text: x.text }))),
+        toolCalls: JSON.stringify(reply.toolCalls),
+        output: reply.text,
+      });
     } catch {
       return false;
     }

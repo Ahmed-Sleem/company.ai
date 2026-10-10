@@ -28,6 +28,7 @@ import { CommsView } from './views/CommsView';
 import { NetworkView } from './views/NetworkView';
 import { WorldView } from './views/WorldView';
 import { SettingsView } from './views/SettingsView';
+import { HistoryView } from './views/HistoryView';
 import { LandingView } from './views/LandingView';
 import { consumePendingNew, listStudios, newStudio, openStudio, rememberStudio } from './lib/studios';
 import { IntroWizard } from './views/IntroWizard';
@@ -46,6 +47,12 @@ function readLang(): Lang {
 function readView(): ViewId {
   const hash = location.hash.replace('#', '') as ViewId;
   return VIEWS.some((v) => v.id === hash) ? hash : 'team';
+}
+
+/** Phase M (REQ-57): `#history/<person>` opens that person's diary in its own tab. */
+function readHistory(): string | null {
+  const m = location.hash.replace('#', '').match(/^history\/(.+)$/);
+  return m && m[1] ? decodeURIComponent(m[1]) : null;
 }
 
 function applyCustomAccentForTheme() {
@@ -69,6 +76,7 @@ function readForcedState(): DataStateKind | undefined {
 
 export function App() {
   const [view, setView] = useState<ViewId>(readView);
+  const [historyFor, setHistoryFor] = useState<string | null>(readHistory);
   const [lang, setLang] = useState<Lang>(readLang);
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [fx, setFx] = useState(readFx);
@@ -170,6 +178,7 @@ export function App() {
 
   useEffect(() => {
     const onHash = () => {
+      setHistoryFor(readHistory());
       setView(readView());
       setForcedState(readForcedState());
       requestAnimationFrame(() => document.getElementById('page-title')?.focus());
@@ -419,8 +428,9 @@ export function App() {
           </div>
         </header>
 
-        <main className="main" id="main" data-view={view}>
-          <div className="view-anim" key={view}>
+        <main className="main" id="main" data-view={historyFor ? 'history' : view}>
+          <div className="view-anim" key={historyFor ? `history-${historyFor}` : view}>
+          {historyFor ? <HistoryView agentId={historyFor} lang={lang} /> : <>
           {view === 'team' && <TeamView {...viewProps} />}
           {view === 'tasks' && <TasksView {...viewProps} />}
           {view === 'inbox' && <InboxView {...viewProps} />}
@@ -428,6 +438,7 @@ export function App() {
           {view === 'network' && <NetworkView {...viewProps} />}
           {view === 'world' && <WorldView {...viewProps} />}
           {view === 'settings' && <SettingsView {...viewProps} onHelp={() => setHelpOpen(true)} />}
+          </>}
           </div>
         </main>
 

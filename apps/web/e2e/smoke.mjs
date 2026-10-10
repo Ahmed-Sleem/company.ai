@@ -1024,6 +1024,23 @@ try {
     await page.waitForSelector('.sidebar');
     check('and my own company is what opens from now on',
       (await page.textContent('.workspace'))?.includes('Nile Pixels') ?? false);
+
+    // Phase M (REQ-57): each person's diary opens in its own tab — the new tab meets the
+    // front door first, then the windowed list with its plain empty state.
+    await page.click('[data-nav=team]');
+    await page.waitForSelector('.team-card');
+    await page.locator('.team-card').first().click();
+    await page.waitForSelector('[data-team=history]');
+    const [diary] = await Promise.all([
+      page.waitForEvent('popup'),
+      page.click('[data-team=history]'),
+    ]);
+    await diary.waitForSelector('[data-landing=open]');
+    await diary.click('[data-landing=open]');
+    await diary.waitForSelector('[data-history-view]');
+    check('a person’s diary opens in its own tab behind the front door (REQ-57)',
+      (await diary.$('[data-history-none]')) !== null);
+    await diary.close();
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));

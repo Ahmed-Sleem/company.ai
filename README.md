@@ -1,36 +1,43 @@
-# company.ai — an agent company you can see and run
+# company.ai — hire AI employees, run a real company
 
-One application that holds **an organisation of AI employees and humans**: a task board + decision
-inbox, the company's reporting structure, conversations (with a visible model selector and voice
-notes), and a visual network of the company — all in one GUI, in the designer's locked pixel style,
-bilingual (English LTR / Arabic RTL).
+One application, entirely in your browser, that holds **an organisation of AI employees and you,
+the owner**: a landing page that sells the whole product, a wizard that collects *your* company,
+a team roster with portraits and model connections, a task board, a decision mailbox where
+employees write you letters, conversations with sent/delivered/seen stamps and a turn scheduler,
+the reporting tree as a living graph, a pixel office where the team walks between rooms on a
+schedule, integrations over the Model Context Protocol, and a per-employee diary of every model
+call — all in the designer's locked pixel style, bilingual (English LTR / Arabic RTL), with every
+byte of your data on your device.
 
-**Status: P0 built, plus the owner's own additions** — the World Map (their studio floor, ported from
-their demo and drift-checked against it), the five palettes, a custom accent that keeps its contrast,
-the screen effect and the collapsed sidebar (both in Settings, both on by default), and build mode
-inside the world. The designer's prototype with the network view is still in the repo and still
-verified. Everything is checked by one command (`bash scripts/verify.sh`).
+**Status: the full product** — rounds one through twelve of owner review plus phases A–M:
+the browser-only engine, the showroom demo that is fresh on every entry and never touches your
+saves, the mail app, the MCP integrations desk (GitHub-only servers), the messenger stamps and
+turn scheduler, and the history diary. The frozen designer prototype that started it all is still
+in the repo and still verified, as the visual reference. Everything is checked by one command
+(`bash scripts/verify.sh`).
 
-**Verified 2026-10-11 (the gate, green, eleven steps, and CI runs it on every push):** type-check ·
+**Verified 2026-10-12 (the gate, green, eleven steps, and CI runs it on every push):** type-check ·
 generated files in sync (design tokens, and the icons + floor plan generated from the owner's demo) ·
-lint (0 errors) · database/API/gateway/contract tests · **107** GUI tests · repository checks ·
-production build · the standalone demo file matches that build · the designer's checks · **93**
+lint (0 errors) · database/API/gateway/contract tests · **158** GUI tests · repository checks ·
+production build · the standalone demo file matches that build · the designer's checks · **107**
 browser checks against the built app · npm audit (high/critical block).
 
-**Never opened this project before?** Start with *Try it without installing anything* below.
+**Never opened this project before?** Start with *Try it without installing anything* below, or
+just open the live product: <https://ahmed-sleem.github.io/company.ai/>.
 
 ## Try it without installing anything
 
-`demo/company-os-demo.html` is the whole product in **one file**: the real GUI, its data and its API
-frozen inside it. Download it (on GitHub: open the file, then *Download raw file*) and open it in a
-browser. No server, no install, no network — every screen works, and creating or moving a task works
-too (the changes last until you reload).
+`demo/company-os-demo.html` is the whole product in **one file**: the real GUI and its demo
+company frozen inside it. Download it (on GitHub: open the file, then *Download raw file*) and
+open it in a browser. No server, no install, no network — every screen works.
 
 ## Run it — the full product, on your machine
 
 Needs **Node 20 or newer** ([nodejs.org](https://nodejs.org) — the LTS button) and **Git**
-([git-scm.com](https://git-scm.com/downloads)). Nothing else: the database is a local file, and model
-calls go to an offline mock, so there are **no keys and no spend**.
+([git-scm.com](https://git-scm.com/downloads)). The product itself needs **nothing else**: the
+engine runs entirely in the browser, your companies save to your browser's storage, and model
+calls go straight from your browser to the provider you chose — with **your** keys, or none at
+all (the teammates keep a local voice until a key exists).
 
 ```bash
 # once — get the code and install everything
@@ -38,18 +45,18 @@ git clone https://github.com/Ahmed-Sleem/company.ai.git
 cd company.ai
 npm install
 
-# terminal 1 — the API (http://127.0.0.1:8787). Leave it running.
-npx tsx services/api/src/server.ts
-
-# terminal 2 — the app (http://127.0.0.1:5173). Open this one.
+# the app (http://127.0.0.1:5173). Open this one. That is the product.
 npm run dev -w @company/web
 ```
 
-Open **http://127.0.0.1:5173** — that is the product. `Ctrl-C` in each terminal stops them. The
-database is seeded on first start and kept in `.data/`; delete that folder to start fresh.
+Open **http://127.0.0.1:5173** — the landing page greets you; *Explore the demo company* shows a
+labelled studio already at work, *Start my company* walks the three-step wizard. `Ctrl-C` stops it.
 
 *(No Git? On the repository page use **Code → Download ZIP**, unzip it, open a terminal in that
-folder, and run the same `npm install` and the two commands above.)*
+folder, and run the same `npm install` and the command above.)*
+
+The repository also carries a legacy seed API (`services/api`) with a local database — it seeds
+the frozen demo and keeps its own tests in the gate, but the browser product does not call it.
 
 ```bash
 # once, only if you want the browser check inside the gate (skip it and that step says so)
@@ -59,71 +66,20 @@ sudo npx playwright install-deps chromium   # Linux only — the system librarie
 
 ## Put it online (free)
 
-Two things can be online, and they answer different questions. Both are already configured in this
-repository — neither needs a credit card, and neither needs you to touch a terminal.
-
-| What goes online | Where | What it costs | What it is for |
-|---|---|---|---|
-| **The demo file** — the whole product in one HTML file | **GitHub Pages** (`·/.github/workflows/demo-pages.yml`) | Free forever, never sleeps, no cold start | The link you can send anyone, or open on a phone |
-| **The full product** — API, database and app | **Render**, free plan (`render.yaml` + `Dockerfile`) | Free; sleeps after 15 minutes idle, wakes in ~30–60 s | Using the real thing, against a live API |
-
-### The demo file on GitHub Pages — two clicks, once
+The product is a static build, so **GitHub Pages is the whole deployment** — no server to pay
+for, no cold start, and it never holds anyone's data:
 
 1. Repository → **Settings** → **Pages** (left sidebar).
 2. Under *Build and deployment* → *Source*, choose **GitHub Actions**. That is the whole switch.
 
-Every push to `main` then republishes it by itself, to:
+Every push to `main` then rebuilds from the pushed commit (`npm ci` → build the web app → publish)
+and republishes to `https://<your-username>.github.io/<repository>/`. **In this repository that
+switch is already on** — the live product is at <https://ahmed-sleem.github.io/company.ai/>, and
+the frozen one-file demo and the designer's prototype are published beside it
+(`…/prototype/#network` shows the original force-directed graph).
 
-```
-https://<your-username>.github.io/<repository>/
-```
-
-**In this repository that switch is already on** — the demo is live at
-<https://ahmed-sleem.github.io/company.ai/> and republishes on every push to `main`.
-
-The workflow **builds the demo from the pushed commit** (`npm ci` → build the web app → freeze it
-into one file) instead of copying the repository's copy, so the live link can never show a build
-older than the code. The designer's prototype is published beside it, and the force-directed company
-graph lives behind the Network view — open <https://ahmed-sleem.github.io/company.ai/prototype/#network>.
-
-### The full product on Render — four clicks, once
-
-1. Go to **render.com** and **sign in with GitHub** (no card required for the free plan).
-2. **New** → **Blueprint**.
-3. Pick this repository. Render reads `render.yaml` by itself and shows what it will create.
-4. **Apply** — the first build takes a few minutes; then the service is at
-   `https://company-os.onrender.com` (Render adds a suffix if the name is taken).
-
-`render.yaml` describes one service. It is the API, and it serves the built app from the same origin
-(`services/api/src/static.ts`), so there is one URL, one dashboard and nothing to configure — and
-every push to `main` redeploys it.
-
-**What to expect from the free plan:** the instance sleeps after 15 minutes without visitors, so the
-first visit after a quiet spell takes ~30–60 seconds to wake; after that it is quick. Free instances
-have no persistent disk, so the database is re-seeded on each deploy — right for a demo. To keep real
-data, set `DATABASE_URL` to a hosted Postgres and nothing else changes.
-
-### Anywhere else
-
-The `Dockerfile` builds the whole product, so any Docker host works:
-
-```bash
-docker build -t company-os .
-docker run --rm -p 8787:8787 company-os     # → http://localhost:8787
-```
-
-### While developing
-
-- Every push to `main` updates both of the above by itself — that is the point of wiring them now.
-- For a live view of your own machine before pushing anything, a tunnel gives a public HTTPS URL in
-  one command without deploying: `cloudflared tunnel --url http://localhost:5173` (the dev server
-  already accepts any hostname).
-- **`nip.io` is not a hosting service** — it is DNS only: it maps any name to an IP address
-  (`company.203.0.113.9.nip.io` → `203.0.113.9`). It does not run anything, so it cannot host this,
-  and neither Pages nor Render needs it. It is useful in exactly one case: running the product on a
-  machine that has a public IP of its own (a free Oracle Cloud VM, a home server) and wanting a name
-  for it without buying a domain. If you ever want that setup, say so and it can be done — the
-  `Dockerfile` above is all that machine would need.
+Because the app is static, any other static host works the same way; the `Dockerfile` still builds
+the legacy seed API for anyone who wants the old server-shaped demo (`docker run -p 8787:8787`).
 
 ## Check it
 
@@ -132,30 +88,35 @@ bash scripts/verify.sh          # the gate: everything above, in order, with a s
 ```
 
 Want the demo file rebuilt from your own working copy? `node scripts/build-demo-html.mjs` writes it
-back into `demo/` using whatever you have just built.
+back into `demo/` using whatever you have just built. Want fresh README screens?
+`node scripts/capture-screens.mjs` re-captures them from the built app.
 
 Every check can fail on purpose (that is how they were built): `bash scripts/checks/_observe-failure.sh`
 plants a violation for each repository check and confirms it fails.
 
 ## The GUI
 
-Real captures of the prototype (`design/prototype/company-os.html`) — not mockups. Dark and light,
-English and Arabic, desktop and mobile. Re-capture with `node design/screenshots/shots.mjs`.
+Captures of **the real product** (the built app, walked through its labelled demo) — not mockups,
+not the prototype. Dark and light, English and Arabic, desktop and a phone. Re-capture with
+`node scripts/capture-screens.mjs`.
 
 | | |
 |---|---|
-| ![Team](design/screenshots/01-team-light-en.png) | ![Network — force](design/screenshots/05-network-force-light-en.png) |
-| **Team** — the roster, budgets and live status | **Network** — the whole company in one view |
+| ![Landing](design/screenshots/00-landing-light-en.png) | ![Team](design/screenshots/01-team-light-en.png) |
+| **Landing** — the whole product, one page | **Team** — portraits, roles, live status, each person's model |
 | ![Tasks](design/screenshots/02-tasks-light-en.png) | ![Inbox](design/screenshots/03-inbox-light-en.png) |
-| **Tasks** — four stages, AI facts on the card | **Inbox** — decisions with cost and cost of delay |
-| ![Conversations](design/screenshots/04-conversations-light-en.png) | ![Settings](design/screenshots/07-settings-light-en.png) |
-| **Conversations** — one thread, any model | **Settings** — appearance, palettes, language, states |
+| **Tasks** — the board the employees move themselves | **Inbox** — decisions arrive as letters; approve or reply once |
+| ![Conversations](design/screenshots/04-conversations-light-en.png) | ![Network](design/screenshots/05-network-light-en.png) |
+| **Conversations** — stamps, turn scheduler, teammate search | **Network** — the reporting tree as a living graph |
+| ![World](design/screenshots/06-world-light-en.png) | ![Settings](design/screenshots/07-settings-light-en.png) |
+| **World Map** — the pixel office, walks, bubbles, the clock | **Settings** — palettes, schedule, integrations, the save |
+| ![History](design/screenshots/13-history-light-en.png) | ![Team — dark](design/screenshots/08-team-dark-en.png) |
+| **History** — one person's diary, in its own tab | the same studio in dark |
 
-| Dark | Arabic (RTL) |
+| Arabic (RTL) | A phone |
 |---|---|
-| ![Team — dark](design/screenshots/08-team-dark-en.png) | ![Team — Arabic](design/screenshots/11-team-light-ar.png) |
-| ![Network — rings](design/screenshots/06-network-rings-light-en.png) | ![Network — Arabic](design/screenshots/09-network-force-dark-ar.png) |
-| ![Tasks — dark, Arabic](design/screenshots/10-tasks-dark-ar.png) | ![Network — mobile, Arabic](design/screenshots/12-network-mobile-ar.png) |
+| ![Tasks — Arabic, dark](design/screenshots/10-tasks-dark-ar.png) | ![Network — mobile, Arabic](design/screenshots/12-network-mobile-ar.png) |
+| ![Network — Arabic, dark](design/screenshots/09-network-dark-ar.png) | ![Team — Arabic](design/screenshots/11-team-light-ar.png) |
 
 ## The repository
 
@@ -164,10 +125,10 @@ company.ai/
 ├── README.md      ← you are here
 ├── LICENSE
 ├── THIRD_PARTY.md  every dependency and its licence, plus the blocked list
-├── apps/web/       the GUI (Vite + React): the shell, seven views, the world, the tests
+├── apps/web/       the product (Vite + React): landing, wizard, nine views, the diary, the tests
 ├── packages/       shared code: tokens · contracts · company (schema, rules, seed) · gateway
-├── services/api/   the HTTP surface the GUI talks to
-├── scripts/        verify.sh (the gate) · the drift checks · the demo-file builder
+├── services/api/   the legacy seed API (seeds the frozen demo; tested, not called by the product)
+├── scripts/        verify.sh (the gate) · the drift checks · the demo-file builder · the captures
 ├── demo/           company-os-demo.html — the whole product in one file (generated)
 ├── design/         the product-facing visuals — NOT removable
 └── _research/      everything development-only — ONE folder, removable before deployment
@@ -181,9 +142,8 @@ company.ai/
 |---|---|
 | `designer-demo/ai-company-os.html` | **The designer's demo** — the visual reference, byte-verified, never edited |
 | `tokens/company-os-pixel.css` `.json` | **The design system** — every colour, size, radius, shadow, duration, in one place |
-| `prototype/company-os.html` | **The prototype** — the demo + the change request + the working network view (open this one) |
-| `prototype/graph.js` `.css`, `prototype-changes.css`, `build-prototype.py`, `verify.mjs` | The network view, the changes, the rebuild script, the verification gate |
-| `archive/gui-scaffold.html` | The first scaffold, kept for reference only (superseded) |
+| `prototype/company-os.html` | **The prototype** — the demo + the change request + the working network view |
+| `screenshots/` | Captures of the real product for this README (`scripts/capture-screens.mjs`) |
 
 Everything the product draws must come from `tokens/company-os-pixel.*`. That is what keeps every
 screen, and everything added later, consistent with the demo.
@@ -193,7 +153,7 @@ screen, and everything added later, consistent with the demo.
 | Path | What it is |
 |---|---|
 | `rules/` | **The four mandatory rule documents**, in one place, plus how they combine with the pixel style |
-| `dev-docs/` | Plan, project map, append-only done log, supporting notes |
+| `dev-docs/` | Plan, project map, append-only done log, owner comments, requirements, supporting notes |
 | `17`–`23`*.md | The demo review, what was built, **the plan**, the model/agent research, the decision log, the deep harvest scan, and the publish guide |
 | `00`…`16`*.md, `designer-brief.md` | The research and the designer brief |
 | `data/`, `harvest/` | Evidence snapshots and the reuse-cloning script |
@@ -213,17 +173,20 @@ Reuse boundaries and licence traps: `_research/09-reuse-and-licensing-map.md` an
 
 ## Credits & licences
 
-The integrations desk (Phase K) speaks the **Model Context Protocol** — client hand-rolled from the public specification (github.com/modelcontextprotocol/specification); reference servers linked, never bundled (github.com/modelcontextprotocol/servers). Full provenance lives in THIRD_PARTY.md.
-
 This project is free and non-commercial, and it says thank you out loud. The full licence ledger —
 every dependency, every vendored file, every adapted idea, with its licence and how it entered —
 lives in **[THIRD_PARTY.md](THIRD_PARTY.md)**, enforced by a gate that fails the build when a
 dependency is missing from it. The headline thanks:
 
 - **React** and **zustand** (MIT) — the GUI and its store.
-- **Zod** (MIT), **Hono** (MIT), **Drizzle ORM** (Apache-2.0) — contracts, API, database.
-- **Vite**, **Vitest**, **Testing Library**, **Playwright**, **oxlint**, **TypeScript** — the
-  tools that build and prove it (development only, never shipped).
+- **Dexie.js** (Apache-2.0) — the per-employee history diary on your device.
+- The **Model Context Protocol** — integrations speak it through a hand-rolled client written
+  against the public specification (github.com/modelcontextprotocol/specification); reference
+  servers are linked, never bundled (github.com/modelcontextprotocol/servers).
+- **Zod** (MIT), **Hono** (MIT), **Drizzle ORM** (Apache-2.0) — contracts and the legacy seed API.
+- **Vite**, **Vitest**, **Testing Library**, **Playwright**, **oxlint**, **TypeScript**,
+  **fake-indexeddb** (Apache-2.0) — the tools that build and prove it (development only, never
+  shipped).
 - The **owner's own demo** — the pixel style, the icons, the avatars and the prototype are
   generated from it, with drift checks in the gate.
 

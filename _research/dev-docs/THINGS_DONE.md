@@ -1263,3 +1263,14 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   one (seen), the teammate answers that one, then the next turn takes the next — the rhythm
   lives in the store, so it survives leaving the chat. Old saves load without queues and stay
   unbroken. Tests 154/154 (three new), smoke 106/106 (two new), gate 11/11.
+- 12 October 2026 — Phase M completed: history (REQ-57). Every model call for a person —
+  the exact system prompt, the inputs as sent, the tool calls the model made, its exact words
+  back — lands in an IndexedDB diary on the owner's device (Dexie, Apache-2.0), written from
+  both the messenger's turns and the engine's work cycles. The demo showroom writes no
+  history. A person's diary opens in its own tab (#history/<person>, from the team profile
+  and the chat head): a windowed list — only the rows in view are drawn — beside the exact
+  transcript. Credits in THIRD_PARTY.md. Tests 158/158 (four new), smoke 107/107 (one new,
+  the popup walked end to end).
+- 12 October 2026 — README audit (owner): the README still told the old server-first story
+  with prototype screens and stale counts; rewritten to describe the product as it is now —
+  browser-only, landing to diary — with fresh captures of the real screens.

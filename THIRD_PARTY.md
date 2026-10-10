@@ -174,3 +174,8 @@ registry is unreachable the step says so and skips — it never fakes a pass.
   (JSON-RPC 2.0, session headers, SSE responses) was re-implemented from the specification and
   is unit-tested against fake servers. Notion and Google Drive adapters call their public REST
   APIs directly with the owner's own tokens (the APIs' own terms apply).
+- **Dexie.js** v4.4.6 (Apache-2.0, npm `dexie`) — the Phase M per-employee history store
+  (IndexedDB on the owner's device). Adopted as planned in the research ledger; the diary is
+  the only thing that lives outside the localStorage save, by design (REQ-57).
+- **fake-indexeddb** (Apache-2.0, npm, development only) — lends jsdom an IndexedDB so the
+  diary's unit tests run headless; never shipped.

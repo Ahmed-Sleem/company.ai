@@ -12,6 +12,7 @@ import demo from './demo.json';
 import type { ModelConnection } from '../lib/providers';
 import { isGitHubRepo } from '../lib/integrations';
 import { localVoice } from '../lib/voice';
+import { recordCall, setHistoryDemoMode } from '../lib/history';
 import { chatCompletion } from '../lib/providers';
 import { compileSystemPrompt } from '../lib/prompt';
 import type { Lang } from '../lib/i18n';
@@ -247,6 +248,7 @@ export const useStore = create<SaveState>()(
       ...fixture(),
       load: (data) => {
         demoSession = false;
+        setHistoryDemoMode(false);
         set((state) => ({
           ...state, ...data,
           // Phase L: saves from before the messenger stamps arrive without turn queues.
@@ -257,6 +259,7 @@ export const useStore = create<SaveState>()(
       passDoor: () => set({ doorPassed: true }),
       reset: () => {
         demoSession = true;
+        setHistoryDemoMode(true);
         try { localStorage.removeItem(DEMO_KEY); } catch { /* a blocked box has nothing to clear */ }
         set(() => ({ ...fixture(), introDone: true, demoMode: true, doorPassed: true, savedAt: new Date().toISOString() }));
       },
@@ -324,6 +327,7 @@ export const useStore = create<SaveState>()(
       setIntroDraft: (draft) => set(() => ({ introDraft: draft })),
       finishIntro: () => set((state) => {
         demoSession = false; // graduating from the demo hands the pen back to the visitor's own save
+        setHistoryDemoMode(false);
         const draft = state.introDraft;
         if (!draft) return { introDone: true, demoMode: false, introDraft: null };
         // Draft people become real ones; the save numbers them the way it numbers everyone
@@ -379,11 +383,13 @@ export const useStore = create<SaveState>()(
       chooseDemo: () => {
         // R11: the demo is FRESH on every entry — whatever a visitor broke last time is gone.
         demoSession = true;
+        setHistoryDemoMode(true);
         try { localStorage.removeItem(DEMO_KEY); } catch { /* a blocked box has nothing to clear */ }
         set(() => ({ ...fixture(), introDone: true, demoMode: true, introDraft: null, doorPassed: true, savedAt: new Date().toISOString() }));
       },
       reopenIntro: () => set((state) => {
         demoSession = false; // the wizard reopened over the demo means this visitor means business
+        setHistoryDemoMode(false);
         const draftId = new Map<string, string>();
         state.agents.forEach((a, i) => draftId.set(a.id, `d-${i + 1}`));
         return {
@@ -465,10 +471,13 @@ export const useStore = create<SaveState>()(
         const person = get().agents.find((a) => a.id === th.agentId) ?? null;
         const msgText = th.messages.find((m) => m.id === mid)?.text ?? '';
         let answer = '';
+        let system = '';
         const conn = person?.model ?? null;
-        if (person && conn && conn.key.trim() !== '' && conn.model.trim() !== '') {
+        const live = person !== null && conn !== null && conn.key.trim() !== '' && conn.model.trim() !== '';
+        if (live && person && conn) {
+          system = compileSystemPrompt(get(), person, lang);
           try {
-            answer = await chatCompletion(conn, compileSystemPrompt(get(), person, lang), msgText);
+            answer = await chatCompletion(conn, system, msgText);
           } catch {
             answer = localVoice(person, get().tasks, lang);
           }
@@ -476,7 +485,21 @@ export const useStore = create<SaveState>()(
           await wait(800);
           answer = person ? localVoice(person, get().tasks, lang) : '…';
         }
-        if (person) get().addMessage(threadId, person.id, answer);
+        if (person) {
+          get().addMessage(threadId, person.id, answer);
+          // Phase M (REQ-57): the exact call, word for word, into the person's diary.
+          void recordCall({
+            agentId: person.id,
+            at: new Date().toISOString(),
+            purpose: 'chat',
+            provider: live && conn ? conn.provider : 'local',
+            model: live && conn ? conn.model : 'local-voice',
+            system,
+            input: msgText,
+            toolCalls: '[]',
+            output: answer,
+          });
+        }
         activeTurns.delete(threadId);
         if ((get().threads.find((x) => x.id === threadId)?.queue ?? []).length > 0) schedulePump(threadId, lang);
       },

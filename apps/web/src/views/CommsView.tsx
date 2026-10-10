@@ -129,6 +129,11 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                       </span>
                     </span>
                     <Badge tone={statusTone(agent.status)}>{t(STATUS_KEY[agent.status] ?? 'statusIdle', lang)}</Badge>
+                    <button type="button" className="iconbtn" data-comms-history
+                      title={t('historyOpen', lang)} aria-label={t('historyOpen', lang)}
+                      onClick={() => window.open(`${location.pathname}#history/${agent.id}`, '_blank')}>
+                      <Icon name="file" />
+                    </button>
                   </header>
 
                   <div className="chat-log" ref={logRef} role="log" aria-live="polite">

@@ -118,10 +118,17 @@ export function TeamView({ lang, forcedState }: { lang: Lang; forcedState?: Data
         eyebrow={t('team', lang)}
         lang={lang}
         actions={profile ? (
-          <button type="button" className="btn" data-team="edit"
-            onClick={() => { const id = profile.id; setOpenId(null); setEditing(id); }}>
-            <Icon name="settings" />{t('teamEditBtn', lang)}
-          </button>
+          <>
+            {/* Phase M (REQ-57): the person's model diary opens in its own tab. */}
+            <button type="button" className="btn" data-team="history"
+              onClick={() => window.open(`${location.pathname}#history/${profile.id}`, '_blank')}>
+              <Icon name="file" />{t('historyOpen', lang)}
+            </button>
+            <button type="button" className="btn" data-team="edit"
+              onClick={() => { const id = profile.id; setOpenId(null); setEditing(id); }}>
+              <Icon name="settings" />{t('teamEditBtn', lang)}
+            </button>
+          </>
         ) : null}
       >
         {profile ? (

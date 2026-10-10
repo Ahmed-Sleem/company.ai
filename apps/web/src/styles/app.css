@@ -63,6 +63,11 @@
   --app-landing-title:34px;
   --app-landing-title-phone:27px;
   --app-landing-cta-phone:25px;
+  --app-hist-side-min:240px;
+  --app-hist-side-max:380px;
+  --app-hrow-h:64px;
+  --app-hpre-h:240px;
+  --app-hlist-phone-h:320px;
   --app-clock:52px;
   --app-bubble-w:160px;
   --app-chat-w:720px;
@@ -1173,6 +1178,20 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 /* ── Phase L: messenger stamps — sent, delivered, seen ───────────────────────────────────── */
 .stamp { display: block; text-align: end; font-size: var(--xs); color: var(--dim); margin-block-start: var(--s1); letter-spacing: calc(var(--s1) * -0.5); }
 .stamp.seen { color: var(--accent); }
+
+/* ── Phase M: the diary — a windowed list, an exact transcript ───────────────────────────── */
+.history { display: grid; grid-template-columns: minmax(var(--app-hist-side-min), var(--app-hist-side-max)) minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.h-listbox { position: relative; overflow-y: auto; block-size: var(--app-world-h); }
+.h-spacer { position: relative; }
+.h-row { position: absolute; inset-inline: 0; block-size: var(--app-hrow-h); display: grid; gap: var(--s1); align-content: center; padding: var(--s2) var(--s3); text-align: start; font: inherit; color: inherit; background: none; border: 0; border-block-end: var(--app-hair) solid var(--soft); cursor: pointer; }
+.h-row.active { background: var(--accent-bg); }
+.h-row .h-out { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-none { padding: var(--s4); }
+.h-detail { display: grid; gap: var(--s3); align-content: start; max-block-size: var(--app-world-h); overflow-y: auto; }
+.h-meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.h-detail h3 { margin: 0; font-size: var(--sm); color: var(--muted); }
+.h-pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg); border: var(--app-hair) solid var(--soft); padding: var(--s3); font-size: var(--xs); max-block-size: var(--app-hpre-h); overflow-y: auto; }
+@media (max-width: 860px) { .history { grid-template-columns: 1fr; } .h-listbox { block-size: var(--app-hlist-phone-h); } }
 
 /* ── inbox as a deck of slides (owner C9) ────────────────────────────────────────────────── */
 /* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */
