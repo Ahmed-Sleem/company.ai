@@ -15,8 +15,15 @@
  *   6. no uncaught page errors, no requests to any API, nothing off-origin.
  */
 import { spawn } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium, devices } from 'playwright';
+
+/** Evidence shots live under the repo's .data — a path of THIS repo, wherever it is checked
+    out (the CI runner has no /home/user, and the smoke must run identically there). */
+const SHOTS = fileURLToPath(new URL('../../../.data/shots', import.meta.url));
+mkdirSync(SHOTS, { recursive: true });
 
 // Deliberately NOT the development port (5173): a smoke test must talk to the server it
 // started itself. Sharing a port with a running dev server silently tested the wrong app.
@@ -764,7 +771,7 @@ try {
       return { height: Math.round(viewport.height), desks: document.querySelectorAll('[data-desk]').length };
     });
     check('the floor plan fits a phone screen', map.desks === 16 && map.height <= 700, `${map.desks} desks in ${map.height}px`);
-    await phone.screenshot({ path: '/home/user/work/.data/shots/phone-world.png' });
+    await phone.screenshot({ path: `${SHOTS}/phone-world.png` });
     await phone.close();
   }
 
