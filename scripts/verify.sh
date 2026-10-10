@@ -9,13 +9,14 @@
 #   2. tokens              — the generated token files match the design source (drift fails)
 #   3. lint                — oxlint
 #   4. tests               — database/gateway/API/contract/token tests
-#   5. web tests           — the shell, states, RTL, theme, the world, icons (jsdom, 87)
+#   5. web tests           — the shell, states, RTL, theme, the world, icons (jsdom, 107)
 #   6. repo checks         — raw values, logical properties, build context, licences, docs
 #   7. build               — the production web build (this is what gets served)
 #   8. demo file           — the standalone demo still matches that build (no browser needed)
 #   9. design gate         — the designer's own prototype still passes its 15 checks (the world tab
 #                            and the camera's movement included)
-#  10. browser smoke       — real Chromium against the built app, with no server at all (66 checks)
+#  10. browser smoke       — real Chromium against the built app, with no server at all (93 checks)
+#  11. npm audit           — high/critical advisories in the lockfile block the push
 #
 # The design gate (8) always runs: it needs no browser. Step 9 needs Chromium and prints the
 # three commands that install it if it is missing; every other step is required.
@@ -65,35 +66,39 @@ socket.on('error', () => process.exit(1));
   exit 1
 fi
 
-run "1/9 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
-run "2/10 generated files in sync (tokens · the owner's data · the prototype's world code)" bash -c '
+run "1/11 type-check (whole workspace)" npx tsc -p tsconfig.json --noEmit
+run "2/11 generated files in sync (tokens · the owner's data · the prototype's world code)" bash -c '
   node packages/tokens/src/generate.mjs --check || exit 1
   node scripts/gen-owner-data.mjs --check || exit 1
   node scripts/gen-icons.mjs --check || exit 1
   node scripts/build-world-lib.mjs --check'
-run "3/10 lint" npx oxlint
-run "4/10 database, gateway, API and contract tests" npx vitest run
-run "5/10 web app tests (shell, states, RTL, world, icons)" npm test -w @company/web --silent
-run "6/10 repository checks" bash -c '
+run "3/11 lint" npx oxlint
+run "4/11 database, gateway, API and contract tests" npx vitest run
+run "5/11 web app tests (shell, states, RTL, world, icons)" npm test -w @company/web --silent
+run "6/11 repository checks" bash -c '
   for check in raw-values logical-properties namespace-lock build-context licence-gate no-budget docs; do
     node "scripts/checks/$check.mjs" || exit 1
   done'
-run "7/10 production web build" npm run build -w @company/web --silent
+run "7/11 production web build" npm run build -w @company/web --silent
 
 # The demo file is the app and its save frozen into one HTML file. It is generated from the build
 # above, so "did someone edit the demo by hand?" and "is the build still the thing we shipped?" are
 # the same question — and this step answers it without a browser.
-run "8/10 the standalone demo file matches the built app" node scripts/build-demo-html.mjs --check
+run "8/11 the standalone demo file matches the built app" node scripts/build-demo-html.mjs --check
 
 # The design gate needs no browser — it must run on every machine, every time.
-run "9/10 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
+run "9/11 design gate (the designer prototype, 11 checks)" node design/prototype/verify.mjs
 
 if has_browser; then
-  run "10/10 browser smoke test (the built app, real Chromium, no server)" node apps/web/e2e/smoke.mjs
+  run "10/11 browser smoke test (the built app, real Chromium, no server)" node apps/web/e2e/smoke.mjs
 else
   explain_no_browser
   SKIPPED=$((SKIPPED+1))
 fi
+
+# Phase H: known-vulnerable dependencies must never ride a push. High/critical fails the gate;
+# moderates are printed. Unreachable registry skips honestly (CI runs it with a real network).
+run "11/11 npm audit (high/critical advisories block)" node scripts/checks/npm-audit.mjs
 
 printf '\n\033[1m── gate summary ──\033[0m\n'
 printf 'passed %d · failed %d · skipped %d\n' "$PASSED" "$FAILED" "$SKIPPED"

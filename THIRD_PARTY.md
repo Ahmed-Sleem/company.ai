@@ -117,3 +117,51 @@ Inngest, Modal (closed).
 
 *Maintenance: append, never rewrite. Each row gains its commit hash and file path when the code
 actually lands. The CI gate is the enforcement; this file is the record.*
+
+---
+
+## Reality of the shipped product (2026-10-11, Phase H) — supersedes the "Status" note above
+
+The product is built and shipping. This is the **actual** set in the lockfile, verified against
+`package-lock.json` on 2026-10-11. The "planned" tables above stay as the design record; this
+section is what is true.
+
+### Runtime dependencies (inside the product)
+
+| Package | Licence | Use | Where |
+|---|---|---|---|
+| `react`, `react-dom` | MIT | the whole GUI | `apps/web` |
+| `zustand` | MIT | the user-side store + persist (the save file) | `apps/web` |
+| `zod` | MIT | the shared contracts (stages, transitions, schemas) | `packages/contracts` |
+| `hono`, `@hono/node-server`, `@hono/zod-validator` | MIT | the API service | `services/api` |
+| `drizzle-orm` | Apache-2.0 | the database layer | `packages/company` |
+| `@electric-sql/pglite` | Apache-2.0 | embedded Postgres for the API's tests/dev | `packages/company` |
+| `pg` | MIT | Postgres driver | `packages/company` |
+| `tsx` | MIT | running the service's TypeScript | `services/api` |
+
+### Development dependencies (never shipped)
+
+`typescript` (Apache-2.0) · `vitest` (MIT) · `vite` + `@vitejs/plugin-react` (MIT) ·
+`tailwindcss` + `@tailwindcss/vite` (MIT) · `lightningcss` (**MPL-2.0**, unmodified, build-time
+only — the standing MPL note applies) · `jsdom` (MIT) · `@testing-library/react` +
+`@testing-library/dom` (MIT) · `playwright` (Apache-2.0) · `oxlint` (MIT) · `esbuild` (MIT) ·
+`drizzle-kit` (Apache-2.0) · `@types/*` (MIT).
+
+### First-party and adapted-idea notes
+
+- **The owner's demo** (`design/owner-demo/acme-studio-os.html`) is first-party — the icons,
+  avatars, demo rows and the prototype are *generated* from it (`scripts/gen-owner-data.mjs`,
+  `--check` in the gate), never copied by hand.
+- **`apps/web/src/world/gestures.ts`**: written in this repo from published *descriptions* of
+  pointer-anchored zoom, pinch-about-midpoint and inertial pan (d3-zoom docs and the
+  vanwijk.win.tue.nl zoom/pan paper — both read for ideas). **No code was copied**; the maths
+  is this repo's own and unit-tested.
+- **The PNG encoder** (`scripts/gen-icons.mjs`) is an original dependency-free implementation
+  of the documented PNG/zlib format — no third-party code.
+- **The standalone PNG/zlib format** itself is public specification (W3C/IETF), not code.
+
+### npm audit
+
+`scripts/checks/npm-audit.mjs` (verify step 11) runs `npm audit` over the whole workspace and
+fails the gate on any **high or critical** advisory; moderates are printed as warnings. If the
+registry is unreachable the step says so and skips — it never fakes a pass.

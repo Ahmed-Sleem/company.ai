@@ -11,11 +11,11 @@ the screen effect and the collapsed sidebar (both in Settings, both on by defaul
 inside the world. The designer's prototype with the network view is still in the repo and still
 verified. Everything is checked by one command (`bash scripts/verify.sh`).
 
-**Verified 2026-10-06 (the gate, green, ten steps):** type-check · generated files in sync (design
-tokens, and the icons + floor plan generated from the owner's demo) · lint (0 errors) · **83**
-database/API/gateway/contract tests · **86** GUI tests · repository checks · production build · the
-standalone demo file matches that build · the designer's **11** checks · **58** browser checks against
-the real API. The demo file has **10** checks of its own.
+**Verified 2026-10-11 (the gate, green, eleven steps, and CI runs it on every push):** type-check ·
+generated files in sync (design tokens, and the icons + floor plan generated from the owner's demo) ·
+lint (0 errors) · database/API/gateway/contract tests · **107** GUI tests · repository checks ·
+production build · the standalone demo file matches that build · the designer's checks · **93**
+browser checks against the built app · npm audit (high/critical block).
 
 **Never opened this project before?** Start with *Try it without installing anything* below.
 
@@ -210,3 +210,20 @@ contract is applied together with the locked pixel style (which values deviate, 
 
 Reuse boundaries and licence traps: `_research/09-reuse-and-licensing-map.md` and
 `_research/15-code-harvest-plan.md`. The demo's embedded font is Pixelify Sans (SIL OFL 1.1).
+
+## Credits & licences
+
+This project is free and non-commercial, and it says thank you out loud. The full licence ledger —
+every dependency, every vendored file, every adapted idea, with its licence and how it entered —
+lives in **[THIRD_PARTY.md](THIRD_PARTY.md)**, enforced by a gate that fails the build when a
+dependency is missing from it. The headline thanks:
+
+- **React** and **zustand** (MIT) — the GUI and its store.
+- **Zod** (MIT), **Hono** (MIT), **Drizzle ORM** (Apache-2.0) — contracts, API, database.
+- **Vite**, **Vitest**, **Testing Library**, **Playwright**, **oxlint**, **TypeScript** — the
+  tools that build and prove it (development only, never shipped).
+- The **owner's own demo** — the pixel style, the icons, the avatars and the prototype are
+  generated from it, with drift checks in the gate.
+
+Anything this repo borrows in the future lands in the ledger and here, with its licence, in the
+same commit that adopts it.
