@@ -1180,3 +1180,14 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   round send centred. REQ-48: one Help window (topbar '?', Settings row, palette command) with
   four expandable sections holding every explanation and shortcut. Gates green: verify 10/10,
   smoke 93/93, web tests 107/107.
+- 11 October 2026 — Phase H completed: licences and gates. THIRD_PARTY.md superseded its
+  design-era status with the shipped reality (runtime: react/react-dom/zustand/zod/hono/
+  drizzle-orm/pglite/pg/tsx; dev set incl. the MPL note; first-party and adapted-idea record —
+  gestures are our own maths, icons generated from the owner's demo, PNG encoder original).
+  npm audit became verify step 11 (high/critical block, moderates named, offline skips
+  honestly); today clean with 4 named moderates in the drizzle-kit dev chain. CI
+  (.github/workflows/ci.yml) runs the same eleven-step gate on every push and PR — first run
+  caught a real portability bug (e2e scripts hard-coded /home/user paths; now derived from
+  import.meta.url) and, once fixed, went green in the cloud. The demo driver was revived too
+  (it predated the landing door; 10/10 again), and the README grew the Credits & licences
+  section (REQ-59). Gates: verify 11/11 green local AND in CI, smoke 93/93, demo file 10/10.
