@@ -280,32 +280,30 @@ function AgentEditor({ lang, open, agent, onClose }: {
             ))}
           </select>
         </label>
-        <div className="field full">
-          <span>{t('modelTitle', lang)}</span>
-          <div className="answer-row">
-            <label className="field">
-              <span className="sr-only">{t('providerLabel', lang)}</span>
+        {/* R9 (owner): the API section, audited — every piece says out loud what it is and
+            where it goes: provider, model id, key, and (for a custom endpoint) its base URL.
+            The placeholders are gone; the labels are the explanation. */}
+        <fieldset className="field full model-fieldset">
+          <legend>{t('modelTitle', lang)}</legend>
+          <div className="form-grid">
+            <label className="field">{t('providerLabel', lang)}
               <select value={conn.provider} data-team="provider"
                 onChange={(e) => setConn({ ...conn, provider: e.target.value as ModelConnection['provider'] })}>
                 {PROVIDERS.map((pr) => <option key={pr.id} value={pr.id}>{pr.label}</option>)}
               </select>
             </label>
-            <label className="field grow">
-              <span className="sr-only">{t('modelIdLabel', lang)}</span>
-              <input value={conn.model} placeholder={t('modelIdLabel', lang)} data-team="model-id"
+            <label className="field">{t('modelIdLabel', lang)}
+              <input value={conn.model} placeholder={conn.provider === 'custom' ? 'my-model' : conn.provider === 'openai' ? 'gpt-4o-mini' : conn.provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gemini-2.0-flash'}
+                data-team="model-id"
                 onChange={(e) => setConn({ ...conn, model: e.target.value })} />
             </label>
-          </div>
-          <div className="answer-row">
-            <label className="field grow">
-              <span className="sr-only">{t('keyLabel', lang)}</span>
-              <input type="password" value={conn.key} placeholder={t('keyLabel', lang)} data-team="model-key"
+            <label className="field full">{t('keyLabel', lang)}
+              <input type="password" value={conn.key} data-team="model-key"
                 autoComplete="off" onChange={(e) => setConn({ ...conn, key: e.target.value })} />
             </label>
             {conn.provider === 'custom' ? (
-              <label className="field grow">
-                <span className="sr-only">{t('baseUrlLabel', lang)}</span>
-                <input value={conn.baseUrl ?? ''} placeholder={t('baseUrlLabel', lang)} data-team="model-base"
+              <label className="field full">{t('baseUrlLabel', lang)}
+                <input value={conn.baseUrl ?? ''} placeholder="https://…/v1" data-team="model-base"
                   onChange={(e) => setConn({ ...conn, baseUrl: e.target.value })} />
               </label>
             ) : null}
@@ -325,7 +323,7 @@ function AgentEditor({ lang, open, agent, onClose }: {
             ) : null}
           </div>
           <span className="small dim">{t('modelNote', lang)}</span>
-        </div>
+        </fieldset>
         {error ? <p className="field-error full" data-team="error" role="alert">{error}</p> : null}
       </div> : null}
     </Dialog>

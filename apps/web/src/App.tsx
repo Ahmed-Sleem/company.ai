@@ -88,7 +88,8 @@ export function App() {
   const introDone = useStore((s) => s.introDone);
   const introDraft = useStore((s) => s.introDraft);
   const chooseDemo = useStore((s) => s.chooseDemo);
-  const [starting, setStarting] = useState(false);  /** R8: the boot right after "New company" skips the picker and opens the wizard. */
+  const [starting, setStarting] = useState(false);
+  /** R8: the boot right after "New company" skips the picker and opens the wizard. */
   const [freshStudio] = useState(consumePendingNew);
   /** REQ-41: the landing is the front door on EVERY fresh load. Passing it lives in memory
       only (the store keeps it out of the save on purpose), so a reload meets the door again —
@@ -137,12 +138,6 @@ export function App() {
     if (introDone && !demoMode && company.trim() !== '') rememberStudio(company.trim());
   }, [introDone, demoMode, company]);
 
-  /** R8: the device remembers every company — the active one is re-recorded as its name
-      settles (boot, rename, wizard finish), so the landing's list is always honest. */
-  const demoMode = useStore((s) => s.demoMode);
-  useEffect(() => {
-    if (introDone && !demoMode && company.trim() !== '') rememberStudio(company.trim());
-  }, [introDone, demoMode, company]);
 
   /** REQ-39 (owner, sixth round): a contracted rail is a strip of labels — it never holds an
       open menu, and the company button below is inert until the rail expands. */
@@ -256,9 +251,6 @@ export function App() {
 
   // A forced state (?state=…) is the QA door — it looks straight at the shell's states and
   // never meets the landing.
-  /** R8: the boot right after "New company" skips the picker and opens the wizard. */
-  const [freshStudio] = useState(consumePendingNew);
-
   if ((!introDone || !doorPassed) && !forcedState) {
     const toggleLang = () => setLang(lang === 'en' ? 'ar' : 'en');
     return starting || freshStudio ? (

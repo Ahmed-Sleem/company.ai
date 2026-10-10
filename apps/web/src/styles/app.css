@@ -497,11 +497,16 @@ h3 { font-size: var(--base); }
    The demo's `form-grid` inside its dialog: two columns, sixteen-pixel gutters, a label above each
    control, and its own control treatment (`min-height: var(--control)`, one border, no shadow). */
 .field { display: flex; flex-direction: column; gap: var(--s2); font-size: var(--sm); color: var(--muted); min-inline-size: 0; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
-.form-grid .full { grid-column: 1 / -1; }
-.form-grid input,
-.form-grid select,
-.form-grid textarea {
+/* R9 (owner): ONE form language, defined exactly once. Any form container — the task dialog's
+   .form-grid, the employee dialog and the new-company wizard's .team-form — gets the same
+   two-column grid and the same centred, bordered, dark text boxes. A new form only has to
+   carry one of these classes to look like all the others. */
+.form-grid,
+.team-form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); align-items: start; }
+:is(.form-grid, .team-form) .full { grid-column: 1 / -1; }
+:is(.form-grid, .team-form) input,
+:is(.form-grid, .team-form) select,
+:is(.form-grid, .team-form) textarea {
   font: inherit;
   color: var(--text);
   background: var(--bg);
@@ -512,13 +517,17 @@ h3 { font-size: var(--base); }
   min-inline-size: 0;
   inline-size: 100%;
 }
-.form-grid textarea { resize: vertical; }
-.form-grid input::placeholder,
-.form-grid textarea::placeholder { color: var(--dim); }
-.form-grid :focus-visible { outline: var(--ring); outline-offset: var(--app-notch); }
+:is(.form-grid, .team-form) textarea { resize: vertical; }
+:is(.form-grid, .team-form) input::placeholder,
+:is(.form-grid, .team-form) textarea::placeholder { color: var(--dim); }
+:is(.form-grid, .team-form) :focus-visible { outline: var(--ring); outline-offset: var(--app-notch); }
+/* The employee dialog's model & API frame — a labelled box around its own inner grid. */
+.model-fieldset { border: var(--app-hair) solid var(--line); padding: var(--s4); margin: 0; display: grid; gap: var(--s3); }
+.model-fieldset legend { padding-inline: var(--s2); font-size: var(--sm); font-weight: 700; color: var(--text); }
 
 @media (max-width: 540px) {
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid,
+  .team-form { grid-template-columns: 1fr; }
 }
 
 /* ── the palette control (Settings → Appearance) ─────────────────────────────────────────────
@@ -935,9 +944,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   .intro-main { padding: var(--s4); }
   .answer-row { flex-direction: column; align-items: stretch; }
 }
-/* REQ-45 (owner, seventh round): the employee form is the task dialog's form language —
-   it carries .form-grid too, so its fields are the same dark boxes on the same grid. */
-.team-form.form-grid { align-items: start; }
+
 .team-form .field-error { color: var(--danger); font-size: var(--sm); margin: 0; }
 .portrait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--app-portrait-cell), 1fr)); gap: var(--s2); max-block-size: var(--app-portrait-max); overflow-y: auto; padding: var(--s1); background: var(--raised); border: var(--app-hair) solid var(--soft); }
 .portrait-grid button { background: var(--surface); border: var(--app-hair) solid var(--soft); padding: var(--app-portrait-pad); display: flex; align-items: center; justify-content: center; }
