@@ -69,8 +69,10 @@ async function waitFor(url, timeoutMs = 30_000) {
 }
 
 /** The visitor's save, read out of the browser. This is the database now. */
+// The visitor's own save; during a demo session there is none, so the check falls back to the
+// demo's throwaway key (R11) — the visitor's real save is never read from the demo's scribbles.
 const readSave = (target) => target.evaluate(() => {
-  const raw = localStorage.getItem('company.ai.save.v1');
+  const raw = localStorage.getItem('company.ai.save.v1') ?? localStorage.getItem('company.ai.demo.v1');
   return raw ? JSON.parse(raw).state : null;
 });
 
@@ -101,9 +103,16 @@ try {
 
   /** Every navigation walks back through the landing door like a real visitor would —
       REQ-41 made the door the front door of every fresh load. */
-  const openDoor = async (target) => {
+  // R11: the demo leaves no save, so once the suite has taken the demo door, every later
+  // navigation must take it again — but the very first visit WANTS the landing to be there.
+  let demoEntered = false;
+  const openDoor = async (target, options = {}) => {
     await page.goto(target, { waitUntil: 'networkidle' });
     if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
+    else if ((options.allowDemo || demoEntered) && await page.$('[data-landing=demo]')) {
+      await page.click('[data-landing=demo]');
+      demoEntered = true;
+    }
   };
   await openDoor(`http://127.0.0.1:${WEB_PORT}/`);
 
@@ -113,7 +122,23 @@ try {
   await page.waitForSelector('.landing');
   check('a brand-new visitor meets the landing page before the product', true, 'landing shown');
   await page.click('[data-landing=demo]');
+  demoEntered = true;
   await page.waitForSelector('.sidebar');
+
+  // R11: the product page's sections are doors — each one opens the demo inside its room.
+  {
+    await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.landing');
+    const see = await page.locator('[data-landing=see-demo]').count();
+    check('every landing section leads somewhere — the demo doors (R11)', see >= 10, `${see} doors`);
+    await page.locator('[data-landing=see-demo]').first().click();
+    await page.waitForSelector('.sidebar');
+    check('a section door drops the visitor in the room it describes (R11)',
+      (await page.evaluate(() => location.hash)) === '#team');
+    await page.goto(`http://127.0.0.1:${WEB_PORT}/`, { waitUntil: 'networkidle' });
+    if (await page.$('[data-landing=demo]')) { await page.click('[data-landing=demo]'); demoEntered = true; }
+    await page.waitForSelector('.sidebar');
+  }
 
   // 1 — shell
   const navIds = await page.$$eval('[data-nav]', (nodes) => nodes.map((n) => n.getAttribute('data-nav')));
@@ -135,12 +160,36 @@ try {
 
   // REQ-41 (owner, sixth round): the landing is the front door on EVERY fresh load — and one
   // click gives the studio back, exactly where it was left.
+  // R11 (owner, eleventh round) — but the DEMO is a showroom: it leaves no save, so a reload
+  // greets a fresh visitor; the resume door belongs to the visitor's own companies (checked
+  // later with Nile Pixels).
   await page.reload({ waitUntil: 'networkidle' });
-  const resumeDoor = await page.$('[data-landing=open]');
-  check('the landing is the front door on every fresh load, offering the studio back',
-    resumeDoor !== null);
-  if (resumeDoor) await page.click('[data-landing=open]');
+  const demoResume = await page.$('[data-landing=open]');
+  check('the demo leaves nothing behind — reload greets a fresh visitor, not a resume door (R11)',
+    demoResume === null);
+  await page.click('[data-landing=demo]');
+  demoEntered = true;
   await page.waitForSelector('.sidebar');
+  const demoTasksBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('company.ai.save.v1') ?? 'null') === null);
+  check('and no save file appeared while the demo ran (R11)', demoTasksBefore === true);
+
+  // R11: the comms column carries its own search, fixed at the top, filtering as you type.
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#comms`, { allowDemo: true });
+  await page.waitForSelector('[data-comms-search]');
+  const allMates = await page.locator('.threads .thread').count();
+  await page.fill('[data-comms-search]', 'Aria');
+  await page.waitForFunction((n) => document.querySelectorAll('.threads .thread').length === n, 1);
+  check('the teammates search filters the column as you type (R11)', allMates > 1);
+  await page.fill('[data-comms-search]', 'zzz-nobody');
+  await page.waitForSelector('.col-search-none');
+  check('and says so plainly when nobody matches (R11)', true);
+  await page.fill('[data-comms-search]', '');
+
+  // R11: the studio clock says in words whether the studio is on the clock.
+  await page.click('[data-nav=world]');
+  await page.waitForSelector('[data-clock-state]');
+  const clockState = await page.textContent('[data-clock-state]');
+  check('the clock carries a work/rest indicator (R11)', (clockState ?? '').length > 2, clockState ?? '');
 
   // REQ-37: search is typed straight into the topbar; results hang under the field; no dialog.
   // REQ-44 (seventh round): search is the command palette — the topbar button opens it,
@@ -346,10 +395,11 @@ try {
     await page.evaluate((value) => localStorage.setItem('company-os.theme', value), theme);
     await page.reload({ waitUntil: 'networkidle' });
     if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
+    else if (await page.$('[data-landing=demo]')) { await page.click('[data-landing=demo]'); demoEntered = true; }
     await page.waitForSelector('.palette-option');
-  };
+  }; // setTheme runs before any user save exists — the demo door is the way in (R11)
 
-  await openDoor(`http://127.0.0.1:${WEB_PORT}/#settings`);
+  await openDoor(`http://127.0.0.1:${WEB_PORT}/#settings`, { allowDemo: true });
   await page.waitForSelector('.palette-option', { timeout: 10_000 });
   const paletteNames = await page.$$eval('.palette-option', (nodes) => nodes.map((n) => n.textContent?.trim()));
   // Changed 2026-10-06: the group now ends with the custom accent, which is an app feature rather
@@ -808,17 +858,22 @@ try {
     await page.click('[data-team=save]');
     await page.waitForFunction((n) => document.querySelectorAll('.team-card').length === n, before + 1);
     const added = await page.evaluate(() => {
-      const a = JSON.parse(localStorage.getItem('company.ai.save.v1')).state.agents;
+      const a = JSON.parse(localStorage.getItem('company.ai.save.v1') ?? localStorage.getItem('company.ai.demo.v1')).state.agents;
       return a[a.length - 1];
     });
     check('a typed-in teammate joins the roster with the picked portrait and a save-given id',
       added.name === 'Nour' && added.role === 'Quality engineer' && added.avatar === 12 && added.id === 'p-new-1',
       `${added.id} ${added.name} avatar ${added.avatar}`);
+    // R11 (owner): the demo is a showroom — a reload hands it back fresh. The typed-in
+    // teammate is gone by design; what must survive a reload is the visitor's own company,
+    // which 5j below still proves.
     await page.reload({ waitUntil: 'networkidle' });
-    if (await page.$('[data-landing=open]')) await page.click('[data-landing=open]');
+    check('reload hands the showroom back fresh — no resume door, no leftovers (R11)',
+      (await page.$('[data-landing=open]')) === null);
+    await page.click('[data-landing=demo]');
     await page.waitForSelector('.team-card');
-    check('the typed-in teammate survives a reload',
-      (await page.textContent('.roster'))?.includes('Nour') ?? false);
+    check('a re-entered demo is the pristine company again — Nour is gone (R11)',
+      !((await page.textContent('.roster'))?.includes('Nour') ?? true));
     // an existing teammate opens the same editor, pre-filled, and the change lands in the save
     await page.locator('.team-card').first().click();
     await page.waitForSelector('[data-team=edit]');
@@ -846,12 +901,12 @@ try {
       ((await page.textContent('[data-team=test-result]')) ?? '').length > 3);
     await page.click('[data-team=save]');
     const conn = await page.evaluate(() => {
-      const a = JSON.parse(localStorage.getItem('company.ai.save.v1')).state.agents[0];
+      const a = JSON.parse(localStorage.getItem('company.ai.save.v1') ?? localStorage.getItem('company.ai.demo.v1')).state.agents[0];
       return a.model?.provider;
     });
     check('the connection is saved on the person, in the visitor’s own save', conn === 'anthropic', String(conn));
     // hand the next run a clean save
-    await page.evaluate(() => localStorage.removeItem('company.ai.save.v1'));
+    await page.evaluate(() => { localStorage.removeItem('company.ai.save.v1'); localStorage.removeItem('company.ai.demo.v1'); });
   }
 
   // 5j — Phase D, the owner's own words: "I open it, I don't see any landing page or intro,
@@ -898,7 +953,7 @@ try {
     await page.click('[data-intro=finish]');
     await page.waitForSelector('.sidebar');
     const mine = await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('company.ai.save.v1')).state;
+      const s = JSON.parse(localStorage.getItem('company.ai.save.v1') ?? localStorage.getItem('company.ai.demo.v1')).state;
       return { name: s.company.name, agents: s.agents.length, tasks: s.tasks.length, introDone: s.introDone };
     });
     check('finishing the wizard starts MY company from scratch — not the hard-coded demo',

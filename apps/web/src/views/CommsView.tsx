@@ -44,11 +44,20 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  /** R11 (owner): a plain search box, fixed at the top of the teammates column. */
+  const [query, setQuery] = useState('');
   const logRef = useRef<HTMLDivElement>(null);
 
   const state: DataStateKind = forcedState && forcedState !== 'default' ? forcedState : 'default';
 
-  const current = selected ?? threads[0]?.agentId ?? agents[0]?.id ?? null;
+  const shown = agents.filter((a) => {
+    const q = query.trim().toLowerCase();
+    if (q === '') return true;
+    return [localized(a.name, a.nameAr, lang), a.name, a.nameAr ?? '', localized(a.role, a.roleAr, lang), a.role]
+      .some((text) => text.toLowerCase().includes(q));
+  });
+
+  const current = selected ?? threads[0]?.agentId ?? shown[0]?.id ?? agents[0]?.id ?? null;
   const agent = agents.find((a) => a.id === current) ?? null;
   const thread = threads.find((th) => th.agentId === current) ?? null;
 
@@ -103,7 +112,14 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
           <div className="chat-layout">
             <aside className="threads" aria-label={t('chatTeammates', lang)}>
               <p className="eyebrow">{t('chatTeammates', lang)}</p>
-              {agents.map((a) => {
+              <div className="col-search-wrap">
+                <Icon name="search" />
+                <input className="col-search" data-comms-search value={query}
+                  placeholder={t('commsSearch', lang)} aria-label={t('commsSearch', lang)}
+                  onChange={(e) => setQuery(e.target.value)} />
+              </div>
+              {shown.length === 0 ? <p className="small dim col-search-none">{t('commsNoMatch', lang)}</p> : null}
+              {shown.map((a) => {
                 const th = threads.find((x) => x.agentId === a.id);
                 const active = a.id === current;
                 return (

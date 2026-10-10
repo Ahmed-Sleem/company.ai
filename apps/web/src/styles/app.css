@@ -61,6 +61,8 @@
   --app-intro-w:860px;
   --app-shot-w:260px;
   --app-landing-title:34px;
+  --app-landing-title-phone:27px;
+  --app-landing-cta-phone:25px;
   --app-clock:52px;
   --app-bubble-w:160px;
   --app-chat-w:720px;
@@ -1073,6 +1075,12 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
   .landing-links { display: none; }
   .landing-grid, .landing-steps { grid-template-columns: 1fr; }
   .lvis-doors span { block-size: var(--land-door-low); }
+  /* the pixel title must stay inside a phone screen */
+  .landing-hero h1 { font-size: var(--app-landing-title-phone); max-inline-size: none; }
+  .landing-cta-final h2 { font-size: var(--app-landing-cta-phone); }
+  /* one-column scenes may let their props wrap instead of pushing the page wide */
+  .landing-grid .landing-block, .landing-steps .landing-block { min-inline-size: 0; }
+  .lvis { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   .lh-desk, .lh-bub, .lh-task b, .lh-task u, .lh-clock i, .lvis-chip, .lvis-letter,
@@ -1124,6 +1132,27 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .small { font-size: var(--sm); }
 .muted { color: var(--muted); }
 .dim { color: var(--dim); }
+
+/* R11: the teammates-column search — fixed at the top of the column, plain like the owner
+   likes it: a field and a glyph, no overlay, no hints, no blue. */
+.col-search-wrap { position: sticky; inset-block-start: 0; z-index: 2; display: flex; align-items: center; gap: var(--s2); padding: var(--s2); margin-block: calc(var(--s2) * -1) var(--s2); background: var(--bg); border-block-end: var(--app-hair) solid var(--soft); }
+.col-search-wrap .icon { color: var(--dim); flex: none; }
+.col-search { inline-size: 100%; background: var(--raised); border: var(--app-hair) solid var(--line); color: var(--text); font: inherit; font-size: var(--sm); padding: var(--s2) var(--s3); }
+.col-search::placeholder { color: var(--dim); }
+.col-search:focus-visible { outline: var(--app-stroke) solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.col-search-none { margin: 0; padding-inline: var(--s2); }
+/* R11: the clock says in words what the arcs already draw. */
+.studio-clock { display: inline-grid; justify-items: center; gap: var(--s1); }
+.studio-clock .clock-state { font-size: var(--xs); letter-spacing: var(--sh-mini-track); text-transform: uppercase; }
+.studio-clock .clock-state.work { color: var(--good); }
+.studio-clock .clock-state.rest { color: var(--dim); }
+/* R11: the landing's sections now lead somewhere — a quiet door into the demo. */
+.landing-seedemo { margin-block-start: var(--s3); }
+/* R11 spacing audit: any button that carries an icon keeps icon and label on one line —
+   the global `svg { display:block }` would otherwise stack them. */
+.btn:has(> svg) { display: inline-flex; align-items: center; gap: var(--s2); }
+/* the stacked-panel rhythm must not leak into grid rows (it shifted every card but the first) */
+.landing-grid .panel + .panel, .landing-steps .panel + .panel { margin-block-start: 0; }
 
 /* ── inbox as a deck of slides (owner C9) ────────────────────────────────────────────────── */
 /* REQ-48: the Help window — expandable sections, kbd chips, one place for everything. */

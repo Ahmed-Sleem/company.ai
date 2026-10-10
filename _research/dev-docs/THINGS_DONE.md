@@ -1227,3 +1227,18 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   lock) refuses a second open letter in words; an answered letter stays open but locked,
   "awaiting {name}", until the employee's next word in their thread closes it; and the inbox
   is live — letters appear and close without reloads. Tests 139/139, gate 11/11, demo 10/10.
+- 11 October 2026 — Round eleven: the showroom contract and the living landing. (1) The chat
+  page's teammates column got a fixed search at its top that filters by name or role in the
+  current language, with a plain no-match line — the owner's liked column style, untouched.
+  (2) The demo is now a SHOWROOM: every entry is pristine (choose/reset clear the throwaway
+  key), a demo session never writes the visitor's save — it scribbles on company.ai.demo.v1,
+  which hydration never reads, so reload greets a fresh visitor with no resume door while the
+  visitor's own companies persist exactly as before; the wizard's finish/reopen hands the pen
+  back to the real save. (3) The world clock carries a work/rest text state. (4) The landing's
+  inert sections now act: every feature card, deep dive and door offers "see it in the demo",
+  which enters the fresh demo and drops the visitor in the room the section describes; and the
+  spacing audit fixed what needed it — the stacked-panel rhythm no longer shifts grid cards,
+  icon+label buttons sit on one line, and the phone view lost its 4px overflow and clipped
+  title (tokenised). Tests 142/142, smoke 101/101, gate 11/11, demo 10/10; npm audit forced a
+  patched esbuild via root overrides (drizzle-kit's dead esm-loader chain), db:generate
+  verified.

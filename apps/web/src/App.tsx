@@ -263,6 +263,7 @@ export function App() {
         studios={listStudios()}
         onStart={() => setStarting(true)}
         onDemo={() => { chooseDemo(); enter(); }}
+        onDemoView={(view) => { chooseDemo(); enter(); location.hash = view; }}
         onOpen={enter}
         onOpenStudio={openStudio}
         onNewStudio={newStudio}

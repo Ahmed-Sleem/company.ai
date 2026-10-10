@@ -198,6 +198,12 @@ export interface SaveState {
   reopenIntro: () => void;
 }
 
+/** R11 (owner): the demo is a showroom, not a save. While a demo session runs, the visitor's
+    own save is never touched — the demo scribbles on a separate throwaway key that hydration
+    never reads, so the demo never resumes and the owner's companies stay exactly as they were. */
+let demoSession = false;
+const DEMO_KEY = 'company.ai.demo.v1';
+
 const fixture = () => ({
   savedAt: null as string | null,
   company: { description: '', answers: [] as { q: string; a: string }[], ...demo.company } as CompanyProfile,
@@ -218,9 +224,16 @@ export const useStore = create<SaveState>()(
   persist(
     (set, get) => ({
       ...fixture(),
-      load: (data) => set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() })),
+      load: (data) => {
+        demoSession = false;
+        set((state) => ({ ...state, ...data, savedAt: new Date().toISOString() }));
+      },
       passDoor: () => set({ doorPassed: true }),
-      reset: () => set(() => ({ ...fixture(), introDone: true, demoMode: true, doorPassed: true, savedAt: new Date().toISOString() })),
+      reset: () => {
+        demoSession = true;
+        try { localStorage.removeItem(DEMO_KEY); } catch { /* a blocked box has nothing to clear */ }
+        set(() => ({ ...fixture(), introDone: true, demoMode: true, doorPassed: true, savedAt: new Date().toISOString() }));
+      },
       patchTask: (id, patch) => {
         let out: TaskRow | null = null;
         set((state) => ({
@@ -284,6 +297,7 @@ export const useStore = create<SaveState>()(
       },
       setIntroDraft: (draft) => set(() => ({ introDraft: draft })),
       finishIntro: () => set((state) => {
+        demoSession = false; // graduating from the demo hands the pen back to the visitor's own save
         const draft = state.introDraft;
         if (!draft) return { introDone: true, demoMode: false, introDraft: null };
         // Draft people become real ones; the save numbers them the way it numbers everyone
@@ -336,8 +350,14 @@ export const useStore = create<SaveState>()(
           introDraft: null,
         };
       }),
-      chooseDemo: () => set((state) => ({ ...state, introDone: true, demoMode: true, introDraft: null, savedAt: new Date().toISOString() })),
+      chooseDemo: () => {
+        // R11: the demo is FRESH on every entry — whatever a visitor broke last time is gone.
+        demoSession = true;
+        try { localStorage.removeItem(DEMO_KEY); } catch { /* a blocked box has nothing to clear */ }
+        set(() => ({ ...fixture(), introDone: true, demoMode: true, introDraft: null, doorPassed: true, savedAt: new Date().toISOString() }));
+      },
       reopenIntro: () => set((state) => {
+        demoSession = false; // the wizard reopened over the demo means this visitor means business
         const draftId = new Map<string, string>();
         state.agents.forEach((a, i) => draftId.set(a.id, `d-${i + 1}`));
         return {
@@ -471,7 +491,16 @@ export const useStore = create<SaveState>()(
     {
       name: 'company.ai.save.v1',
       version: 3,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (name) => { try { return localStorage.getItem(name); } catch { return null; } },
+        setItem: (name, value) => {
+          try { localStorage.setItem(demoSession ? DEMO_KEY : name, value); } catch { /* a blocked box keeps the session in memory */ }
+        },
+        removeItem: (name) => {
+          if (demoSession) return;
+          try { localStorage.removeItem(name); localStorage.removeItem(DEMO_KEY); } catch { /* nothing to do */ }
+        },
+      })),
       // v1 → v2: the company grew a profile, and the intro arrived. Anyone who already has a
       // save has been through the front door the long way — let them in without the wizard.
       // v2 → v3: every person grew a model connection slot (REQ-18); old saves get an empty one.

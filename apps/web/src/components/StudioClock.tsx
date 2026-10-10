@@ -7,7 +7,8 @@
  * from the top, and each arc carries its own span so the large-arc flag can never lie.
  */
 import { useEffect, useState } from 'react';
-import { readWorkHours } from '../lib/schedule';
+import { readWorkHours, isWorkTime } from '../lib/schedule';
+import { t, type Lang } from '../lib/i18n';
 
 const C = 34; // the viewBox centre
 const R = 26; // the ring radius
@@ -34,7 +35,7 @@ const tick = (hour: number) => {
   return { x0, y0, x1, y1 };
 };
 
-export function StudioClock({ label }: { label: string }) {
+export function StudioClock({ label, lang }: { label: string; lang: Lang }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -58,6 +59,10 @@ export function StudioClock({ label }: { label: string }) {
         <circle className="clock-pin" cx={C} cy={C} r={2.5} />
       </svg>
       <small>{`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`}</small>
+      {/* R11 (owner): the clock says in words whether the studio is on the clock or off it. */}
+      <small className={`clock-state ${isWorkTime(now) ? 'work' : 'rest'}`} data-clock-state={isWorkTime(now) ? 'work' : 'rest'}>
+        {isWorkTime(now) ? t('clockWork', lang) : t('clockRest', lang)}
+      </small>
     </span>
   );
 }

@@ -37,6 +37,12 @@ export const STRINGS = {
   mailMailTag: { en: 'deliverable', ar: 'تسليم' },
   mailAwaiting: { en: 'awaiting {name}', ar: 'بانتظار {name}' },
   mailYouSaid: { en: 'You replied:', ar: 'رددتَ:' },
+  /* R11 (owner, eleventh round): the comms search, the clock's words, the demo deep links. */
+  commsSearch: { en: 'Search teammates…', ar: 'ابحث عن الزملاء…' },
+  commsNoMatch: { en: 'No teammate matches.', ar: 'لا يوجد زميل مطابق.' },
+  clockWork: { en: 'Work hours', ar: 'ساعات العمل' },
+  clockRest: { en: 'Rest hours', ar: 'ساعات الراحة' },
+  landSeeDemo: { en: 'See it in the demo', ar: 'شاهده في العرض التجريبي' },
   mailLockNote: { en: 'The thread answers next — this letter closes when your employee replies.', ar: 'المحادثة تجيب تاليًا — تُغلق هذه الرسالة عندما يرد موظفك.' },
   /* REQ-52: the one-root tree, explained where it is refused. */
   teamErrSecondRoot: { en: 'One root only — this company already has its top manager. Choose who this person reports to.', ar: 'جذر واحد فقط — لدى الشركة مديرها الأعلى بالفعل. اختر لمن يُقدّم هذا الشخص تقاريره.' },

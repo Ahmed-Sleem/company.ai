@@ -768,7 +768,7 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
               data-world="live" aria-pressed={liveOn} onClick={() => setLive((on) => !on)}>
               <span className="live-dot" aria-hidden="true" />{t('live', lang)}
             </button>
-            <StudioClock label={t('clockLabel', lang)} />
+            <StudioClock label={t('clockLabel', lang)} lang={lang} />
           </div>
           <span className="world-scale" data-world="scale">{`${Math.round(camera.scale * 100)}%`}</span>
           <div

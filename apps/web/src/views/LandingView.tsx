@@ -98,6 +98,7 @@ export function LandingView({
   onOpenStudio,
   onNewStudio,
   onLanguage,
+  onDemoView,
 }: {
   lang: Lang;
   /** A draft from an earlier visit turns the start button into "continue where I left off". */
@@ -112,6 +113,8 @@ export function LandingView({
   onOpenStudio: (id: string) => void;
   onNewStudio: () => void;
   onLanguage: () => void;
+  /** R11: every section leads somewhere — the demo, dropped into the room it describes. */
+  onDemoView: (view: string) => void;
 }) {
   /** Start with companies on the device shows the picker first; without, it starts.
       With no active save at all (a cleared or brand-new browser) there is nothing to pick
@@ -123,10 +126,10 @@ export function LandingView({
   const startLabel = resumable && !studio ? t('landingResume', lang) : studios.length > 0 ? t('landingStart', lang) : resumable ? t('landingResume', lang) : t('landingStart', lang);
 
   const deepDives = [
-    { id: 'tools', title: t('landBandToolsT', lang), body: t('landBandToolsB', lang), lines: [t('landBandToolsL1', lang), t('landBandToolsL2', lang), t('landBandToolsL3', lang)], scene: <ToolScene lang={lang} /> },
-    { id: 'mail', title: t('landBandMailT', lang), body: t('landBandMailB', lang), lines: [t('landBandMailL1', lang), t('landBandMailL2', lang), t('landBandMailL3', lang)], scene: <MailScene lang={lang} /> },
-    { id: 'world', title: t('landBandWorldT', lang), body: t('landBandWorldB', lang), lines: [t('landBandWorldL1', lang), t('landBandWorldL2', lang), t('landBandWorldL3', lang)], scene: <FloorScene lang={lang} /> },
-    { id: 'models', title: t('landBandModelsT', lang), body: t('landBandModelsB', lang), lines: [t('landBandModelsL1', lang), t('landBandModelsL2', lang), t('landBandModelsL3', lang)], scene: <DoorsScene lang={lang} /> },
+    { id: 'tools', view: 'tasks', title: t('landBandToolsT', lang), body: t('landBandToolsB', lang), lines: [t('landBandToolsL1', lang), t('landBandToolsL2', lang), t('landBandToolsL3', lang)], scene: <ToolScene lang={lang} /> },
+    { id: 'mail', view: 'inbox', title: t('landBandMailT', lang), body: t('landBandMailB', lang), lines: [t('landBandMailL1', lang), t('landBandMailL2', lang), t('landBandMailL3', lang)], scene: <MailScene lang={lang} /> },
+    { id: 'world', view: 'world', title: t('landBandWorldT', lang), body: t('landBandWorldB', lang), lines: [t('landBandWorldL1', lang), t('landBandWorldL2', lang), t('landBandWorldL3', lang)], scene: <FloorScene lang={lang} /> },
+    { id: 'models', view: 'team', title: t('landBandModelsT', lang), body: t('landBandModelsB', lang), lines: [t('landBandModelsL1', lang), t('landBandModelsL2', lang), t('landBandModelsL3', lang)], scene: <DoorsScene lang={lang} /> },
   ] as const;
 
   const faqs = [
@@ -230,11 +233,11 @@ export function LandingView({
             <div className="lvis" aria-hidden="true">
               <div className="lvis-doors mini"><span>O</span><span>A</span><span>G</span><span>★</span></div>
             </div>
-            <div><h2>{t('landFeatModelsT', lang)}</h2><p>{t('landFeatModelsB', lang)}</p></div>
+            <div><h2>{t('landFeatModelsT', lang)}</h2><p>{t('landFeatModelsB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('team')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
           <article className="landing-block panel">
             <ToolScene lang={lang} />
-            <div><h2>{t('landFeatToolsT', lang)}</h2><p>{t('landFeatToolsB', lang)}</p></div>
+            <div><h2>{t('landFeatToolsT', lang)}</h2><p>{t('landFeatToolsB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('tasks')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
           <article className="landing-block panel">
             <div className="lvis" aria-hidden="true">
@@ -243,22 +246,22 @@ export function LandingView({
               <div className="lvis-mate c2"><span /><small>B</small></div>
               <div className="lvis-mate c3"><span /><small>C</small></div>
             </div>
-            <div><h2>{t('landFeatTreeT', lang)}</h2><p>{t('landFeatTreeB', lang)}</p></div>
+            <div><h2>{t('landFeatTreeT', lang)}</h2><p>{t('landFeatTreeB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('network')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
           <article className="landing-block panel">
             <MailScene lang={lang} />
-            <div><h2>{t('landFeatMailT', lang)}</h2><p>{t('landFeatMailB', lang)}</p></div>
+            <div><h2>{t('landFeatMailT', lang)}</h2><p>{t('landFeatMailB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('inbox')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
           <article className="landing-block panel">
             <FloorScene lang={lang} />
-            <div><h2>{t('landFeatWorldT', lang)}</h2><p>{t('landFeatWorldB', lang)}</p></div>
+            <div><h2>{t('landFeatWorldT', lang)}</h2><p>{t('landFeatWorldB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('world')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
           <article className="landing-block panel">
             <div className="lvis" aria-hidden="true">
               <div className="lvis-check"><i /><b>{lang === 'ar' ? 'جهازك' : 'Your device'}</b></div>
               <div className="lvis-pill">0 {lang === 'ar' ? 'خوادم' : 'servers'}</div>
             </div>
-            <div><h2>{t('landFeatLocalT', lang)}</h2><p>{t('landFeatLocalB', lang)}</p></div>
+            <div><h2>{t('landFeatLocalT', lang)}</h2><p>{t('landFeatLocalB', lang)}</p><button type="button" className="btn ghost landing-seedemo" data-landing="see-demo" onClick={() => onDemoView('settings')}><Icon name="play" />{t('landSeeDemo', lang)}</button></div>
           </article>
         </div>
       </section>
@@ -306,6 +309,10 @@ export function LandingView({
               <h2>{dive.title}</h2>
               <p>{dive.body}</p>
               <ul>{dive.lines.map((line) => <li key={line}><Icon name="check" />{line}</li>)}</ul>
+              <button type="button" className="btn ghost landing-seedemo" data-landing="see-demo"
+                onClick={() => onDemoView(dive.view)}>
+                <Icon name="play" />{t('landSeeDemo', lang)}
+              </button>
             </div>
           </article>
         ))}
