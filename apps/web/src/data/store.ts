@@ -132,7 +132,7 @@ export interface IntroDraft {
   options: { theme: string; fx: boolean };
 }
 
-interface SaveState {
+export interface SaveState {
   company: CompanyProfile;
   /** R8: true while the labelled demo company is the one on screen — the landing's
       company list must only ever contain companies the owner actually created. */
@@ -165,7 +165,7 @@ interface SaveState {
     name: string; nameAr: string | null; role: string; roleAr: string | null;
     focus: string | null; focusAr: string | null; avatar: number; managerId: string | null;
     model: ModelConnection | null;
-  }) => AgentRow;
+  }) => AgentRow | null;
   addTask: (task: TaskRow) => void;
   addMessage: (threadId: string, from: string, text: string) => void;
   startThread: (agentId: string, title: string) => void;
@@ -219,7 +219,25 @@ export const useStore = create<SaveState>()(
         }));
         return out;
       },
+      /**
+       * REQ-52 (owner, ninth round): the hierarchy is a tree with ONE root — the root model at
+       * the top, everybody else descending. The store refuses a second root and refuses cycles
+       * here, at the data layer, so no screen can smuggle either in.
+       */
       patchAgent: (id, patch) => {
+        if ('managerId' in patch) {
+          const state = useStore.getState();
+          const next = patch.managerId ?? null;
+          if (next === null && state.agents.some((a) => a.managerId === null && a.id !== id)) return null;
+          let cursor: string | null = next;
+          const seen = new Set<string>();
+          while (cursor) {
+            if (cursor === id) return null; // cycle: the person would report into their own team
+            if (seen.has(cursor)) break;
+            seen.add(cursor);
+            cursor = state.agents.find((a) => a.id === cursor)?.managerId ?? null;
+          }
+        }
         let out: AgentRow | null = null;
         set((state) => ({
           savedAt: new Date().toISOString(),
@@ -232,6 +250,8 @@ export const useStore = create<SaveState>()(
         return out;
       },
       addAgent: (input) => {
+        // REQ-52: a new hire may be the root only while the company has none.
+        if (input.managerId === null && useStore.getState().agents.some((a) => a.managerId === null)) return null;
         // The save is the database, so it numbers the person from what it already holds —
         // no clock, no dice (namespace lock).
         const max = get().agents.reduce((m, a) => {

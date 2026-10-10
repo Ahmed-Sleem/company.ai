@@ -33,6 +33,9 @@ export const STRINGS = {
   mailReplyPlaceholder: { en: 'Write your answer…', ar: 'اكتب ردك…' },
   mailSend: { en: 'Send', ar: 'أرسل' },
   mailReadMore: { en: 'Read more', ar: 'اقرأ المزيد' },
+  /* REQ-52: the one-root tree, explained where it is refused. */
+  teamErrSecondRoot: { en: 'One root only — this company already has its top manager. Choose who this person reports to.', ar: 'جذر واحد فقط — لدى الشركة مديرها الأعلى بالفعل. اختر لمن يُقدّم هذا الشخص تقاريره.' },
+  teamErrCycle: { en: 'That would close a loop — nobody can report into their own team.', ar: 'هذا يغلق حلقة — لا يمكن أن يُقدّم أحد تقاريره لفريقه الخاص.' },
   /* R8 (owner): the landing is a full page that tells the whole story. */
   landWhatTitle: { en: 'What is company.ai?', ar: 'ما هو company.ai؟' },
   landWhatBody: { en: 'A company that runs in your browser, staffed by humans and AI employees together. You found it in a few questions, you hire the team, and the work moves on its own: tasks advance through their stages, your people talk in threads, and anything that needs your decision arrives in your inbox as a letter.', ar: 'شركة تعمل داخل متصفحك، فريقها من البشر وموظفي الذكاء الاصطناعي معًا. تؤسسها في أسئلة قليلة، وتوظّف الفريق، فيتحرك العمل بنفسه: المهام تتقدم عبر مراحلها، وفريقك يتحدث في محادثات، وكل ما يحتاج قرارك يصل إلى صندوقك رسالة.' },

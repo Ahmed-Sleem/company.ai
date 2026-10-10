@@ -78,13 +78,11 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     // Phase F: the teammate answers. With a key configured, their OWN provider answers, carrying
     // the company's system prompt (REQ-16); without one, the local voice keeps the studio alive.
     const state = useStore.getState();
-    const manager = state.agents.find((a) => a.id === agent.managerId);
     const conn = agent.model;
     const threadId = thread.id;
     const person = agent;
     if (conn && conn.key.trim() !== '' && conn.model.trim() !== '') {
-      const system = compileSystemPrompt(state.company, person,
-        manager ? localized(manager.name, manager.nameAr, lang) : null);
+      const system = compileSystemPrompt(state, person, lang);
       chatCompletion(conn, system, text)
         .then((answer) => addMessage(threadId, person.id, answer))
         .catch(() => addMessage(threadId, person.id, localVoice(person, lang)));

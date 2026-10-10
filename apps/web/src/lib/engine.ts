@@ -22,7 +22,10 @@ import { t, type Lang } from './i18n';
 import { isWorkTime } from './schedule';
 import { localized } from './format';
 import { compileSystemPrompt } from './prompt';
-import { chatCompletion, type ModelConnection } from './providers';
+import { chatCompletion, chatTurn, type ModelConnection, type Turn, type TurnReply } from './providers';
+import { APP_TOOLS } from './tools';
+import { runTool } from './toolrun';
+import type { AgentRow, TaskRow } from '../data/store';
 import { canTransition, type TaskStage } from '@company/contracts';
 
 /** The parsed shape of the contract — the only form a work report may take. */
@@ -125,14 +128,18 @@ async function providerCycle(taskId: string, agentId: string, conn: ModelConnect
   const task = state.tasks.find((x) => x.id === taskId);
   const owner = state.agents.find((a) => a.id === agentId);
   if (!task || !owner) return;
-  const manager = state.agents.find((a) => a.id === owner.managerId) ?? null;
-  const system = compileSystemPrompt(state.company, owner, manager ? localized(manager.name, manager.nameAr, lang) : null);
+  const system = compileSystemPrompt(state, owner, lang);
   const ask = [
     `Progress report for ${task.shortRef} — "${localized(task.title, task.titleAr, lang)}".`,
     `Right now the studio shows: stage ${task.stage}, ${task.progress}%.`,
     'Reply with your progress report in the exact JSON form your instructions define.',
   ].join('\n');
 
+  // REQ-53 (Phase I): the standard path first — the model is handed the tool registry and
+  // works through the tools. If the platform answers at all, this loop is the cycle.
+  if (await toolCycle(task, owner, conn, system, ask, lang)) return;
+
+  // Fallback: the original JSON contract, once more each way, then the local heartbeat.
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const reply = await chatCompletion(conn, system, attempt === 0 ? ask : `${ask}\n\nRemember: one JSON object only, no markdown, no commentary.`);
@@ -147,6 +154,57 @@ async function providerCycle(taskId: string, agentId: string, conn: ModelConnect
   }
   // Two failures: this cycle falls back to the heartbeat so work never stalls silently.
   localHeartbeat(taskId, lang);
+}
+
+/**
+ * The tool loop (REQ-53): the model gets the registry, calls tools, the engine executes them
+ * and feeds the results back — up to three rounds. Returns true when the cycle reported
+ * something (a tool ran, or the JSON fallback contract was honoured in text). Returns false
+ * only when the provider itself failed, so the caller's contract attempts still get their turn.
+ */
+async function toolCycle(
+  task: TaskRow,
+  owner: AgentRow,
+  conn: ModelConnection,
+  system: string,
+  ask: string,
+  lang: Lang,
+): Promise<boolean> {
+  const turns: Turn[] = [{ role: 'user', text: ask }];
+  for (let round = 0; round < 3; round += 1) {
+    let reply: TurnReply;
+    try {
+      reply = await chatTurn(conn, system, turns, APP_TOOLS);
+    } catch {
+      return false;
+    }
+    turns.push({ role: 'assistant', text: reply.text, toolCalls: reply.toolCalls });
+    if (reply.toolCalls.length === 0) {
+      // Text only: the JSON fallback contract still counts when the model used it.
+      const report = parseReport(reply.text);
+      if (!report) return false;
+      applyReport(task.id, report, lang);
+      return true;
+    }
+    for (const call of reply.toolCalls) {
+      const result = runTool(call, {
+        state: useStore.getState(),
+        caller: owner,
+        task,
+        lang,
+        // runTool has already checked the stage against the three legal words.
+        report: (input) => applyReport(task.id, {
+          progress: input.progress,
+          stage: input.stage as 'progress' | 'review' | 'done',
+          note: input.note,
+          ask: null,
+        }, lang),
+      });
+      turns.push({ role: 'tool', id: call.id, name: call.name, result });
+      if (call.name === 'update_progress') return true;
+    }
+  }
+  return false;
 }
 
 /** Write a parsed report: clamp it, keep the stage legal, post the model's own note. */

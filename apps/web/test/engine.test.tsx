@@ -11,7 +11,13 @@ import { chatCompletion } from '../src/lib/providers';
 
 vi.mock('../src/lib/providers', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/lib/providers')>();
-  return { ...actual, chatCompletion: vi.fn() };
+  // REQ-53: the engine tries the tool path first — here it is unavailable, so these tests
+  // exercise the JSON-contract fallback exactly as before. The tool path has its own file.
+  return {
+    ...actual,
+    chatCompletion: vi.fn(),
+    chatTurn: vi.fn(async () => { throw new Error('no tool support in this test'); }),
+  };
 });
 
 const reply = vi.mocked(chatCompletion);
@@ -75,7 +81,7 @@ describe('runTick — a real model does the reporting', () => {
     reply.mockResolvedValue('{"progress": 42, "stage": "progress", "note": "halfway there"}');
     const result = runTick('en', true);
     expect(result).toMatch(/^asked:/);
-    expect(reply).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(reply).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => {
       const task = useStore.getState().tasks[0]!;
       expect(task.progress).toBe(42);

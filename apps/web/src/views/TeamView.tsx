@@ -203,7 +203,11 @@ function AgentEditor({ lang, open, agent, onClose }: {
       setName(agent?.name ?? ''); setNameAr(agent?.nameAr ?? '');
       setRole(agent?.role ?? ''); setRoleAr(agent?.roleAr ?? '');
       setFocus(agent?.focus ?? ''); setAvatar(agent?.avatar ?? 0);
-      setManagerId(agent?.managerId ?? ''); setError(null);
+      // REQ-52: a new hire joins under the root the company already has; only the very
+      // first employee may stand at the top. Editing keeps the person's own place —
+      // the root's own `null` means "reports to the owner", never a default.
+      setManagerId(agent ? (agent.managerId ?? '') : (agents.find((a) => a.managerId === null)?.id ?? ''));
+      setError(null);
       setConn(agent?.model ?? { provider: 'openai', model: '', key: '', baseUrl: null });
       setTestRes(null); setTesting(false);
       setSeed(seed + 1);
@@ -213,6 +217,20 @@ function AgentEditor({ lang, open, agent, onClose }: {
   const save = () => {
     if (name.trim() === '') { setError(t('teamErrName', lang)); return; }
     if (role.trim() === '') { setError(t('teamErrRole', lang)); return; }
+    // REQ-52: one root, no loops — said here in words, and enforced again by the store.
+    if (managerId === '' && agents.some((a) => a.managerId === null && a.id !== agent?.id)) {
+      setError(t('teamErrSecondRoot', lang)); return;
+    }
+    if (managerId !== '' && agent) {
+      let cursor: string | null = managerId;
+      const seen = new Set<string>();
+      while (cursor) {
+        if (cursor === agent.id) { setError(t('teamErrCycle', lang)); return; }
+        if (seen.has(cursor)) break;
+        seen.add(cursor);
+        cursor = agents.find((a) => a.id === cursor)?.managerId ?? null;
+      }
+    }
     const fields = {
       name: name.trim(), nameAr: nameAr.trim() === '' ? null : nameAr.trim(),
       role: role.trim(), roleAr: roleAr.trim() === '' ? null : roleAr.trim(),

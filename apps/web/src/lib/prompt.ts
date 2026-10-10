@@ -1,43 +1,58 @@
 /**
  * REQ-16 — the company profile compiles into the models' system prompts, so a teammate that
  * talks to a real provider already knows the company the owner described: its name, what it
- * does, the owner's own answers, and who this person is inside it.
+ * does, the owner's own answers, who this person is inside it, and who the colleagues are.
+ *
+ * REQ-42 + REQ-53 (Phase I): the prompt also teaches the WORKING CONTRACT — the tools the app
+ * gives every model, declared in one registry (lib/tools.ts), and the JSON report that stands
+ * in when a platform attaches no tools. One contract, one parser, one place each.
  */
-import type { AgentRow, CompanyProfile } from '../data/store';
+import type { AgentRow, SaveState } from '../data/store';
+import type { Lang } from './i18n';
+import { localized } from './format';
+import { toolsPromptSection } from './tools';
 
-export function compileSystemPrompt(company: CompanyProfile, agent: AgentRow, managerName: string | null): string {
-  const lines = [
-    `You are ${agent.name}, ${agent.role} at ${company.name}.`,
-  ];
-  if (company.description.trim() !== '') lines.push(`About the company: ${company.description.trim()}`);
+export function compileSystemPrompt(save: SaveState, agent: AgentRow, lang: Lang): string {
+  const company = save.company;
+  const manager = agent.managerId ? (save.agents.find((a: AgentRow) => a.id === agent.managerId) ?? null) : null;
+  const name = localized(agent.name, agent.nameAr, lang);
+  const role = localized(agent.role, agent.roleAr, lang);
+  const managerName = manager ? localized(manager.name, manager.nameAr, lang) : null;
+
+  const lines: string[] = [];
+  lines.push(`You work at ${company.name}. Everything below is true of your company — act from it.`);
+  if (company.description.trim() !== '') lines.push(`What it does: ${company.description.trim()}`);
   for (const answer of company.answers) {
     if (answer.q.trim() !== '' && answer.a.trim() !== '') lines.push(`${answer.q.trim()} — ${answer.a.trim()}`);
   }
-  if (agent.focus) lines.push(`Your current focus: ${agent.focus}`);
-  lines.push(managerName ? `You report to ${managerName}.` : 'You report directly to the owner of the company.');
-  lines.push('Answer briefly, in character, as a teammate would in chat.');
-  lines.push(PROGRESS_CONTRACT);
+  lines.push('');
+  lines.push(IDENTITY(name, role, agent.focus ? localized(agent.focus, agent.focusAr, lang) : '', managerName));
+  const colleagues = save.agents.filter((a: AgentRow) => a.id !== agent.id);
+  if (colleagues.length > 0) {
+    lines.push(
+      `Your colleagues: ${colleagues
+        .map((c: AgentRow) => `${localized(c.name, c.nameAr, lang)} (${localized(c.role, c.roleAr, lang)})`)
+        .join(', ')}.`,
+    );
+  }
+  lines.push('');
+  lines.push(toolsPromptSection());
+  lines.push(STAGES);
+  lines.push('');
+  lines.push('In chat with a colleague or the owner, answer briefly, in character, as a teammate would.');
   return lines.join('\n');
 }
 
-/**
- * REQ-42 (owner, sixth round): the structured progress report, defined ONCE here and handed to
- * every model through its system prompt. Each engine cycle the model answers with one JSON
- * object; the engine parses exactly this shape (`parseReport` in lib/engine.ts). One contract,
- * one parser, one place each — the rule is centralisation.
- */
-export const PROGRESS_CONTRACT = [
-  'Progress reports: when you are asked for a progress report on a task, reply with ONE JSON',
-  'object and nothing else, exactly in this shape:',
-  '{"progress": <integer 0-100, your honest estimate of how much of the task is done>,',
-  ' "stage": "progress" | "review" | "done",',
-  ' "note": "<one short line: what you did this cycle, or what you need if you are blocked>",',
-  // REQ-46 (owner, seventh round): the user-facing ask — a letter to the owner's mailbox,
-  // answered with one of the offered options or with free text. Optional: most cycles have none.
-  ' "ask": { "question": "<one clear question for the owner>",',
-  '          "options": ["<short option>", "<short option>", ...] } }',
-  'The "ask" field is OPTIONAL — include it only when you need the owner to decide something',
-  'before you can continue; give two to five short options. No markdown fences, no commentary',
-  'around the object. If you are blocked, keep your current progress number, keep stage',
-  '"progress", explain in the note, and put the decision to the owner with an "ask".',
-].join('\n');
+function IDENTITY(name: string, role: string, focus: string, managerName: string | null): string {
+  const lines = [
+    `You are ${name}, the ${role}.`,
+    focus.trim() !== '' ? `Your current focus: ${focus.trim()}` : null,
+    managerName
+      ? `You report to ${managerName}. Keep them informed; they are the one your progress reaches first.`
+      : 'You report directly to the owner of the company.',
+  ].filter((line): line is string => line !== null);
+  return lines.join('\n');
+}
+
+const STAGES = `A task's stage only moves forward: progress -> review -> done. "review" means the
+work is finished and waiting for a human look; "done" means accepted and closed.`;
