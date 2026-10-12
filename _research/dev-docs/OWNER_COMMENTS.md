@@ -392,3 +392,11 @@ Comments (the work list):
   expand teh menu , please fix that" and "make sure all rules are followed … make sure the
   security is fine , everything is perfect" — shipped as REQ-63 plus the security pass; the
   audit ran Phase 3 (the shell).
+
+## 2026-10-12 — round eighteen, the four orchestration decisions (asked with options)
+
+* Desktop shell: **Tauri** (owner chose it over the Electron recommendation).
+* Online build: **"make the online thing only the demo, just the demo with the download link
+  to the app and so on"** — root URL = demo showroom + desktop download.
+* Sub-managers creating interface tasks: **No** — user + root only.
+* Manager notified when the owner chats their report directly: **Yes**.

@@ -4,15 +4,20 @@ The build order for the brief's orchestration system. Rule zero (owner): search,
 adapt existing repos, credit them in README §Credits — never rebuild what is maintained.
 Every phase ends gate-green + pushed + logged in THINGS_DONE.md.
 
-## Phase 0 — the owner's decisions (BLOCKER, asked this round)
+## Phase 0 — the owner's decisions (ANSWERED 2026-10-12, binding)
 
-1. **Desktop shell: Electron vs Tauri.** Recommendation: **Electron** — the entire TypeScript
-   engine, Dexie history, and web UI move unchanged; Node gives file tools + isolated-vm;
-   Tauri would force a Rust rewrite or sidecar of the engine we already have.
-2. **Keep the web build as the public showroom?** Recommendation: yes — the root URL the
-   owner watches keeps working; desktop adds the real workspace on top of the same code.
-3. **Sub-managers create interface tasks?** Assumed NO (brief §6: only user + root) — confirm.
-4. **Manager notified when the user chats an employee directly?** Assumed YES — confirm.
+1. **Desktop shell: TAURI** (owner's pick, over the Electron recommendation). Consequence,
+   accepted: the TypeScript engine stays in the webview UI; everything that needs the OS —
+   the company workspace folder, sandboxed code execution, background cycles — lives in the
+   Rust side. Code sandbox = **deno_core** (see research cycle 5), files = Rust commands.
+2. **The online build becomes the demo, only** (owner's words: "make the online thing only
+   the demo, just the demo with the download link to the app"). The root URL keeps the
+   labelled demo showroom and gains a download section for the desktop app; the wizard and
+   the real-company flow move into the desktop app. Landing copy updates accordingly.
+3. **Sub-managers do NOT create interface tasks** — only user + root (brief §6 stands).
+   Manager-assigned work still happens through the manager's own model decisions, flagged.
+4. **The manager IS notified** when the owner chats their report directly — the reporting
+   line stays informed; the manager's next cycle sees it in context.
 
 ## Phase 1 — orchestration truth (web-safe, no shell needed)
 
@@ -34,13 +39,21 @@ Every phase ends gate-green + pushed + logged in THINGS_DONE.md.
 - `search_history` tool: Phase 2a = Dexie keyword search (zero deps); Phase 2b (desktop) =
   embeddings. Research below picks the store.
 
-## Phase 3 — workspace, files, code execution (desktop-gated)
+## Phase 3 — workspace, files, code execution (Tauri side)
 
-Per-company folder under the app's userData; file tools (read/write/list) exposed as app
-tools; risky writes → mail approval (decision pipeline shipped this round already carries
-owner notes). Code execution: **isolated-vm** (V8 isolates; sub-ms startup, hard memory
-ceiling; `node:vm` is documented NOT a security boundary and vm2-style jails keep breaking —
-research cycle 1). Python stays out of scope until a real need appears.
+Per-company folder under the app's data dir; file tools (read/write/list) as Rust commands
+exposed to the webview engine; risky writes → mail approval (decision pipeline shipped this
+round already carries owner notes). Code execution: **deno_core** in the Rust process — one
+V8 isolate per code tool call, hard memory ceiling, no injected globals except our file
+bridge (research cycles 1 and 5; `node:vm` is documented NOT a security boundary and
+vm2-style jails keep breaking). Python stays out of scope until a real need appears.
+
+## Phase 5 — the online build becomes the showroom (owner decision 2)
+
+Root URL = landing + the labelled demo + a download section for the desktop app (links per
+OS, version from the release). The wizard/real-company entry points come off the web build
+when the first desktop release ships — not before, so the root URL the owner watches never
+serves a broken door.
 
 ## Phase 4 — settings completeness + safety
 
@@ -81,8 +94,17 @@ brief §10 (owner said GitHub-only "until the brief extends them" — the brief 
   pgvector ONLY as a derived search index inside the desktop workspace — rebuilding it from
   the diary must always be possible, so "never deleted by summarizing" stays literally true.
 
+### Cycle 5 — the Tauri-side sandbox (2026-10-12, after the owner chose Tauri)
+- **deno_core** (crates.io, MIT, 0.412.0 Sep 2026, ~650k downloads/month, powers Deno):
+  `JsRuntime` = a V8 isolate with an event loop; Rust functions injected via the
+  `extension!` macro are the ONLY bridge — exactly the isolated-vm security story, natively
+  in Rust, no Node sidecar to ship. DECISION: deno_core for the code tool; credit denoland
+  in README alongside the MCP SDK.
+
 ## Definition of done (brief §15, restated)
 
 No mocks anywhere outside labelled demoMode · every employee answers from its own real key or
 says honestly that it cannot · routing, memory, files, sandbox, approvals all real · gate
-green · README credits every borrowed repo · owner's four decisions implemented as answered.
+green · README credits every borrowed repo · the owner's four decisions implemented exactly
+as answered: Tauri shell, online = demo + download only, tasks from user + root only,
+managers informed of direct chats.
