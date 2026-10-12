@@ -102,6 +102,10 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       talking → meeting room. No energy, no forced rest, nothing to fall out of sync. */
   const [tickAt, setTickAt] = useState(() => Date.now());
   const [meeting, setMeeting] = useState<{ a: string; b: string } | null>(null);
+  // R18 (owner): a message between two people is a glow that travels the wire.
+  const [glow, setGlow] = useState<{ id: number; from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
+  const lastWire = useRef<string | null>(null);
+  const threadsForGlow = useStore((s) => s.threads);
   const [walkers, setWalkers] = useState<{
     key: string; agentId: string; avatar: number | null;
     from: { x: number; y: number }; to: { x: number; y: number }; pos: 'from' | 'to';
@@ -168,6 +172,21 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
     const seat = seats.find((each) => each.agent?.id === id);
     return seat?.agent ? localized(seat.agent.name, seat.agent.nameAr, lang) : '';
   }, [seats, lang]);
+
+  useEffect(() => {
+    for (const th of threadsForGlow) {
+      const last = th.messages[th.messages.length - 1];
+      if (!last || last.from === 'you') continue;
+      if (lastWire.current === null) { lastWire.current = last.id; continue; }
+      if (last.id === lastWire.current) continue;
+      lastWire.current = last.id;
+      if (last.from === th.agentId) continue;
+      const fromSeat = seats.find((x) => x.agent?.id === last.from);
+      const toSeat = seats.find((x) => x.agent?.id === th.agentId);
+      if (fromSeat && toSeat) setGlow({ id: Date.now(), from: centreOf(fromSeat.desk), to: centreOf(toSeat.desk) });
+    }
+  }, [threadsForGlow, seats]);
+
 
   /** Where every body stands on the floor. Desks never move; free people gather in the break
       room and a talking pair sits in the meeting room. A change in this map is exactly what
@@ -892,7 +911,9 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                 >
                   {seat.agent ? (
                     <>
-                      <Avatar index={seat.agent.avatar ?? undefined} size="sm" />
+                      {walk && walk.agentId === seat.agent.id
+                        ? <span className="walk-away" aria-hidden="true" />
+                        : <Avatar index={seat.agent.avatar ?? undefined} size="sm" />}
                       <span className="desk-name">{localized(seat.agent.name, seat.agent.nameAr, lang)}</span>
                       <span className={`desk-status desk-status-${seat.agent.status}`} aria-hidden="true" />
                       {seat.tasks.length > 0 && (
@@ -920,6 +941,21 @@ export function WorldView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
 
               {/* Where people are, said out loud: the plan is a picture, so a screen reader gets the
                   same facts from one sentence instead of sixteen buttons. */}
+              {glow ? (
+                <span
+                  key={glow.id}
+                  className="glow-msg"
+                  aria-hidden="true"
+                  style={{
+                    insetInlineStart: glow.from.x,
+                    insetBlockStart: glow.from.y,
+                    ['--gx' as string]: `${glow.to.x}px`,
+                    ['--gy' as string]: `${glow.to.y}px`,
+                  }}
+                  onAnimationEnd={() => setGlow(null)}
+                />
+              ) : null}
+
               {liveOn && walk ? (
                 <span
                   className="walker"

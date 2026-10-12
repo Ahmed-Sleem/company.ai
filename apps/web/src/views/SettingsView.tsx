@@ -18,6 +18,7 @@ import { readFx, readRail, setFx, setLangPref, setRail } from '../lib/prefs';
 import { readWorkHours, saveWorkHours } from '../lib/schedule';
 import { runTick } from '../lib/engine';
 import { downloadSave, parseSave, resetSave } from '../lib/savefile';
+import { askNotify, notifyPermission } from '../lib/notify';
 import { useStore } from '../data/store';
 import { Icon } from '../components/Icon';
 import { applyCustomAccent, deriveAccent, validHex } from '../lib/accent';
@@ -289,6 +290,9 @@ export function SettingsView({ lang, forcedState, onHelp }: { lang: Lang; forced
   const operatorName = useStore((s) => s.operator.name);
   const load = useStore((s) => s.load);
   const reopenIntro = useStore((s) => s.reopenIntro);
+  const notifyOn = useStore((s) => s.notifyOn);
+  const setNotifyOn = useStore((s) => s.setNotifyOn);
+  const [perm, setPerm] = useState(notifyPermission());
   const [form, setForm] = useState({
     company: company.name,
     description: company.description,
@@ -447,6 +451,33 @@ export function SettingsView({ lang, forcedState, onHelp }: { lang: Lang; forced
                 </div>
               </section>
 
+
+              <section className="panel panel-pad settings-section">
+                <h2>{t('notifyTitle', lang)}</h2>
+                <div className="setting">
+                  <div>
+                    <h3>{t('notifyToggle', lang)}</h3>
+                    <p>{t('notifyNote', lang)}</p>
+                  </div>
+                  <input type="checkbox" data-settings="notify" checked={notifyOn}
+                    onChange={(e) => setNotifyOn(e.target.checked)} />
+                </div>
+                <div className="setting">
+                  <div>
+                    <h3>{t('notifyAskT', lang)}</h3>
+                    <p data-settings="notify-status">
+                      {perm === 'granted' ? t('notifyPermGranted', lang)
+                        : perm === 'denied' ? t('notifyPermDenied', lang)
+                        : perm === 'unsupported' ? t('notifyPermUnsupported', lang)
+                        : t('notifyPermDefault', lang)}
+                    </p>
+                  </div>
+                  <button type="button" className="btn" data-settings="notify-ask"
+                    onClick={() => { void askNotify().then(() => setPerm(notifyPermission())); }}>
+                    {t('notifyAsk', lang)}
+                  </button>
+                </div>
+              </section>
 
               <section className="panel panel-pad settings-section">
                 <h2>{t('integrationsTitle', lang)}</h2>

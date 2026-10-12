@@ -24,6 +24,7 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const agents = useStore((s) => s.agents);
   const threads = useStore((s) => s.threads);
   const operator = useStore((s) => s.operator);
+  const typing = useStore((s) => s.typing);
   const startThread = useStore((s) => s.startThread);
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -167,6 +168,11 @@ export function CommsView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                         </article>
                       );
                     })}
+                    {thread && typing.includes(thread.id) ? (
+                      <span className="typing-dots" data-comms="typing" aria-label={t('typingNow', lang)}>
+                        <i /><i /><i />
+                      </span>
+                    ) : null}
                     {thread && thread.messages.length === 0 ? <p className="small dim">{t('chatNone', lang)}</p> : null}
                     {!thread ? (
                       <div className="chat-start">

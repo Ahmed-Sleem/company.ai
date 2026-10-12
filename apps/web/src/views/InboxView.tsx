@@ -29,6 +29,8 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   /** REQ-46: at most one letter is open at a time, and its reply draft lives beside it. */
   const [openId, setOpenId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  // R18 (owner): a decision can carry the owner's reason to the model — optional, one box.
+  const [noteText, setNoteText] = useState('');
   const agents = useStore((s) => s.agents);
   /** Phase J: the mailbox is LIVE — a letter filed by a model mid-cycle appears without a
       reload, and a thread's reply closes its letter in front of the owner's eyes. */
@@ -57,9 +59,10 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const decide = (id: string, verdict: 'approve' | 'reject') => {
     if (busy) return;
     setBusy(id);
-    api.decide(id, verdict).catch(() => undefined).then(() => {
+    api.decide(id, verdict, noteText.trim() || undefined).catch(() => undefined).then(() => {
       setBusy(null);
       setOpenId(null);
+      setNoteText('');
       load();
     });
   };
@@ -163,6 +166,12 @@ export function InboxView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
                               <dt>{t('audit', lang)}</dt>
                               <dd>{dateTime(d.audit.raisedAt, lang)}</dd>
                             </dl>
+                            <label className="field mail-note">
+                              <span>{t('decisionNoteLabel', lang)}</span>
+                              <textarea data-mail-note={d.id} rows={2}
+                                value={noteText} placeholder={t('decisionNotePlaceholder', lang)}
+                                onChange={(e) => setNoteText(e.target.value)} />
+                            </label>
                             <div className="actions">
                               <button className="btn primary" type="button" disabled={busy !== null}
                                 data-mail-decide="approve" onClick={() => decide(d.id, 'approve')}>

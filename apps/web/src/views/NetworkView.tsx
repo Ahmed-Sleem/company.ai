@@ -141,13 +141,19 @@ export function NetworkView({ lang, forcedState }: { lang: Lang; forcedState?: D
     kick();
   };
 
-  // A new graph (first paint, or the visitor chose another one): simulate, then frame it.
+  // A new graph (first paint, or the visitor chose another one): round eighteen (owner) —
+  // settle the layout BEFORE the first paint, then frame it at once. No readjust jump.
   useEffect(() => {
-    alpha.current = G.alpha;
+    const current = graphRef.current;
+    let warm: number = G.alpha;
+    for (let i = 0; i < 240; i++) {
+      warm = Math.max(warm * G.decay, LIVE_ALPHA);
+      layoutStep(current, warm);
+    }
+    alpha.current = LIVE_ALPHA;
     setSelected(null);
+    fit();
     kick();
-    const once = window.setTimeout(fit, 900);
-    return () => window.clearTimeout(once);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph]);
 

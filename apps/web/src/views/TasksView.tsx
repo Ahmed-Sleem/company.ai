@@ -9,6 +9,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PRIORITY_LABELS, STAGE_LABELS, TASK_PRIORITIES, TASK_STAGES, type TaskStage } from '@company/contracts';
 import { api, type TaskRow, type TransitionOffer } from '../lib/api';
+import { useStore } from '../data/store';
+import { notify } from '../lib/notify';
 import { t, type Lang } from '../lib/i18n';
 import { date, localized, percent } from '../lib/format';
 import { ScreenHead } from '../components/ScreenHead';
@@ -49,7 +51,6 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
   const [agents, setAgents] = useState<Array<{ id: string; name: string; nameAr: string | null }>>([]);
   /** `undefined` = closed, `null` = a new task, a row = editing that task. */
   const [form, setForm] = useState<TaskRow | null | undefined>(undefined);
-  const [note, setNote] = useState<string | null>(null);
 
   const load = () => {
     setError(false);
@@ -139,7 +140,9 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
       });
     }
     await load();
-    setNote(t(form ? 'taskUpdated' : 'taskAdded', lang));
+    // round eighteen (owner): the odd on-screen "task added" is gone; the desktop
+    // notification (when the owner allows it) is the receipt.
+    notify(t('notifyTaskT', lang), values.title, useStore.getState().notifyOn);
   };
 
   const counts = {
@@ -324,7 +327,6 @@ export function TasksView({ lang, forcedState }: { lang: Lang; forcedState?: Dat
         onSubmit={saveTask}
         onClose={() => setForm(undefined)}
       />
-      {note ? <p role="status" className="note">{note}</p> : null}
       </div>
     </>
   );

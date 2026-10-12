@@ -26,6 +26,7 @@ import { chatCompletion, chatTurn, type ModelConnection, type Turn, type TurnRep
 import { APP_TOOLS, integrationToolDefs } from './tools';
 import { recordCall } from './history';
 import { runToolAsync } from './toolrun';
+import { notify } from './notify';
 import type { AgentRow, TaskRow } from '../data/store';
 import { canTransition, type TaskStage } from '@company/contracts';
 
@@ -99,7 +100,9 @@ export function runTick(lang: Lang, manual = false): string | null {
     void providerCycle(task.id, owner.id, conn, lang);
     return `asked:${task.shortRef}`;
   }
-  return localHeartbeat(task.id, lang);
+  // Round eighteen (owner): simulated progress is a showroom courtesy. A real company
+  // without keys moves when keys arrive — never before.
+  return state.demoMode ? localHeartbeat(task.id, lang) : null;
 }
 
 /** The local heartbeat: honest simulated progress for agents without a provider. */
@@ -117,6 +120,7 @@ export function localHeartbeat(taskId: string, lang: Lang): string | null {
   if (progress >= 100 && task.stage === 'review') {
     state.patchTask(task.id, { progress: 100, stage: 'done' });
     announce(task.ownerAgentId, t('liveDone', lang).replace('{title}', title), lang);
+    if (state.notifyOn) notify(t('notifyDoneT', lang).replace('{title}', title), state.company.name, true);
     return `done:${task.shortRef}`;
   }
   state.patchTask(task.id, { progress });

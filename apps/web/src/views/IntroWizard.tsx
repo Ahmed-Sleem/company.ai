@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useStore, type DraftEmployee, type IntroDraft } from '../data/store';
 import { t, type Lang } from '../lib/i18n';
 import { PORTRAITS } from '../lib/avatars.data';
+import { PROVIDERS, testConnection, type ModelConnection } from '../lib/providers';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { saveAttr, FX } from '../lib/prefs';
@@ -38,7 +39,8 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
   const [draft, setDraft] = useState<IntroDraft>(stored ?? blankDraft);
   const [error, setError] = useState<string | null>(null);
   /** The add-employee form's own fields. */
-  const [form, setForm] = useState({ name: '', nameAr: '', role: '', roleAr: '', focus: '', avatar: 0, managerId: '' });
+  const [form, setForm] = useState({ name: '', nameAr: '', role: '', roleAr: '', focus: '', avatar: 0, managerId: '', provider: 'openai' as ModelConnection['provider'], model: '', key: '' });
+  const [testWord, setTestWord] = useState<string | null>(null);
 
   const update = (patch: Partial<IntroDraft>) => {
     const next = { ...draft, ...patch };
@@ -101,9 +103,13 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
       focus: form.focus.trim() === '' ? null : form.focus.trim(),
       avatar: form.avatar,
       managerId: form.managerId === '' ? null : form.managerId,
+      model: form.model.trim() !== '' && form.key.trim() !== ''
+        ? { provider: form.provider, model: form.model.trim(), key: form.key.trim(), baseUrl: null }
+        : null,
     };
     update({ employees: [...draft.employees, employee] });
-    setForm({ name: '', nameAr: '', role: '', roleAr: '', focus: '', avatar: 0, managerId: '' });
+    setForm({ name: '', nameAr: '', role: '', roleAr: '', focus: '', avatar: 0, managerId: '', provider: 'openai', model: '', key: '' });
+    setTestWord(null);
   };
 
   const removeEmployee = (id: string) =>
@@ -215,7 +221,8 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
         ) : null}
 
         {draft.step === 1 ? (
-          <div className="team-form">
+          <div className="team-form draft-cols">
+            <div className="draft-listcol">
             <p className="small dim">{t('wizardEmployeesHint', lang)}</p>
             {draft.employees.length === 0 ? <p className="small dim" data-intro="no-employees">{t('wizardNoEmployees', lang)}</p> : (
               <ul className="draft-employees">
@@ -234,6 +241,7 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
                 ))}
               </ul>
             )}
+            </div>
             <div className="panel panel-pad draft-form">
               <p className="sectionhead-mini">{t('wizardAddEmployee', lang)}</p>
               <div className="answer-row">
@@ -269,6 +277,34 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
                   ))}
                 </div>
               </div>
+              <div className="answer-row">
+                <label className="field grow">{t('providerLabel', lang)}
+                  <select value={form.provider} data-intro="employee-provider"
+                    onChange={(e) => { setTestWord(null); setForm({ ...form, provider: e.target.value as ModelConnection['provider'] }); }}>
+                    {PROVIDERS.map((prov) => <option key={prov.id} value={prov.id}>{prov.label}</option>)}
+                  </select>
+                </label>
+                <label className="field grow">{t('modelLabel', lang)}
+                  <input value={form.model} data-intro="employee-model" placeholder="gpt-4o-mini"
+                    onChange={(e) => { setTestWord(null); setForm({ ...form, model: e.target.value }); }} />
+                </label>
+              </div>
+              <div className="answer-row">
+                <label className="field grow">{t('keyLabel', lang)}
+                  <input type="password" value={form.key} data-intro="employee-key"
+                    onChange={(e) => { setTestWord(null); setForm({ ...form, key: e.target.value }); }} />
+                </label>
+                <button type="button" className="btn" data-intro="test-connection"
+                  disabled={form.key.trim() === '' || form.model.trim() === ''}
+                  onClick={() => {
+                    setTestWord('…');
+                    void testConnection({ provider: form.provider, model: form.model.trim(), key: form.key.trim(), baseUrl: null })
+                      .then((result) => setTestWord(result.message));
+                  }}>
+                  {t('testConn', lang)}
+                </button>
+              </div>
+              {testWord ? <p className="small dim" data-intro="test-result" role="status">{testWord}</p> : null}
               <label className="field">{t('teamManagerLabel', lang)}
                 <select value={form.managerId} data-intro="employee-manager"
                   onChange={(e) => setForm({ ...form, managerId: e.target.value })}>
@@ -294,14 +330,6 @@ export function IntroWizard({ lang, onLanguage }: { lang: Lang; onLanguage: () =
                 <option value="light">Light</option>
                 <option value="system">System</option>
               </select>
-            </label>
-            <label className="setting">
-              <input type="checkbox" data-intro="fx" checked={draft.options.fx}
-                onChange={(e) => update({ options: { ...draft.options, fx: e.target.checked } })} />
-              <span>
-                {t('screenEffect', lang)}
-                <small>{t('screenEffectNote', lang)}</small>
-              </span>
             </label>
             <p className="small dim">{t('wizardOptionsNote', lang)}</p>
           </div>

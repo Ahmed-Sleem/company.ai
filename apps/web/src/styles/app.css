@@ -15,6 +15,9 @@
    tokens rather than inline literals so the raw-value check can stay absolute. */
 :root{
   --app-hair:1px;
+  --app-dot:6px;
+  --app-draft-h:420px;
+  --app-draft-h-phone:240px;
   --app-stroke:2px;
   --app-notch:3px;
   --app-track:1.6px;
@@ -935,6 +938,25 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .palette-list
 .companies-win .studio-list { margin-block: var(--s3); }
 .companies-win .studio-row { flex-wrap: wrap; }
 .companies-win .win-actions { flex-wrap: wrap; }
+/* round eighteen — the wizard's two independent columns: the list scrolls, the form stays */
+.draft-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--s5); align-items: start; }
+.draft-listcol { display: flex; flex-direction: column; gap: var(--s3); max-block-size: var(--app-draft-h); overflow-y: auto; }
+.draft-form { position: sticky; inset-block-start: 0; }
+.walk-away { inline-size: var(--sh-icon); block-size: var(--sh-icon); border: var(--app-hair) dashed var(--line); display: inline-block; }
+/* the messenger's typing dots, the way the owner named them: telegram-like */
+.typing-dots { display: inline-flex; gap: var(--s1); padding: var(--s2) var(--s3); border: var(--app-hair) solid var(--line); background: var(--surface); }
+.typing-dots i { inline-size: var(--app-dot); block-size: var(--app-dot); background: var(--muted); animation: typedot 1s infinite; }
+.typing-dots i:nth-child(2) { animation-delay: .2s; }
+.typing-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes typedot { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
+/* a message travelling between two desks, as a glow on the wire */
+.glow-msg { position: absolute; inline-size: var(--s3); block-size: var(--s3); border-radius: 50%; background: var(--accent); box-shadow: 0 0 var(--s3) var(--accent); animation: glowfly 1.2s ease-in forwards; pointer-events: none; z-index: 5; }
+@keyframes glowfly { to { translate: var(--gx) var(--gy); opacity: 0; } }
+@media (max-width: 800px) {
+  .draft-cols { grid-template-columns: 1fr; }
+  .draft-listcol { max-block-size: var(--app-draft-h-phone); }
+}
+
 /* round sixteen — the narrowest phones: the door bar must fit 320px */
 @media (max-width: 400px) {
   .landing, .intro { padding-inline: var(--s3); }

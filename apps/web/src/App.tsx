@@ -486,7 +486,7 @@ export function App() {
         {fx ? <div className="fx-overlay" data-fx-overlay aria-hidden="true" /> : null}
 
         <footer className="statusbar">
-          <span><span className="dot" aria-hidden="true" />{health ? `${company} · ${t('online', lang)}` : t('loading', lang)}</span>
+          <span><span className="dot" aria-hidden="true" />{health ? company : t('loading', lang)}</span>
           <span className="secondary">
             {`${people} ${t('footPeople', lang)} · ${openTasks} ${t('footOpen', lang)} · ${waiting} ${t('footWaiting', lang)}`}
             {savedAt ? ` · ${t('footSaved', lang)} ${new Date(savedAt).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}

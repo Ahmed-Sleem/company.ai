@@ -1309,3 +1309,20 @@ The owner opened the live link on his phone and called it corrupted. It was, and
   shell now serves a CSP meta (script-src self, no objects, base-uri locked, loopback kept
   only so owner-run MCP servers stay reachable); npm audit stays clean in the gate.
 * Phase 3 findings logged in AUDIT_PLAN.md; palette, help and statusbar re-checked clean.
+
+## Round eighteen (2026-10-12) — the realness pass + the owner's quick fixes
+* The demo behaviour is dead outside the labelled demo: an employee with no model key no
+  longer gets a scripted reply — the honest "not connected" line is the only answer, and no
+  diary row is invented (unit-tested both ways, realness tests in messenger.test.tsx).
+* Telegram-style typing dots while a real model thinks (store `typing`, CommsView row);
+  engine's fake heartbeat now runs only in demoMode; finished tasks and replies raise real
+  desktop notifications (lib/notify.ts + Settings section: toggle, permission status,
+  re-ask button); the "Task added." inline note is gone.
+* Wizard: step 2 is two independent columns (scrolling list, sticky form) with provider /
+  model / key fields and a Test button; step 3 no longer offers the effects switch.
+* Decisions carry an optional note to the model; the network graph settles before first
+  paint; the world walker is one body (outline at the desk while walking) and messages glow
+  between desks; the statusbar no longer says "Live"; the Live control is a proven toggle.
+* Gate: typecheck clean · 168 web + 90 root tests · oxlint exit 0 · smoke 114 → 122 checks ·
+  verify 11/11 GREEN. Orchestrated-system docs staged: ORCHESTRATION_UNDERSTANDING /
+  AUDIT / DIFF / PLAN (research cycles 1–4 recorded in the plan).

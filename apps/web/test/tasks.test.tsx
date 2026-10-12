@@ -10,7 +10,17 @@
  * user-side save — the same store the app itself writes — and then assert on what the save holds
  * after the board acts on it.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// R18 (owner): the board no longer prints "Task added." inside the page — it raises a real
+// desktop notification instead, so the tests watch the notifier, not an inline note.
+const notifySpy = vi.hoisted(() => vi.fn());
+vi.mock('../src/lib/notify', () => ({
+  notify: (...args: unknown[]) => notifySpy(...args),
+  notifySupported: true,
+  notifyPermission: () => 'default',
+  askNotify: async () => 'granted' as const,
+}));
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { TasksView } from '../src/views/TasksView';
 import { PORTRAITS } from '../src/lib/avatars.data';
@@ -61,6 +71,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  notifySpy.mockClear();
 });
 
 describe('the board shows what the demo shows', () => {
@@ -173,7 +184,9 @@ describe('the task form, on real state', () => {
     const stored = useStore.getState().tasks.find((t) => t.title === 'Draft the November plan')!;
     expect(stored).toMatchObject({ stage: 'progress', priority: 'high', dueDate: '2026-11-03', ownerAgentId: ANA });
     expect(stored.shortRef).toMatch(/^TSK-\d+$/);
-    await screen.findByText('Task added.');
+    // the confirmation is the notification itself — nothing lingers inside the page
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith('Task saved on the board', 'Draft the November plan', true));
+    expect(screen.queryByText('Task added.')).toBeNull();
     await screen.findByText('Draft the November plan');
   });
 
@@ -217,7 +230,7 @@ describe('the task form, on real state', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(useStore.getState().tasks.find((t) => t.id === 'tsk-1')!.title).toBe('Refine the pipeline further'));
-    await screen.findByText('Task updated.');
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith('Task saved on the board', 'Refine the pipeline further', true));
   });
 
   it('shows the rule’s refusal when the form tries an illegal move', async () => {

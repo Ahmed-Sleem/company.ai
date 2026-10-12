@@ -143,15 +143,23 @@ export const api = {
     }
     return next({ ok: true });
   },
-  decide: (decisionId: string, verdict: 'approve' | 'reject') => {
+  decide: (decisionId: string, verdict: 'approve' | 'reject', note?: string) => {
     const state = useStore.getState();
     const existing = state.decisions.find((d) => d.id === decisionId);
     if (!existing) fail('not_found', 'No such decision.');
     if (existing!.status !== 'pending') fail('already_decided', 'This decision was already decided.');
+    const trimmed = (note ?? '').trim();
     const decided = state.patchDecision(decisionId, {
       status: verdict === 'approve' ? 'approved' : 'rejected',
+      ownerNote: trimmed === '' ? null : trimmed,
       audit: { raisedAt: existing!.audit.raisedAt, decidedByLabel: `${state.operator.name} (owner)`, decidedAt: new Date().toISOString() },
     });
+    // the model reads the owner's note in words — it lands in that person's thread, which the
+    // next prompt is compiled from; approve/reject alone never carries a note.
+    if (decided?.agentId && trimmed !== '') {
+      const th = state.threads.find((x) => x.agentId === decided.agentId);
+      if (th) state.addMessage(th.id, 'you', `${verdict === 'approve' ? 'Approved' : 'Rejected'} — ${trimmed}`);
+    }
     return next({ outcome: { kind: verdict }, applied: { outcome: `${verdict === 'approve' ? 'Approved' : 'Rejected'}: ${decided?.title ?? ''}` } });
   },
   models: (): Promise<{ models: ModelRow[] }> => next({ models: useStore.getState().models }),

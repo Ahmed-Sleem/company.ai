@@ -12,6 +12,8 @@ import demo from './demo.json';
 import type { ModelConnection } from '../lib/providers';
 import { isGitHubRepo } from '../lib/integrations';
 import { localVoice } from '../lib/voice';
+import { notify } from '../lib/notify';
+import { t } from '../lib/i18n';
 import { recordCall, setHistoryDemoMode } from '../lib/history';
 import { chatCompletion } from '../lib/providers';
 import { compileSystemPrompt } from '../lib/prompt';
@@ -75,6 +77,8 @@ export interface DecisionRow {
    */
   body?: string | null;
   options?: string[] | null;
+  /** Round eighteen (owner): the optional note the owner leaves on a verdict, for the model. */
+  ownerNote?: string | null;
   reply?: string | null;
   /** REQ-54 (Phase J): deliverables travel with their documents attached. */
   attachments?: MailAttachment[] | null;
@@ -139,6 +143,8 @@ export interface DraftEmployee {
   avatar: number;
   /** Another draft id, or null for "reports to the owner". */
   managerId: string | null;
+  /** The model this person answers with (R18) — null until the owner wires a key. */
+  model: ModelConnection | null;
 }
 
 /** The intro wizard's draft — it lives in the save, so closing the tab loses nothing (REQ-15). */
@@ -178,6 +184,11 @@ export interface SaveState {
   worldPlan: WorldPlan | null;
   /** Replace any collection (tests, import, the future wizard). */
   load: (data: Partial<Omit<SaveState, 'load' | 'reset'>>) => void;
+  /** Which threads a real model is answering right now (R18: the typing dots). Not saved. */
+  typing: string[];
+  /** Desktop notifications on/off (R18). Saved, so the owner's choice sticks. */
+  notifyOn: boolean;
+  setNotifyOn: (on: boolean) => void;
   /** Back to the labelled demo company. */
   reset: () => void;
   patchTask: (id: string, patch: Partial<TaskRow>) => TaskRow | null;
@@ -232,6 +243,8 @@ const fixture = () => ({
   introDone: false,
   demoMode: false,
   doorPassed: false,
+  typing: [] as string[],
+  notifyOn: true,
   introDraft: null as IntroDraft | null,
   operator: { ...demo.operator },
   agents: demo.agents.map((a) => ({ model: null, ...a })) as AgentRow[],
@@ -344,7 +357,7 @@ export const useStore = create<SaveState>()(
           department: null, focus: e.focus, focusAr: null,
           avatar: e.avatar, status: 'idle', capabilities: [],
           managerId: e.managerId ? realId.get(e.managerId) ?? null : null,
-          model: null,
+          model: e.model ?? null,
         }));
         if (draft.mode === 'edit') {
           // Reopened over an existing company (REQ-15): people keep their ids, and everything
@@ -357,6 +370,7 @@ export const useStore = create<SaveState>()(
               name: e.name, nameAr: e.nameAr, role: e.role, roleAr: e.roleAr,
               focus: e.focus, avatar: e.avatar,
               managerId: e.managerId ? realId.get(e.managerId) ?? e.managerId : null,
+              model: e.model ?? null,
             };
           });
           return {
@@ -404,6 +418,7 @@ export const useStore = create<SaveState>()(
               sourceId: a.id,
               name: a.name, nameAr: a.nameAr, role: a.role, roleAr: a.roleAr,
               focus: a.focus, avatar: a.avatar ?? 0,
+              model: a.model ?? null,
               managerId: a.managerId ? draftId.get(a.managerId) ?? null : null,
             })),
             options: { theme: 'dark', fx: true },
@@ -440,6 +455,7 @@ export const useStore = create<SaveState>()(
         savedAt: new Date().toISOString(),
         integrations: state.integrations.filter((r) => r.id !== id),
       })),
+      setNotifyOn: (on) => set({ notifyOn: on }),
       sendOwnerMessage: (threadId, text, lang) => {
         get().addMessage(threadId, 'you', text);
         const th = get().threads.find((x) => x.id === threadId);
@@ -474,31 +490,44 @@ export const useStore = create<SaveState>()(
         let system = '';
         const conn = person?.model ?? null;
         const live = person !== null && conn !== null && conn.key.trim() !== '' && conn.model.trim() !== '';
+        const demo = get().demoMode;
+        let real = false;
         if (live && person && conn) {
           system = compileSystemPrompt(get(), person, lang);
+          // the messenger shows a typing animation while the real model thinks (owner, R18)
+          set((s0) => ({ typing: [...s0.typing.filter((x) => x !== threadId), threadId] }));
           try {
             answer = await chatCompletion(conn, system, msgText);
+            real = true;
           } catch {
-            answer = localVoice(person, get().tasks, lang);
+            answer = `— ${t('chatFailed', lang)}`;
           }
-        } else {
+          set((s0) => ({ typing: s0.typing.filter((x) => x !== threadId) }));
+        } else if (demo) {
+          // the labelled showroom keeps its scripted voices; it says DEMO everywhere.
           await wait(800);
           answer = person ? localVoice(person, get().tasks, lang) : '…';
+        } else {
+          // Round eighteen (owner): no key and no demo — NO placeholder reply, ever.
+          answer = `— ${t('notConnected', lang)}`;
         }
         if (person) {
           get().addMessage(threadId, person.id, answer);
-          // Phase M (REQ-57): the exact call, word for word, into the person's diary.
-          void recordCall({
-            agentId: person.id,
-            at: new Date().toISOString(),
-            purpose: 'chat',
-            provider: live && conn ? conn.provider : 'local',
-            model: live && conn ? conn.model : 'local-voice',
-            system,
-            input: msgText,
-            toolCalls: '[]',
-            output: answer,
-          });
+          if (get().notifyOn) notify(t('notifyReplyT', lang).replace('{name}', person.name), answer.slice(0, 90), true);
+          // Phase M (REQ-57): only calls that really happened land in the diary.
+          if (real || demo) {
+            void recordCall({
+              agentId: person.id,
+              at: new Date().toISOString(),
+              purpose: 'chat',
+              provider: real && conn ? conn.provider : 'local',
+              model: real && conn ? conn.model : 'local-voice',
+              system,
+              input: msgText,
+              toolCalls: '[]',
+              output: answer,
+            });
+          }
         }
         activeTurns.delete(threadId);
         if ((get().threads.find((x) => x.id === threadId)?.queue ?? []).length > 0) schedulePump(threadId, lang);
@@ -656,6 +685,7 @@ export const useStore = create<SaveState>()(
         worldPlan: state.worldPlan,
         models: state.models,
         integrations: state.integrations,
+        notifyOn: state.notifyOn,
       }),
     },
   ),

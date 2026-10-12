@@ -191,6 +191,8 @@ try {
     navIcons.join(', '));
   check('the status bar names the product and its version',
     (await page.textContent('.statusbar'))?.includes('company.ai') ?? false);
+  check('round 18 — the status bar never claims the word live: the studio says what it is',
+    !((await page.textContent('.statusbar')) ?? '').toLowerCase().includes('live'));
   await page.waitForSelector('text=Aria', { timeout: 10_000 });
   check('the team view shows real agents from the database', true, 'Aria rendered');
   const roster = await page.textContent('.roster');
@@ -257,6 +259,13 @@ try {
   await page.waitForSelector('[data-clock-state]');
   const clockState = await page.textContent('[data-clock-state]');
   check('the clock carries a work/rest indicator (R11)', (clockState ?? '').length > 2, clockState ?? '');
+  // Round 18 (owner): the world's Live control is a real toggle, and it says which way it stands.
+  const liveBefore = await page.getAttribute('[data-world=live]', 'aria-pressed');
+  await page.click('[data-world=live]');
+  const liveAfter = await page.getAttribute('[data-world=live]', 'aria-pressed');
+  check('round 18 — the Live control is a real toggle: one press flips it, the state is readable',
+    liveBefore !== null && liveBefore !== liveAfter, `${liveBefore} -> ${liveAfter}`);
+  await page.click('[data-world=live]'); // leave the world live for the checks that follow
 
   // REQ-37: search is typed straight into the topbar; results hang under the field; no dialog.
   // REQ-44 (seventh round): search is the command palette — the topbar button opens it,
@@ -841,6 +850,16 @@ try {
   // that cannot be opened says so in the owner's words instead of failing silently.
   await page.click('[data-nav=settings]');
   await page.waitForSelector('[data-ix=repo]');
+  // Round 18 (owner): notifications are a first-class settings section with a real switch.
+  check('round 18 — settings carries the desktop-notifications section, switch and browser status',
+    (await page.$('[data-settings=notify]')) !== null &&
+    (await page.$('[data-settings=notify-status]')) !== null &&
+    (await page.$('[data-settings=notify-ask]')) !== null);
+  const notifyWas = await page.isChecked('[data-settings=notify]');
+  await page.click('[data-settings=notify]');
+  check('round 18 — the notifications switch really switches',
+    (await page.isChecked('[data-settings=notify]')) !== notifyWas);
+  await page.click('[data-settings=notify]'); // put it back on: the default the owner chose
   await page.fill('[data-ix=repo]', 'https://evil.example/server');
   await page.click('[data-ix=add]');
   check('an integration whose home is not GitHub is refused, in words (REQ-55)',
@@ -1052,6 +1071,19 @@ try {
     await page.click('[data-intro=next]');
     await page.fill('[data-intro=employee-name]', 'Sara');
     await page.fill('[data-intro=employee-role]', 'Producer');
+    // Round 18 (owner): the employee form carries its own model wiring, in its own column —
+    // the list scrolls on its own; the form never drifts down with it.
+    check('round 18 — the wizard employee form is an independent column with its own model fields',
+      (await page.$('.draft-cols')) !== null &&
+      (await page.$('[data-intro=employee-provider]')) !== null &&
+      (await page.$('[data-intro=employee-model]')) !== null &&
+      (await page.$('[data-intro=employee-key]')) !== null);
+    check('round 18 — the Test button waits until a model and a key are entered',
+      (await page.getAttribute('[data-intro=test-connection]', 'disabled')) !== null);
+    await page.fill('[data-intro=employee-model]', 'gpt-4o-mini');
+    await page.fill('[data-intro=employee-key]', 'sk-not-a-real-key');
+    check('round 18 — the Test button arms once the form can actually reach a model',
+      (await page.getAttribute('[data-intro=test-connection]', 'disabled')) === null);
     await page.click('[data-portrait="5"]');
     await page.click('[data-intro=add-employee]');
     await page.reload({ waitUntil: 'networkidle' }); // close the tab mid-wizard…
@@ -1065,6 +1097,8 @@ try {
     check('the drafted employee survived the reload',
       (await page.locator('.draft-employee').count()) === 1);
     await page.click('[data-intro=next]');
+    check('round 18 — the wizard offers no effects switch: effects belong to Settings, on by default',
+      (await page.$('.intro-main input[type=checkbox]')) === null);
     await page.click('[data-intro=finish]');
     await page.waitForSelector('.sidebar');
     const mine = await page.evaluate(() => {
